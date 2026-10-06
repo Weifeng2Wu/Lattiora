@@ -16,7 +16,8 @@ import {
 } from "@/lib/shell/ui-store";
 
 // Exercise the real controller and persistence without mounting desktop UI.
-vi.mock("react", () => ({
+vi.mock("react", async (importOriginal) => ({
+	...(await importOriginal<typeof import("react")>()),
 	useRef: (current: unknown) => ({ current }),
 	useMemo: (factory: () => unknown) => factory(),
 	useEffect: (effect: () => unknown) => {
