@@ -73,7 +73,7 @@ export function useLibraryHeatmap({
 			subscribeCloudFiles((paths) => {
 				let changed = false;
 				for (const path of paths) {
-					const match = /^(.*)\/marks\/[^/]+\.json$/.exec(path);
+					const match = /^(.*)\/(?:marks|\.reading)\/[^/]+\.json$/.exec(path);
 					if (!match) continue;
 					heatmapCacheRef.current.heatmaps.delete(match[1]);
 					heatmapCacheRef.current.points.delete(match[1]);
@@ -187,7 +187,10 @@ export function useLibraryHeatmap({
 				void savePaperPageCounts(vaultPath, new Map([[key, count]]));
 				const points = cache.points.get(key);
 				if (!points?.length) continue;
-				const heat = aggregateReadingHeatmap(points, { pageCount: count });
+				const heat = {
+					...aggregateReadingHeatmap(points, { pageCount: count }),
+					reading: cache.heatmaps.get(key)?.reading,
+				};
 				cache.heatmaps.set(key, heat);
 				setHeatmaps((prev) => {
 					const next = new Map(prev);

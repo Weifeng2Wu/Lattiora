@@ -110,13 +110,38 @@ export function ReadingTitleHeat({
 		</span>
 	);
 
-	if (!heatLabel) return text;
+	const reading = heatmap?.reading;
+	const label = [
+		heatLabel,
+		reading?.pageCount
+			? t("papersLibrary.readingCoverage", {
+					count: reading.pages.length,
+					total: reading.pageCount,
+				})
+			: null,
+		reading?.analyzedAt ? t("papersLibrary.aiAnalyzed") : null,
+	]
+		.filter(Boolean)
+		.join(" · ");
+	if (!label) return text;
 
 	return (
 		<Tooltip>
-			<TooltipTrigger asChild>{text}</TooltipTrigger>
+			<TooltipTrigger asChild>
+				<span className="relative block">
+					{text}
+					{reading && reading.pageCount > 0 && (
+						<span
+							className="pointer-events-none absolute bottom-0 left-0 h-0.5 rounded bg-primary/50"
+							style={{
+								width: `${(100 * reading.pages.length) / reading.pageCount}%`,
+							}}
+						/>
+					)}
+				</span>
+			</TooltipTrigger>
 			<TooltipContent side="top" className="max-w-xs text-xs">
-				{heatLabel}
+				{label}
 			</TooltipContent>
 		</Tooltip>
 	);

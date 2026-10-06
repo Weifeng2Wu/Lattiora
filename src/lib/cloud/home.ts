@@ -13,11 +13,13 @@ import {
 	writeLocalFile,
 } from "./files";
 import { MAX_FILE_BYTES } from "./protocol";
+import { loadReadingProgress } from "./reading-progress";
 
 export type HomeBoard = { path: string; localId: string; doc: Kanban };
 
 export async function loadHomeOverview() {
-	const files = (await listLocalFiles()).filter(
+	const snapshot = await listLocalFiles();
+	const files = snapshot.filter(
 		(file) =>
 			!file.deleted &&
 			file.mime !== "inode/directory" &&
@@ -39,6 +41,7 @@ export async function loadHomeOverview() {
 		}
 	}
 	return {
+		reading: await loadReadingProgress(snapshot),
 		notes: files.filter((file) => /\.(md|mdx|markdown)$/i.test(file.path))
 			.length,
 		boards: boards.sort((a, b) => a.path.localeCompare(b.path)),

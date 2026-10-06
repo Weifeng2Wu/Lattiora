@@ -173,7 +173,9 @@
 		"refreshMetadataNoTargets": "没有可刷新的论文（需要 DOI、arXiv 编号或标题）",
 		"refreshMetadataTaskTitle": "刷新元数据",
 		"refreshMetadataTaskDetail": "{{current}} / {{total}} · 已更新 {{updated}} · 失败 {{failed}} · 未找到 {{empty}}",
-		"refreshMetadataPartial": "已更新 {{updated}} 篇，失败 {{failed}} 篇，未找到 {{empty}} 篇"
+		"refreshMetadataPartial": "已更新 {{updated}} 篇，失败 {{failed}} 篇，未找到 {{empty}} 篇",
+		"readingCoverage": "已浏览 {{count}} / {{total}} 页",
+		"aiAnalyzed": "AI 已分析"
 	},
 	"plaza": {
 		"plaza": "广场",

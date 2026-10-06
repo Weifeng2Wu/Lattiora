@@ -1,3 +1,4 @@
+import type { ReadingProgress } from "@/lib/cloud/reading-progress";
 /** Reading heatmap derived from PDF highlights, asks, and translates. */
 
 export type ReadingActivityKind = "highlight" | "ask" | "translate";
@@ -13,6 +14,7 @@ export type ReadingActivityPoint = {
 };
 
 export type ReadingHeatmap = {
+	reading?: ReadingProgress;
 	/** Normalized intensities 0–1 along the document (left = start) */
 	bins: number[];
 	/** Sum of all weights */

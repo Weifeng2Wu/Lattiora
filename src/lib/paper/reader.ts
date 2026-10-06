@@ -1,6 +1,6 @@
 /**
  * paper-reader workflow: run the paper-reader skill against a paper folder,
- * surface progress via background tasks, mark catalog `is_read` on success.
+ * surface progress via background tasks, record AI analysis separately from human reading.
  *
  * Skill activation syntax is provider-specific and owned entirely by the Host
  * (`skill_mention_style` + `paper_reader_skill_line`), which knows the resolved
@@ -23,11 +23,14 @@ import {
 	type RunOnceAccepted,
 	runOnce,
 } from "@/lib/agent";
+import {
+	loadReadingProgress,
+	markPaperAnalyzed,
+} from "@/lib/cloud/reading-progress";
 import { updateBackgroundTask } from "@/lib/core/background-tasks";
 import { errorText } from "@/lib/core/error";
 import { runLocalActivity } from "@/lib/core/tasks";
 import { isCloud } from "@/lib/core/tauri";
-import { setPaperIsRead } from "@/lib/paper/api";
 import { loadPaperMetadata } from "@/lib/paper/load-meta";
 import { paperTaskLabel } from "@/lib/paper/task-label";
 import { loadSettings } from "@/lib/settings/store";
@@ -225,7 +228,7 @@ export async function runPaperReaderWorkflow(opts: {
 				}
 
 				setDetail(i18n.t("app:tasks.paperReadMarking"));
-				await setPaperIsRead(opts.vaultRoot, paperRel, true);
+				await markPaperAnalyzed(paperRel);
 				setDetail(i18n.t("app:tasks.paperReadDone"));
 			},
 		);
@@ -248,7 +251,7 @@ export function paperAssetsReadyForReader(flags: {
 
 /**
  * After import / download: if Settings → Agent → auto paper-reader is on,
- * assets are ready, and catalog `is_read` is false, start paper-reader
+ * assets are ready, and the paper has not been analyzed or manually marked read, start paper-reader
  * (shows left-bottom progress). Returns true when a run started.
  *
  * Default setting is **off**. Does not throw on skip; rethrows agent/workflow
@@ -270,7 +273,11 @@ export async function maybeAutoRunPaperReader(opts: {
 	const abs = joinVaultPath(opts.vaultRoot, paperRel);
 	try {
 		const meta = await loadPaperMetadata(abs, opts.vaultRoot);
-		if (meta?.is_read === true) return false;
+		if (
+			meta?.is_read === true ||
+			(await loadReadingProgress()).get(paperRel)?.analyzedAt
+		)
+			return false;
 	} catch {
 		// No catalog row / unreadable — still try (workflow may work; mark may fail)
 	}

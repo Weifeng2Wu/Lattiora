@@ -252,7 +252,7 @@
 		"paperRead": "Reading paper",
 		"paperReadStarting": "Starting paper-reader…",
 		"paperReadRunning": "Agent is reading the paper…",
-		"paperReadMarking": "Marking as read…",
+		"paperReadMarking": "Saving analysis status…",
 		"paperReadDone": "Read complete",
 		"paperReadFailed": "Paper reading failed",
 		"connector": "Saving Connector attachment",
@@ -310,6 +310,9 @@
 			"updated": "Updated {{date}}",
 			"loadFailed": "Could not refresh conferences. Previously cached deadlines are kept.",
 			"saveFailed": "Could not save your conference selection."
-		}
+		},
+		"readingSaveFailed": "Could not save reading progress.",
+		"readingDetail": "{{read}} read · {{started}} in progress",
+		"pageCoverage": "{{count}} / {{total}} pages viewed"
 	}
 }

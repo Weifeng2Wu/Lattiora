@@ -57,7 +57,6 @@ import { PdfLeftToolbar } from "@/components/viewer/pdf/chrome/pdf-left-toolbar"
 import { PdfOutlinePanel } from "@/components/viewer/pdf/chrome/pdf-outline-panel";
 import { PdfReferencesPanel } from "@/components/viewer/pdf/chrome/pdf-references-panel";
 import { PdfToolbar } from "@/components/viewer/pdf/chrome/pdf-toolbar";
-
 import { usePdfEngineContext } from "@/components/viewer/pdf/engine-provider";
 import { usePdfActiveAnchors } from "@/components/viewer/pdf/hooks/use-pdf-active-anchors";
 import { usePdfAskThreads } from "@/components/viewer/pdf/hooks/use-pdf-ask-threads";
@@ -138,6 +137,7 @@ import {
 	selectionAnchorKey,
 } from "@/lib/pdf/selection";
 import { PDF_ZOOM_MAX, PDF_ZOOM_MIN } from "@/lib/pdf/zoom";
+import { uiStore } from "@/lib/shell/ui-store";
 
 export type {
 	PdfViewerHandle,
@@ -505,9 +505,11 @@ function PdfViewerInner({
 		}
 	}, [importIdentifier, importBusy]);
 
+	const homeOpen = useStore(uiStore, (state) => state.homeOpen);
 	const { pageField, setPageField, pageFocusedRef, goToPage, commitPageField } =
 		usePdfNavigation({
 			paperKey,
+			active: isActive && !homeOpen && !translationPane && !isRemotePaper,
 			currentPage,
 			totalPages,
 			scroll,

@@ -1,3 +1,6 @@
+import i18n from "@/i18n";
+import { recordReadingPage } from "@/lib/cloud/reading-progress";
+import { notifyError } from "@/lib/core/notify";
 /**
  * Page navigation and reading position.
  *
@@ -25,6 +28,7 @@ type ScrollCapability = ReturnType<typeof useScroll>["provides"];
 export type UsePdfNavigationOptions = {
 	/** Stable per-paper key for the stored reading position (null = no memory). */
 	paperKey: string | null;
+	active?: boolean;
 	currentPage: number;
 	totalPages: number;
 	scroll: ScrollCapability;
@@ -48,6 +52,7 @@ export type PdfNavigation = {
 
 export function usePdfNavigation({
 	paperKey,
+	active = true,
 	currentPage,
 	totalPages,
 	scroll,
@@ -124,6 +129,28 @@ export function usePdfNavigation({
 		}, READING_POSITION_SAVE_MS);
 		return () => clearTimeout(id);
 	}, [paperKey, currentPage]);
+
+	useEffect(() => {
+		if (!active || !paperKey || totalPages < 1 || currentPage < 1) return;
+		let timer: ReturnType<typeof setTimeout>;
+		const start = () => {
+			clearTimeout(timer);
+			if (document.visibilityState !== "visible") return;
+			timer = setTimeout(() => {
+				void recordReadingPage(paperKey, currentPage, totalPages).catch(() =>
+					notifyError(i18n.t("app:home.readingSaveFailed"), {
+						id: "reading-progress-save",
+					}),
+				);
+			}, 2000);
+		};
+		start();
+		document.addEventListener("visibilitychange", start);
+		return () => {
+			clearTimeout(timer);
+			document.removeEventListener("visibilitychange", start);
+		};
+	}, [active, paperKey, currentPage, totalPages]);
 
 	const goToPage = (n: number) => {
 		if (!scroll || totalPages <= 0) return;

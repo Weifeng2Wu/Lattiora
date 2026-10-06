@@ -173,7 +173,9 @@
 		"refreshMetadataNoTargets": "No papers with DOI, arXiv ID, or title to refresh",
 		"refreshMetadataTaskTitle": "Refresh metadata",
 		"refreshMetadataTaskDetail": "{{current}} / {{total}} · {{updated}} updated · {{failed}} failed · {{empty}} not found",
-		"refreshMetadataPartial": "{{updated}} updated, {{failed}} failed, {{empty}} not found"
+		"refreshMetadataPartial": "{{updated}} updated, {{failed}} failed, {{empty}} not found",
+		"readingCoverage": "{{count}} / {{total}} pages viewed",
+		"aiAnalyzed": "AI analyzed"
 	},
 	"plaza": {
 		"plaza": "Plaza",

@@ -252,7 +252,7 @@
 		"paperRead": "精读论文",
 		"paperReadStarting": "正在启动 paper-reader…",
 		"paperReadRunning": "Agent 正在阅读论文…",
-		"paperReadMarking": "正在标记为已读…",
+		"paperReadMarking": "正在保存分析状态…",
 		"paperReadDone": "精读完成",
 		"paperReadFailed": "精读失败",
 		"connector": "正在保存 Connector 附件",
@@ -310,6 +310,9 @@
 			"updated": "更新于 {{date}}",
 			"loadFailed": "会议数据刷新失败，已保留之前缓存的截止日期。",
 			"saveFailed": "无法保存所选会议。"
-		}
+		},
+		"readingSaveFailed": "无法保存阅读进度。",
+		"readingDetail": "已读 {{read}} 篇 · 在读 {{started}} 篇",
+		"pageCoverage": "已浏览 {{count}} / {{total}} 页"
 	}
 }

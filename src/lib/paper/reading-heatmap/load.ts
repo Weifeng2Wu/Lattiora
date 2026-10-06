@@ -1,4 +1,5 @@
 import { readCloudReadingActivity } from "@/lib/cloud/reading-activity";
+import { loadReadingProgress } from "@/lib/cloud/reading-progress";
 import {
 	aggregateReadingHeatmap,
 	emptyHeatmap,
@@ -50,18 +51,21 @@ export async function loadReadingHeatmaps(
 		},
 	);
 	const rels = [...new Set(keyed.flatMap((k) => (k.rel ? [k.rel] : [])))];
-	const activity = await fetchReadingActivityBatch(vaultPath, rels);
+	const [activity, reading] = await Promise.all([
+		fetchReadingActivityBatch(vaultPath, rels),
+		loadReadingProgress(),
+	]);
 
 	for (const { key, rel } of keyed) {
 		const pts = (rel ? activity[rel] : undefined) ?? [];
 		points.set(key, pts);
 		const pageCount = opts?.pageCounts?.get(key);
-		heatmaps.set(
-			key,
-			!pts.length && !pageCount
+		heatmaps.set(key, {
+			...(!pts.length && !pageCount
 				? emptyHeatmap()
-				: aggregateReadingHeatmap(pts, { pageCount }),
-		);
+				: aggregateReadingHeatmap(pts, { pageCount })),
+			reading: reading.get(rel ?? key),
+		});
 	}
 	return { heatmaps, points };
 }

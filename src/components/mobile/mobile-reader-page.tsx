@@ -116,6 +116,7 @@ export function MobileReaderPage({
 			error={pdfError}
 			docId={`mobile:${paper.id}`}
 			paperPath={paper.path ?? null}
+			active={mode === "pdf"}
 		/>
 	);
 	const notesEditor = (
@@ -164,12 +165,14 @@ function MobilePdfPreview({
 	error,
 	docId,
 	paperPath,
+	active,
 }: {
 	source: string | null;
 	bytes: ArrayBuffer | null;
 	error: string | null;
 	docId: string;
 	paperPath: string | null;
+	active: boolean;
 }) {
 	const { t } = useTranslation("mobile");
 	if (error) {
@@ -203,6 +206,7 @@ function MobilePdfPreview({
 					paperRelPath={paperPath}
 					paperAbsPath={paperPath ? absoluteCloudPath(paperPath) : null}
 					className="h-full"
+					isActive={active}
 				/>
 			</Suspense>
 		</div>
