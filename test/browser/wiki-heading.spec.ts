@@ -82,7 +82,7 @@ test("original editor renames a saved heading and inbound links offline, then sy
 		.locator(".agentero-scroll")
 		.filter({ has: page.getByRole("tree") })
 		.last();
-	const row = sidebar.getByText(target, { exact: true });
+	const row = sidebar.getByTitle(target, { exact: true });
 	await scroll.evaluate((element) => {
 		element.scrollTop = 0;
 	});

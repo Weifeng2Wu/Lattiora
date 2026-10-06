@@ -25,7 +25,8 @@
 		"db:migrate:remote": "node scripts/cloudflare.mjs d1 migrations apply agentero-web --remote",
 		"deploy": "pnpm build && node scripts/cloudflare.mjs deploy",
 		"test:cloud": "vitest run test/cloud-*.test.ts",
-		"test:browser": "playwright test"
+		"test:browser": "playwright test",
+		"test:browser:isolated": "node scripts/test-browser-isolated.mjs"
 	},
 	"dependencies": {
 		"@codemirror/autocomplete": "^6.20.3",

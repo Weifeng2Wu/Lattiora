@@ -1,5 +1,5 @@
 import { expect, test } from "@playwright/test";
-import { finishInitialSetup } from "./setup";
+import { disableTranslator, finishInitialSetup } from "./setup";
 
 test("original batch importer runs independent inputs at the configured concurrency and exposes cancellation", async ({
 	page,
@@ -65,16 +65,7 @@ test("original batch importer runs independent inputs at the configured concurre
 		.getByRole("button", { name: "Settings", exact: true })
 		.click();
 	await page.getByRole("button", { name: "General", exact: true }).click();
-	const translator = page.getByRole("textbox", {
-		name: "Translator service URL",
-		exact: true,
-	});
-	await translator.fill("");
-	const saveTranslator = translator
-		.locator("../../..")
-		.getByRole("button", { name: "Save", exact: true });
-	await saveTranslator.click();
-	await expect(saveTranslator).toBeEnabled();
+	await disableTranslator(page, true);
 	await page
 		.getByText("Background task concurrency", { exact: true })
 		.locator("../..")

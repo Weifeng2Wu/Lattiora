@@ -103,7 +103,7 @@ async function openNote(page: Page, name: string) {
 		await expect(folder).toBeVisible();
 		if ((await folder.getAttribute("aria-expanded")) !== "true")
 			await folder.click();
-		const row = sidebar.getByText(name, { exact: true });
+		const row = sidebar.getByTitle(name, { exact: true });
 		await expect
 			.poll(async () => {
 				if (await row.count()) return true;

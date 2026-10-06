@@ -1,5 +1,31 @@
 import { expect, type Page } from "@playwright/test";
 
+/** Select the built-in lookup path explicitly when a test mocks /api/lookup. */
+export async function disableTranslator(page: Page, settingsOpen = false) {
+	if (!settingsOpen) {
+		await page
+			.getByRole("toolbar", { name: "Workspace storage", exact: true })
+			.getByRole("button", { name: "Settings", exact: true })
+			.click();
+		await page.getByRole("button", { name: "General", exact: true }).click();
+	}
+	await page
+		.getByRole("switch", {
+			name: "Enable Zotero metadata service",
+			exact: true,
+		})
+		.uncheck();
+	const card = page
+		.getByRole("textbox", { name: "Translator service URL", exact: true })
+		.locator("../../..");
+	await card.getByRole("button", { name: "Save", exact: true }).click();
+	await expect(
+		page.getByText("Metadata service saved", { exact: true }),
+	).toBeVisible();
+	if (!settingsOpen)
+		await page.getByRole("button", { name: "Close", exact: true }).click();
+}
+
 /** Follow the visible first-run flow; never force clicks through its overlay. */
 export async function finishInitialSetup(
 	page: Page,

@@ -1,5 +1,5 @@
 import { expect, test } from "@playwright/test";
-import { finishInitialSetup } from "./setup";
+import { disableTranslator, finishInitialSetup } from "./setup";
 
 test("original metadata editor preserves aliases offline and header refresh updates the paper", async ({
 	page,
@@ -37,6 +37,7 @@ test("original metadata editor preserves aliases offline and header refresh upda
 		page.getByRole("button", { name: "Sync now", exact: true }),
 	).toBeVisible({ timeout: 90000 });
 	await finishInitialSetup(page);
+	await disableTranslator(page);
 	await page.getByRole("button", { name: "Import", exact: true }).click();
 	const chooser = page.waitForEvent("filechooser");
 	await page

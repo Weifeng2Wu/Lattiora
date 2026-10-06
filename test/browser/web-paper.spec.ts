@@ -1,5 +1,5 @@
 import { expect, test } from "@playwright/test";
-import { finishInitialSetup } from "./setup";
+import { disableTranslator, finishInitialSetup } from "./setup";
 
 test("original magic wand imports public web metadata and body with offline HTML reading", async ({
 	page,
@@ -35,6 +35,7 @@ test("original magic wand imports public web metadata and body with offline HTML
 		page.getByRole("button", { name: "Sync now", exact: true }),
 	).toBeVisible({ timeout: 90000 });
 	await finishInitialSetup(page);
+	await disableTranslator(page);
 	const add = async () => {
 		await page.locator("[data-magic-wand]").click();
 		const input = page.getByPlaceholder(

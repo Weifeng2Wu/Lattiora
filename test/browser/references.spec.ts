@@ -1,6 +1,6 @@
 import { expect, test } from "@playwright/test";
 import { PDFDocument, StandardFonts } from "pdf-lib";
-import { finishInitialSetup } from "./setup";
+import { disableTranslator, finishInitialSetup } from "./setup";
 
 test("original References panel parses ordered source files, imports a citation and reads offline", async ({
 	page,
@@ -44,6 +44,7 @@ test("original References panel parses ordered source files, imports a citation 
 		page.getByRole("button", { name: "Sync now", exact: true }),
 	).toBeVisible({ timeout: 90000 });
 	await finishInitialSetup(page);
+	await disableTranslator(page);
 	const pdf = await PDFDocument.create(),
 		font = await pdf.embedFont(StandardFonts.Helvetica);
 	pdf.addPage().drawText("Scientific paper with references [1].", {

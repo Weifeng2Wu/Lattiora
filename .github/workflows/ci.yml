@@ -23,12 +23,11 @@ jobs:
       - run: pnpm build
       - run: pnpm exec playwright install --with-deps chromium
       - name: Start isolated Worker and verify browser workflows
-        run: |
-          printf 'ACCESS_PASSWORD="local-development-password-32-chars"\nENCRYPTION_KEY="abababababababababababababababababababababababababababababababab"\n' > .dev.vars
-          pnpm db:migrate:local
-          pnpm dev:web > /tmp/worker.log 2>&1 &
-          for attempt in $(seq 1 30); do
-            if curl -fsS http://127.0.0.1:8790/ > /dev/null; then break; fi
-            sleep 1
-          done
-          pnpm test:browser
+        run: pnpm test:browser:isolated
+      - name: Save browser failure diagnostics
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: browser-failures
+          path: test-results/isolated
+          retention-days: 7

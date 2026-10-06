@@ -1,5 +1,5 @@
 import { expect, test } from "@playwright/test";
-import { finishInitialSetup } from "./setup";
+import { disableTranslator, finishInitialSetup } from "./setup";
 
 test("original citing dialog tests configured service, selects imports and reopens offline", async ({
 	page,
@@ -92,6 +92,7 @@ test("original citing dialog tests configured service, selects imports and reope
 		.getByRole("button", { name: "Settings", exact: true })
 		.click();
 	await page.getByRole("button", { name: "General", exact: true }).click();
+	await disableTranslator(page, true);
 	await page
 		.getByLabel("Semantic Scholar Graph API URL", { exact: true })
 		.fill(`https://s2.example/graph/${candidate}`);

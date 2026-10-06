@@ -40,7 +40,7 @@ test("mention folders reveal nested files on hover without replacing their paren
 	await create("notes", "folder", folder);
 	await create(folder, "folder", "nested");
 	await create("nested", "file", "source.md");
-	await sidebar.getByRole("treeitem", { name: "Library", exact: true }).click();
+	// Creating the note already opens the workspace; an empty library need not exist.
 	const showAgent = page.getByRole("button", {
 		name: "Show right sidebar",
 		exact: true,
