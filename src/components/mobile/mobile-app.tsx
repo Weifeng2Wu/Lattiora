@@ -1,5 +1,12 @@
 import { ArrowLeft, Search } from "lucide-react";
-import { useCallback, useEffect, useRef, useState } from "react";
+import {
+	lazy,
+	Suspense,
+	useCallback,
+	useEffect,
+	useRef,
+	useState,
+} from "react";
 import { useTranslation } from "react-i18next";
 import { useStore } from "zustand";
 import lattioraIcon from "@/assets/lattiora-icon.svg";
@@ -22,17 +29,36 @@ import { BackgroundTasksPanel } from "@/components/shell/background-tasks-panel"
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useAppBootstrap } from "@/hooks/use-app-bootstrap";
+import { cloudAiError } from "@/lib/cloud/ai";
+import {
+	absoluteCloudPath,
+	cloudRelative,
+	readLocalFile,
+} from "@/lib/cloud/files";
 import { CLOUD_ROOT } from "@/lib/cloud/protocol";
+import { notifyError } from "@/lib/core/notify";
 import { libraryStore } from "@/lib/paper/library-store";
 import type { PaperMetadata } from "@/lib/paper/types";
+import { setPendingPdfPage } from "@/lib/pdf/pending-pdf-page";
 import { openSettingsWindow } from "@/lib/shell/settings-window";
 import { setHomeOpen, uiStore } from "@/lib/shell/ui-store";
 import { MobileSidebar } from "./mobile-sidebar";
 
+const GraphView = lazy(() =>
+	import("@/components/research/graph-view").then((m) => ({
+		default: m.GraphView,
+	})),
+);
+const SemanticSearchView = lazy(() =>
+	import("@/components/research/semantic-search-view").then((m) => ({
+		default: m.SemanticSearchView,
+	})),
+);
+
 export default function MobileApp() {
 	useAppBootstrap();
 	const beforeLeave = useRef<(() => Promise<boolean>) | null>(null);
-	const { t } = useTranslation("mobile");
+	const { t } = useTranslation(["mobile", "app"]);
 	const [tab, setTab] = useState<MobileTab>(() =>
 		uiStore.getState().homeOpen ? "home" : "library",
 	);
@@ -41,6 +67,11 @@ export default function MobileApp() {
 	const [selectedPaper, setSelectedPaper] = useState<PaperMetadata | null>(
 		null,
 	);
+	const [research, setResearch] = useState<"graph" | "semantic-search" | null>(
+		null,
+	);
+	const [source, setSource] = useState<string | null>(null);
+	const [readerRevision, setReaderRevision] = useState(0);
 	const [readerMode, setReaderMode] = useState<MobileReaderMode>("pdf");
 	const papers = useStore(libraryStore, (state) => state.papers);
 	const papersLoading = useStore(libraryStore, (state) => state.loading);
@@ -65,14 +96,50 @@ export default function MobileApp() {
 	const changeTab = (next: MobileTab) => {
 		void (async () => {
 			if (beforeLeave.current && !(await beforeLeave.current())) return;
+			setResearch(null);
+			setSource(null);
 			setTab(next);
 			setHomeOpen(next === "home");
 		})();
 	};
 
+	const openResearch = (next: "graph" | "semantic-search") => {
+		void (async () => {
+			if (beforeLeave.current && !(await beforeLeave.current())) return;
+			setSource(null);
+			setResearch(next);
+		})();
+	};
+	const openSource = (target: string) => {
+		void (async () => {
+			if (beforeLeave.current && !(await beforeLeave.current())) return;
+			const [raw, fragment = ""] = target.split("#");
+			const path = cloudRelative(raw);
+			const paper = papers.find(
+				(item) =>
+					item.path && (path === item.path || path.startsWith(`${item.path}/`)),
+			);
+			if (paper?.path) {
+				const page = Number(new URLSearchParams(fragment).get("page"));
+				if (page > 0)
+					setPendingPdfPage([paper.path, absoluteCloudPath(paper.path)], page);
+				setReaderRevision((n) => n + 1);
+				setSelectedPaper(paper);
+				setReaderMode(path.endsWith("/NOTES.md") ? "notes" : "pdf");
+				setResearch(null);
+				setSource(null);
+				setTab("library");
+				setHomeOpen(false);
+			} else setSource(path);
+		})();
+	};
+	const closeResearch = () => {
+		if (source) setSource(null);
+		else setResearch(null);
+	};
 	const swipeHandlers = useHorizontalSwipe(
 		({ dx, dy, fromEdge, durationMs }) => {
-			if (sidebarOpen || selectedPaper) return;
+			if (sidebarOpen || selectedPaper || research || source) return;
 			if (durationMs > 500 || Math.abs(dy) > 60) return;
 			const horizontal = Math.abs(dx) > Math.abs(dy) * 1.25;
 			if (!horizontal) return;
@@ -90,7 +157,8 @@ export default function MobileApp() {
 		},
 	);
 
-	const inReader = tab === "library" && selectedPaper !== null;
+	const inReader =
+		!research && !source && tab === "library" && selectedPaper !== null;
 
 	return (
 		<div
@@ -103,7 +171,14 @@ export default function MobileApp() {
 			</aside>
 			<main className="relative flex min-h-0 min-w-0 flex-1 flex-col">
 				<MobileHeader
-					title={inReader ? selectedPaper.title : t(`tabs.${tab}`)}
+					title={
+						source ??
+						(research
+							? t(`app:research.${research}.title`)
+							: inReader
+								? selectedPaper.title
+								: t(`tabs.${tab}`))
+					}
 					status={status}
 					statusLabel={
 						connected ? t("settings.connected") : t("settings.offline")
@@ -111,15 +186,15 @@ export default function MobileApp() {
 					brand={<MobileBrand />}
 					brandButtonLabel={t("settings.menu")}
 					onBrandClick={() => setSidebarOpen(true)}
-					showBrand={!selectedPaper}
+					showBrand={!selectedPaper && !research && !source}
 					leading={
-						inReader ? (
+						inReader || research || source ? (
 							<Button
 								type="button"
 								variant="ghost"
 								size="icon-sm"
 								aria-label={t("reader.back")}
-								onClick={closeReader}
+								onClick={research || source ? closeResearch : closeReader}
 							>
 								<ArrowLeft className="size-4" />
 							</Button>
@@ -131,7 +206,7 @@ export default function MobileApp() {
 								mode={readerMode}
 								onChange={setReaderMode}
 							/>
-						) : tab === "library" ? (
+						) : !research && !source && tab === "library" ? (
 							<div className="relative w-[min(10rem,38vw)] shrink-0">
 								<Search className="pointer-events-none absolute top-1/2 left-2.5 size-4 -translate-y-1/2 text-muted-foreground" />
 								<Input
@@ -146,51 +221,62 @@ export default function MobileApp() {
 					}
 				/>
 				<div className="h-16 shrink-0 md:hidden" aria-hidden="true" />
-				<CloudToolbar onHome={() => changeTab("home")} />
+				<CloudToolbar
+					onHome={() => changeTab("home")}
+					onGraph={() => openResearch("graph")}
+					onSearch={() => openResearch("semantic-search")}
+				/>
 				<div className="min-h-0 flex-1 overflow-hidden">
-					{tab === "home" && <HomePage onBack={() => changeTab("library")} />}
-					{tab === "library" ? (
-						selectedPaper ? (
-							<EdgeSwipeBack onBack={closeReader}>
-								<MobileReaderPage
-									key={selectedPaper.path}
-									paper={selectedPaper}
-									mode={readerMode}
-									beforeLeave={beforeLeave}
+					{source ? (
+						<MobileSource path={source} />
+					) : research ? (
+						<Suspense fallback={null}>
+							{research === "graph" ? (
+								<GraphView onOpenFile={openSource} />
+							) : (
+								<SemanticSearchView onOpenFile={openSource} />
+							)}
+						</Suspense>
+					) : (
+						<>
+							{tab === "home" && (
+								<HomePage
+									onBack={() => changeTab("library")}
+									onOpenFile={openSource}
 								/>
-							</EdgeSwipeBack>
-						) : (
-							<MobileLibraryPage
-								papers={papers}
-								loading={papersLoading}
-								selected={selectedPaper}
-								onSelect={setSelectedPaper}
-								query={libraryQuery}
-							/>
-						)
-					) : null}
-					{tab === "agent" ? (
-						<AgentPanel
-							vaultPath={CLOUD_ROOT}
-							selectedPath={selectedPaper?.path}
-							selectedPaperTitle={selectedPaper?.title}
-							onOpenAgentSettings={openSettingsWindow}
-							className="h-full"
-							onOpenSource={(source) => {
-								const paper = papers.find(
-									(paper) =>
-										paper.path &&
-										(source === paper.path ||
-											source.startsWith(`${paper.path}/`)),
-								);
-								if (paper) {
-									setSelectedPaper(paper);
-									setReaderMode("pdf");
-									setTab("library");
-								}
-							}}
-						/>
-					) : null}
+							)}
+							{tab === "library" ? (
+								selectedPaper ? (
+									<EdgeSwipeBack onBack={closeReader}>
+										<MobileReaderPage
+											key={`${selectedPaper.path}:${readerRevision}`}
+											paper={selectedPaper}
+											mode={readerMode}
+											beforeLeave={beforeLeave}
+										/>
+									</EdgeSwipeBack>
+								) : (
+									<MobileLibraryPage
+										papers={papers}
+										loading={papersLoading}
+										selected={selectedPaper}
+										onSelect={setSelectedPaper}
+										query={libraryQuery}
+									/>
+								)
+							) : null}
+							{tab === "agent" ? (
+								<AgentPanel
+									vaultPath={CLOUD_ROOT}
+									selectedPath={selectedPaper?.path}
+									selectedPaperTitle={selectedPaper?.title}
+									onOpenAgentSettings={openSettingsWindow}
+									className="h-full"
+									onOpenSource={openSource}
+								/>
+							) : null}
+						</>
+					)}
 				</div>
 			</main>
 			<MobileSidebar
@@ -212,4 +298,28 @@ export default function MobileApp() {
 function MobileBrand() {
 	const { t } = useTranslation("common");
 	return <img src={lattioraIcon} alt={t("brand.name")} className="size-8" />;
+}
+
+function MobileSource({ path }: { path: string }) {
+	const [text, setText] = useState("");
+	useEffect(() => {
+		let active = true;
+		setText("");
+		void readLocalFile(path)
+			.then((file) => file.text())
+			.then((value) => {
+				if (active) setText(value);
+			})
+			.catch((error) => {
+				if (active) notifyError(cloudAiError(error));
+			});
+		return () => {
+			active = false;
+		};
+	}, [path]);
+	return (
+		<pre className="h-full overflow-auto whitespace-pre-wrap break-words p-4 text-sm">
+			{text}
+		</pre>
+	);
 }

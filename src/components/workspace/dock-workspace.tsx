@@ -255,7 +255,13 @@ function WorkspaceTab({
 			}}
 		>
 			<span className="dv-default-tab-content">
-				<MathText text={title ?? ""} />
+				<MathText
+					text={
+						tab?.kind === "graph" || tab?.kind === "semantic-search"
+							? t(`research.${tab.kind}.title`)
+							: (title ?? "")
+					}
+				/>
 			</span>
 			{canToggleHtml ? (
 				<Tooltip>
@@ -967,6 +973,8 @@ export const DockWorkspace = memo(
 					tab != null &&
 					tab.kind !== "library" &&
 					tab.kind !== "trash" &&
+					tab.kind !== "graph" &&
+					tab.kind !== "semantic-search" &&
 					!isLibraryVirtualPath(tab.path) &&
 					!isTrashVirtualPath(tab.path);
 				if (canMoveToWindow && tab) {

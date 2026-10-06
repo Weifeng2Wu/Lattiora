@@ -194,6 +194,22 @@ export async function executeAgentTool(
 				nextStart: Math.min(text.length, start + length),
 			};
 		}
+		case "semantic_search": {
+			const { query, prefix } = z
+				.object({
+					query: z.string().min(1).max(2000),
+					prefix: z.string().max(1024).optional(),
+				})
+				.strict()
+				.parse(args);
+			const { searchSemantic, semanticIndexStatus } = await import(
+				"./semantic-search"
+			);
+			return {
+				hits: await searchSemantic(query, signal, prefix),
+				coverage: await semanticIndexStatus(),
+			};
+		}
 		case "search_documents": {
 			const { query, prefix = "" } = z
 				.object({

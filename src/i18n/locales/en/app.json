@@ -314,5 +314,43 @@
 		"readingSaveFailed": "Could not save reading progress.",
 		"readingDetail": "{{read}} read · {{started}} in progress",
 		"pageCoverage": "{{count}} / {{total}} pages viewed"
+	},
+	"research": {
+		"refresh": "Refresh",
+		"open": "Open",
+		"close": "Close",
+		"cancel": "Cancel",
+		"graph": {
+			"title": "Relationship graph",
+			"search": "Find papers and notes…",
+			"links": "Note links",
+			"citations": "Citations",
+			"unavailable": "Could not read {{count}} citation files.",
+			"failed": "Could not load the graph.",
+			"canvas": "Paper and note relationships",
+			"empty": "No matching papers or notes.",
+			"count": "{{nodes}} nodes · {{edges}} connections",
+			"global": "Show full graph",
+			"focus": "Focus",
+			"limited": "Showing {{count}} of {{total}} nodes. Search or focus a node to narrow the graph."
+		},
+		"semantic-search": {
+			"title": "Semantic search",
+			"failed": "Could not read the search index.",
+			"buildFirst": "Build the index before searching.",
+			"settings": "Embedding settings",
+			"query": "Describe what you want to find…",
+			"search": "Search by meaning",
+			"coverage": "{{indexed}} / {{total}} files indexed · {{chunks}} passages",
+			"index": "Update index",
+			"hint": "Indexes saved PDFs, notes, text and annotations using your configured embedding service. Only changed files are processed; new queries require a connection.",
+			"partial": "{{count}} PDFs contain pages without readable text. Parse/OCR those pages to include their content.",
+			"indexing": "Indexing documents",
+			"searching": "Searching…",
+			"failures": "{{count}} files failed; check the cause and update again.",
+			"page": "Page {{page}}",
+			"line": "Line {{line}}",
+			"empty": "No matching passages in the current index."
+		}
 	}
 }

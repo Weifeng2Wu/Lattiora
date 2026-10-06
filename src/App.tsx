@@ -6,6 +6,11 @@ import {
 	pickAndImportFiles,
 } from "@/lib/cloud/import";
 import { notifyError } from "@/lib/core/notify";
+import { openTab as openResearchTab } from "@/lib/workspace/actions";
+import {
+	GRAPH_PATH,
+	SEMANTIC_SEARCH_PATH,
+} from "@/lib/workspace/virtual-views";
 
 /**
  * App shell: thin composition layer. Domain state lives in zustand vanilla
@@ -263,7 +268,11 @@ export default function App() {
 				  Height must match trafficLightPosition math in tao (≈32px → h-8).
 				*/}
 				<AppTitleBar />
-				<CloudToolbar onHome={() => setHomeOpen(true)} />
+				<CloudToolbar
+					onHome={() => setHomeOpen(true)}
+					onGraph={() => openResearchTab(GRAPH_PATH)}
+					onSearch={() => openResearchTab(SEMANTIC_SEARCH_PATH)}
+				/>
 
 				<ErrorBoundary label="workspace">
 					<ResizableGroup

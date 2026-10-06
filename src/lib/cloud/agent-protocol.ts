@@ -47,6 +47,12 @@ export const AGENT_TOOLS = [
 		),
 	},
 	{
+		name: "semantic_search",
+		description:
+			"Search the user-built semantic index of saved PDF text, notes and annotations. Returns source paths, page or line numbers and excerpts. Requires a prebuilt index; never claims that unindexed or scanned content was searched. Does not build the index.",
+		parameters: object({ query: text, prefix: text }, ["query"]),
+	},
+	{
 		name: "search_documents",
 		description:
 			"Literal case-insensitive search of cached text files. Returns snippets and paths; uncached PDFs are not searched.",

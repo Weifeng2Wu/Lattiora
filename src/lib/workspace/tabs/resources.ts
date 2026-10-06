@@ -46,6 +46,8 @@ import {
 	preferredModeForPath,
 } from "@/lib/workspace/viewer";
 
+import { researchViewKind } from "@/lib/workspace/virtual-views";
+
 function findChildren(nodes: FileNode[], path: string): FileNode[] | undefined {
 	return treeFindNode(nodes, path)?.children;
 }
@@ -105,6 +107,21 @@ export async function loadTabResources(
 	tree: FileNode[],
 	paperFolders: string[],
 ): Promise<TabResources> {
+	const researchKind = researchViewKind(path);
+	if (researchKind)
+		return {
+			kind: researchKind,
+			title: i18n.t(`app:research.${researchKind}.title`),
+			mode: "markdown",
+			paperMeta: null,
+			pdfUrl: null,
+			htmlUrl: null,
+			imageUrl: null,
+			notesPath: null,
+			notesSeed: "",
+			markdownSeed: "",
+			loaded: true,
+		};
 	if (isTrashVirtualPath(path)) {
 		return {
 			kind: "trash",

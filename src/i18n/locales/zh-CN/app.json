@@ -314,5 +314,43 @@
 		"readingSaveFailed": "无法保存阅读进度。",
 		"readingDetail": "已读 {{read}} 篇 · 在读 {{started}} 篇",
 		"pageCoverage": "已浏览 {{count}} / {{total}} 页"
+	},
+	"research": {
+		"refresh": "刷新",
+		"open": "打开",
+		"close": "关闭",
+		"cancel": "取消",
+		"graph": {
+			"title": "关系图谱",
+			"search": "查找论文和笔记…",
+			"links": "笔记链接",
+			"citations": "论文引用",
+			"unavailable": "有 {{count}} 份引用文件无法读取。",
+			"failed": "无法加载关系图谱。",
+			"canvas": "论文与笔记关系",
+			"empty": "没有匹配的论文或笔记。",
+			"count": "{{nodes}} 个节点 · {{edges}} 条关系",
+			"global": "显示全局图谱",
+			"focus": "聚焦",
+			"limited": "显示 {{total}} 个节点中的 {{count}} 个，可搜索或聚焦节点缩小范围。"
+		},
+		"semantic-search": {
+			"title": "语义检索",
+			"failed": "无法读取检索索引。",
+			"buildFirst": "请先建立索引再检索。",
+			"settings": "向量模型设置",
+			"query": "描述你想找的内容…",
+			"search": "按语义检索",
+			"coverage": "已索引 {{indexed}} / {{total}} 个文件 · {{chunks}} 个片段",
+			"index": "更新索引",
+			"hint": "使用已配置的向量服务索引已保存的 PDF、笔记、文本和批注。仅处理变更文件；新问题需要联网。",
+			"partial": "有 {{count}} 份 PDF 含无可读文字的页面，请先解析或 OCR 补全内容。",
+			"indexing": "正在建立索引",
+			"searching": "正在检索…",
+			"failures": "{{count}} 个文件失败，请检查原因后重试更新。",
+			"page": "第 {{page}} 页",
+			"line": "第 {{line}} 行",
+			"empty": "当前索引中没有匹配的片段。"
+		}
 	}
 }

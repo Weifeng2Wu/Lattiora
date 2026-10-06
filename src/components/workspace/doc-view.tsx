@@ -20,6 +20,16 @@ import { visualDocumentKind } from "@/lib/workspace/visual-documents";
 
 // Heavyweight viewers are lazy-loaded so the EmbedPDF (PDFium) and Plate
 // editor bundles stay out of the initial chunk and are fetched on first use.
+const SemanticSearchView = lazy(() =>
+	import("@/components/research/semantic-search-view").then((m) => ({
+		default: m.SemanticSearchView,
+	})),
+);
+const GraphView = lazy(() =>
+	import("@/components/research/graph-view").then((m) => ({
+		default: m.GraphView,
+	})),
+);
 const PdfViewer = lazy(() =>
 	import("@/components/viewer/pdf/pdf-viewer").then((m) => ({
 		default: m.PdfViewer,
@@ -217,7 +227,12 @@ function docViewPropsEqual(prev: DocViewProps, next: DocViewProps): boolean {
 			prev.trashReloadSignal === next.trashReloadSignal
 		);
 	}
-	if (tab.kind === "plaza") return true;
+	if (
+		tab.kind === "plaza" ||
+		tab.kind === "graph" ||
+		tab.kind === "semantic-search"
+	)
+		return true;
 	if (tab.mode === "markdown") return prev.editor === next.editor;
 	if (tab.mode === "excalidraw") return prev.excalidraw === next.excalidraw;
 	if (tab.mode === "text") return prev.text === next.text;
@@ -302,6 +317,20 @@ export const DocView = memo(function DocView({
 		return (
 			<Suspense fallback={<TabLoadingSkeleton />}>
 				<PlazaView path={tab.path} className="bg-background" />
+			</Suspense>
+		);
+	}
+	if (tab.kind === "semantic-search") {
+		return (
+			<Suspense fallback={<TabLoadingSkeleton />}>
+				<SemanticSearchView />
+			</Suspense>
+		);
+	}
+	if (tab.kind === "graph") {
+		return (
+			<Suspense fallback={<TabLoadingSkeleton />}>
+				<GraphView active={active} />
 			</Suspense>
 		);
 	}

@@ -1,3 +1,4 @@
+import i18n from "@/i18n";
 import {
 	isLibraryVirtualPath,
 	isTrashVirtualPath,
@@ -8,6 +9,7 @@ import { isPlazaVirtualPath, plazaTitleForPath } from "@/lib/plaza";
 import { basenameOf, normalizePathKey } from "@/lib/vault/path";
 import type { DocTab, TabResources } from "@/lib/workspace/tabs/types";
 import type { CenterViewMode } from "@/lib/workspace/viewer";
+import { researchViewKind } from "@/lib/workspace/virtual-views";
 
 export { basenameOf, normalizePathKey as normalizeTabPath };
 
@@ -120,6 +122,7 @@ export function createPlaceholderTab(
 	preferMode: CenterViewMode = "markdown",
 	id = tabIdForPath(path),
 ): DocTab {
+	const researchKind = researchViewKind(path);
 	const isLibrary = isLibraryVirtualPath(path);
 	const isTrash = isTrashVirtualPath(path);
 	const isPlaza = isPlazaVirtualPath(path);
@@ -130,20 +133,18 @@ export function createPlaceholderTab(
 			: isTrash
 				? TRASH_VIRTUAL_PATH
 				: path,
-		kind: isLibrary
-			? "library"
-			: isTrash
-				? "trash"
-				: isPlaza
-					? "plaza"
-					: "file",
-		title: isLibrary
-			? "Library"
-			: isTrash
-				? "Recycle Bin"
-				: isPlaza
-					? plazaTitleForPath(path)
-					: basenameOf(path),
+		kind:
+			researchViewKind(path) ??
+			(isLibrary ? "library" : isTrash ? "trash" : isPlaza ? "plaza" : "file"),
+		title: researchKind
+			? i18n.t(`app:research.${researchKind}.title`)
+			: isLibrary
+				? "Library"
+				: isTrash
+					? "Recycle Bin"
+					: isPlaza
+						? plazaTitleForPath(path)
+						: basenameOf(path),
 		mode: preferMode,
 		paperMeta: null,
 		pdfUrl: null,

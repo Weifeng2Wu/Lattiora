@@ -237,23 +237,30 @@ export function matchLibraryReferences(
 	citations: Citation[],
 	papers: CloudPaper[],
 	ownPath: string,
+	uniqueOnly = false,
 ): Citation[] {
 	const others = papers.filter((p) => p.path !== ownPath);
+	let ambiguous = false;
+	const find = (predicate: (paper: CloudPaper) => unknown) => {
+		if (!uniqueOnly) return others.find(predicate);
+		const matches = others.filter(predicate);
+		if (matches.length > 1) ambiguous = true;
+		return matches.length === 1 ? matches[0] : undefined;
+	};
 	return citations.map((c) => {
+		ambiguous = false;
 		const metadata = c.metadata;
 		const checks = [
 			[
 				"doi",
 				metadata.doi
-					? others.find(
-							(p) => p.doi && doiKey(p.doi) === doiKey(metadata.doi ?? ""),
-						)
+					? find((p) => p.doi && doiKey(p.doi) === doiKey(metadata.doi ?? ""))
 					: undefined,
 			],
 			[
 				"arxiv",
 				metadata.arxivId
-					? others.find(
+					? find(
 							(p) =>
 								p.arxiv_id &&
 								arxivKey(p.arxiv_id) === arxivKey(metadata.arxivId ?? ""),
@@ -263,13 +270,11 @@ export function matchLibraryReferences(
 			[
 				"title",
 				metadata.title && titleKey(metadata.title).length >= 15
-					? others.find(
-							(p) => titleKey(p.title) === titleKey(metadata.title ?? ""),
-						)
+					? find((p) => titleKey(p.title) === titleKey(metadata.title ?? ""))
 					: undefined,
 			],
 		] as const;
-		const found = checks.find(([, paper]) => paper);
+		const found = ambiguous ? undefined : checks.find(([, paper]) => paper);
 		return {
 			...c,
 			localMatch: found?.[1]

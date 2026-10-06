@@ -6,7 +6,9 @@ import {
 	House,
 	Link2,
 	LogOut,
+	Network,
 	RefreshCw,
+	Search,
 	Settings2,
 	Upload,
 	WifiOff,
@@ -43,7 +45,15 @@ import { openSettingsWindow } from "@/lib/shell/settings-window";
 import { CloudAiSettingsDialog } from "./cloud-ai-settings-dialog";
 import { SharePanel } from "./share-panel";
 
-export function CloudToolbar({ onHome }: { onHome?: () => void }) {
+export function CloudToolbar({
+	onHome,
+	onGraph,
+	onSearch,
+}: {
+	onHome?: () => void;
+	onGraph?: () => void;
+	onSearch?: () => void;
+}) {
 	const { t } = useTranslation(["cloud", "app", "editor"]);
 	const state = useStore(syncStore);
 	const offlineReady = useOfflineReady();
@@ -88,6 +98,28 @@ export function CloudToolbar({ onHome }: { onHome?: () => void }) {
 						onClick={onHome}
 					>
 						<House />
+					</Button>
+				)}
+				{onGraph && (
+					<Button
+						size="icon-xs"
+						variant="ghost"
+						aria-label={t("app:research.graph.title")}
+						title={t("app:research.graph.title")}
+						onClick={onGraph}
+					>
+						<Network />
+					</Button>
+				)}
+				{onSearch && (
+					<Button
+						size="icon-xs"
+						variant="ghost"
+						aria-label={t("app:research.semantic-search.title")}
+						title={t("app:research.semantic-search.title")}
+						onClick={onSearch}
+					>
+						<Search />
 					</Button>
 				)}
 				<span
