@@ -79,6 +79,9 @@ test("original metadata editor preserves aliases offline and header refresh upda
 		page.getByRole("status").filter({ hasText: "Offline ready" }).first(),
 	).toBeVisible({ timeout: 120000 });
 	await context.setOffline(true);
+	const library = page.getByRole("treeitem", { name: "Library", exact: true });
+	if ((await library.getAttribute("aria-expanded")) !== "true")
+		await library.click();
 	await page
 		.getByRole("treeitem")
 		.filter({ hasText: title })

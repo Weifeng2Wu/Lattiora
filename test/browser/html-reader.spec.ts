@@ -61,7 +61,7 @@ test("original HTML reader isolates website scripts, navigates and keeps selecti
 			JSON.stringify([{ title, type: "html", html_url: url }]),
 		),
 	});
-	await page.getByText(title, { exact: true }).first().dblclick();
+	await page.getByRole("row").filter({ hasText: title }).click();
 	const frame = page.frameLocator('iframe[title="HTML paper sandbox"]');
 	await expect(
 		frame.getByRole("heading", { name: "Original HTML paper" }),

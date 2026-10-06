@@ -54,7 +54,7 @@ test("original NOTES toolbar appends public Kimi FAQ once and reuses it offline"
 			]),
 		),
 	});
-	await page.getByText(title, { exact: true }).first().dblclick();
+	await page.getByRole("row").filter({ hasText: title }).click();
 	const button = page
 		.locator("[data-fetch-cool-papers-notes]")
 		.filter({ visible: true });

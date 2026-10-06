@@ -33,6 +33,9 @@ test("paper notes are discoverable in the tree and retain edits after an offline
 		mimeType: "application/pdf",
 		buffer: Buffer.from(await pdf.save()),
 	});
+	const library = page.getByRole("treeitem", { name: "Library", exact: true });
+	if ((await library.getAttribute("aria-expanded")) !== "true")
+		await library.click();
 	await page.getByRole("treeitem", { name: new RegExp(`^${title}`) }).click();
 	const editor = page
 		.locator('[contenteditable="true"][role="textbox"]')

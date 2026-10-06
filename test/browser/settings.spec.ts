@@ -197,6 +197,8 @@ test("interface scale previews during dragging and applies only on release", asy
 	});
 	await slider.fill("100");
 	await expect(page.locator("html")).toHaveCSS("font-size", "16px");
+	// Wait for dialog positioning before taking coordinates for a real mouse drag.
+	await slider.hover();
 	const bounds = await slider.boundingBox();
 	if (!bounds) throw new Error("Missing scale slider");
 	await page.mouse.move(
