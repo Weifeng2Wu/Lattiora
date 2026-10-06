@@ -23,9 +23,23 @@ const available = (await readdir("test/browser"))
 	.filter((file) => file.endsWith(".spec.ts"))
 	.sort()
 	.map((file) => `test/browser/${file}`);
-const specs = process.argv.length > 2 ? process.argv.slice(2) : available;
+let specs = process.argv.length > 2 ? process.argv.slice(2) : available;
 if (specs.some((spec) => !available.includes(spec))) {
 	throw new Error("Pass test/browser/*.spec.ts paths from this repository.");
+}
+if (process.env.BROWSER_TEST_SHARD) {
+	const [shard, total] = process.env.BROWSER_TEST_SHARD.split("/").map(Number);
+	if (
+		!Number.isInteger(shard) ||
+		!Number.isInteger(total) ||
+		shard < 1 ||
+		shard > total
+	) {
+		throw new Error(
+			"BROWSER_TEST_SHARD must be an index/count pair, for example 1/4.",
+		);
+	}
+	specs = specs.filter((_, index) => index % total === shard - 1);
 }
 const config = JSON.parse(await readFile("wrangler.jsonc", "utf8"));
 config.main = resolve(config.main);

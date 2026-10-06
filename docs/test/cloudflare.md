@@ -62,6 +62,8 @@ PLAYWRIGHT_CHROMIUM_EXECUTABLE=/usr/bin/chromium pnpm test:browser:isolated
 
 `test:browser:isolated` 可追加一个或多个 `test/browser/*.spec.ts` 路径；自动生成临时配置与测试凭据、迁移本地数据库、等待就绪并在该 spec 完成后关闭进程及清理临时存储。每个 spec 内的多设备和离线场景仍共用该工作区。它拒绝 `CLOUD_E2E_URL` / `AGENTERO_TEST_URL`，不会复用现有服务；也不修改根目录凭据。失败截图和 Worker 日志保留于 `test-results/isolated/<spec>/`，CI 失败时上传诊断附件，保留 7 天，trace 仍关闭。
 
+CI 的 `verify` 运行类型、lint、单元测试并只构建一次；四个独立浏览器任务下载同一构建，按排序后的 spec 文件分片（`BROWSER_TEST_SHARD=1/4` 至 `4/4`），每个文件只运行一次。各分片内仍逐个启动独立 Worker，失败不会取消其他分片，以便一次取得全部诊断。
+
 若已按 [部署说明](../deployment/cloudflare.md) 启动自己的隔离本地 Worker，可继续用 `AGENTERO_TEST_URL=http://127.0.0.1:<端口> pnpm test:browser`。全套测试不应共用长期累积的数据库：云端同步的设置、服务地址、论文和索引来源不会随新的浏览器 context 自动清空。
 
 真实部署测试使用 `CLOUD_E2E_URL` 和 `AGENTERO_TEST_PASSWORD`，密码应从受保护文件读入子进程环境，不打印、不写在命令行参数中。测试默认关闭 trace，避免保留登录请求。独立测试前缀的数据应在验收后定向清理；不可清空已有用户工作区。
