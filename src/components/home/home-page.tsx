@@ -22,6 +22,7 @@ import {
 	type HomeSettings,
 	type HomeWidgetId,
 	readHomeSettings,
+	saveHomeSettings,
 } from "@/lib/cloud/home-settings";
 import { notifyError } from "@/lib/core/notify";
 import { ConferenceCountdowns } from "./conference-countdowns";
@@ -29,6 +30,7 @@ import { HomeCapture } from "./home-capture";
 import { HomeClock, HomeProgress, HomeTasks } from "./home-core-widgets";
 import { HomeCustomizer } from "./home-customizer";
 import { HomeFocus, HomeRecent, HomeWeather } from "./home-extra-widgets";
+import { HomeWidgetGrid } from "./home-widget-grid";
 import { useHomeData } from "./use-home-data";
 
 export function HomePage({
@@ -45,6 +47,9 @@ export function HomePage({
 		localId: string | null;
 	}>({ value: defaultHomeSettings, localId: null });
 	const [settingsReady, setSettingsReady] = useState(false);
+	const [moving, setMoving] = useState(false);
+	const savingOrder = useRef(false);
+	const [moveAnnouncement, setMoveAnnouncement] = useState("");
 	const [background, setBackground] = useState<string | null>(null);
 	const mounted = useRef(true);
 	const generation = useRef(0);
@@ -103,6 +108,39 @@ export function HomePage({
 			if (url) URL.revokeObjectURL(url);
 		};
 	}, [settings.value.background.path, t]);
+	const moveWidget = async (
+		from: HomeWidgetId,
+		to: HomeWidgetId,
+		baseline: string | null,
+	) => {
+		if (!settingsReady || savingOrder.current) return;
+		const source = settings.value.widgets.findIndex((item) => item.id === from);
+		const target = settings.value.widgets.findIndex((item) => item.id === to);
+		if (source < 0 || target < 0 || source === target) return;
+		savingOrder.current = true;
+		setMoving(true);
+		try {
+			if (baseline !== settings.localId) throw new Error("localConflict");
+			const widgets = [...settings.value.widgets];
+			const [widget] = widgets.splice(source, 1);
+			widgets.splice(target, 0, widget);
+			const next = { ...settings.value, widgets };
+			setSettings({ ...settings, value: next });
+			await saveHomeSettings(next, baseline);
+			setMoveAnnouncement(
+				t("home.widgetMoved", {
+					name: t(`home.widgets.${from}`),
+					position: target + 1,
+				}),
+			);
+		} catch (error) {
+			notifyError(cloudAiError(error));
+		} finally {
+			await refresh();
+			savingOrder.current = false;
+			if (mounted.current) setMoving(false);
+		}
+	};
 	const readingRatio = data.papers.reduce((sum, paper) => {
 		const progress = paper.path
 			? data.overview?.reading.get(paper.path)
@@ -149,7 +187,7 @@ export function HomePage({
 						<h2 className="text-xs">{label}</h2>
 						<Icon className="size-4" />
 					</div>
-					<p className="font-semibold text-3xl tabular-nums tracking-tight">
+					<p className="font-semibold text-[clamp(1.5rem,12cqw,1.875rem)] tabular-nums tracking-tight">
 						{value}
 					</p>
 				</div>
@@ -223,8 +261,8 @@ export function HomePage({
 					/>
 				</>
 			)}
-			<div className="h-full overflow-auto overscroll-contain">
-				<div className="mx-auto max-w-6xl space-y-6 p-5 sm:p-8 lg:p-10">
+			<div className="h-full overflow-auto overscroll-contain" data-home-scroll>
+				<div className="@container/home-grid mx-auto max-w-6xl space-y-6 p-5 sm:p-8 lg:p-10">
 					<header className="flex flex-wrap items-center justify-between gap-4">
 						<div>
 							<p className="mb-2 font-medium text-muted-foreground text-xs tracking-widest">
@@ -245,31 +283,23 @@ export function HomePage({
 								<HomeCustomizer
 									settings={settings.value}
 									localId={settings.localId}
+									disabled={moving}
 									onSaved={refresh}
 								/>
 							)}
 						</div>
 					</header>
-					<div
-						className="grid grid-cols-1 items-start gap-4 sm:grid-cols-2 lg:grid-cols-4"
-						data-home-widgets
+					<HomeWidgetGrid
+						widgets={settings.value.widgets}
+						localId={settings.localId}
+						disabled={!settingsReady || moving}
+						onMove={moveWidget}
 					>
-						{settings.value.widgets.map((widget) => (
-							<div
-								key={widget.id}
-								data-home-widget={widget.id}
-								className={
-									widget.width === 4
-										? "min-w-0 sm:col-span-2 lg:col-span-4"
-										: widget.width === 2
-											? "min-w-0 sm:col-span-2"
-											: "min-w-0"
-								}
-							>
-								{renderWidget(widget.id)}
-							</div>
-						))}
-					</div>
+						{renderWidget}
+					</HomeWidgetGrid>
+					<p className="sr-only" role="status">
+						{moveAnnouncement}
+					</p>
 					{!settings.value.widgets.length && (
 						<p className="py-12 text-center text-sm text-muted-foreground">
 							{t("home.noWidgets")}

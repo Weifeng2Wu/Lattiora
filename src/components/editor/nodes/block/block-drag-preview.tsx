@@ -83,7 +83,11 @@ export function BlockDragPreview() {
 		void dragKey;
 	}, [dragKey, isDragging]);
 
-	if (!isDragging || typeof document === "undefined") {
+	if (
+		!isDragging ||
+		!isElementDragItem(item) ||
+		typeof document === "undefined"
+	) {
 		return null;
 	}
 

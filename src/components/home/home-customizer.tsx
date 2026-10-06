@@ -26,10 +26,12 @@ export function HomeCustomizer({
 	settings,
 	localId,
 	onSaved,
+	disabled = false,
 }: {
 	settings: HomeSettings;
 	localId: string | null;
 	onSaved: () => Promise<void>;
+	disabled?: boolean;
 }) {
 	const { t, i18n } = useTranslation("app");
 	const formId = useId();
@@ -103,7 +105,7 @@ export function HomeCustomizer({
 			}}
 		>
 			<DialogTrigger asChild>
-				<Button variant="ghost" size="sm">
+				<Button variant="ghost" size="sm" disabled={disabled}>
 					<Settings2 className="size-4" />
 					{t("home.customize")}
 				</Button>

@@ -21,6 +21,7 @@ export function EditorDndProvider({ children }: { children: ReactNode }) {
 			options={{
 				enableMouseEvents: true,
 				enableTouchEvents: true,
+				enableKeyboardEvents: true,
 				delay: 0,
 				delayMouseStart: 0,
 				delayTouchStart: 0,

@@ -9,16 +9,16 @@ export function HomeClock() {
 	const { t, i18n } = useTranslation("app");
 	const now = new Date(useVisibleNow());
 	return (
-		<div className="shrink-0 text-left sm:text-right">
+		<div className="min-w-0 w-full text-center">
 			<time
 				role="timer"
 				aria-label={t("home.clock")}
 				dateTime={now.toISOString()}
-				className="font-light text-4xl tabular-nums tracking-tight sm:text-5xl"
+				className="block whitespace-nowrap font-light text-[clamp(1.5rem,14cqw,3rem)] tabular-nums tracking-tight"
 			>
 				{now.toLocaleTimeString(i18n.language, { hour12: false })}
 			</time>
-			<p className="mt-2 text-muted-foreground text-sm">
+			<p className="mt-2 text-muted-foreground text-sm leading-relaxed">
 				{now.toLocaleDateString(i18n.language, {
 					year: "numeric",
 					month: "long",
@@ -46,8 +46,8 @@ export function HomeProgress({
 	const percent =
 		suppliedPercent ?? (total ? Math.round((completed / total) * 100) : 0);
 	return (
-		<div className="space-y-3 rounded-xl border bg-card/90 p-5">
-			<div className="flex items-center justify-between gap-3">
+		<div className="h-full space-y-3 rounded-xl border bg-card/90 p-5">
+			<div className="flex flex-wrap items-center justify-between gap-3">
 				<h2 className="font-medium text-sm">{label}</h2>
 				<span className="text-muted-foreground text-xs tabular-nums">
 					{detail ?? `${completed} / ${total}`}
@@ -58,9 +58,9 @@ export function HomeProgress({
 					aria-label={label}
 					max={100}
 					value={percent}
-					className="h-2 w-full overflow-hidden rounded-full accent-primary [&::-webkit-progress-bar]:bg-muted [&::-webkit-progress-value]:bg-primary [&::-moz-progress-bar]:bg-primary"
+					className="h-2 min-w-0 flex-1 overflow-hidden rounded-full accent-primary [&::-webkit-progress-bar]:bg-muted [&::-webkit-progress-value]:bg-primary [&::-moz-progress-bar]:bg-primary"
 				/>
-				<span className="w-12 text-right font-medium text-sm tabular-nums">
+				<span className="w-12 shrink-0 text-right font-medium text-sm tabular-nums">
 					{percent}%
 				</span>
 			</div>
@@ -93,7 +93,7 @@ export function HomeTasks({
 	} = data;
 	return (
 		<div
-			className="space-y-4 rounded-xl border bg-card/90 p-5 sm:p-6"
+			className="h-full space-y-4 rounded-xl border bg-card/90 p-5 @min-[28rem]/home-widget:p-6"
 			aria-busy={busy}
 		>
 			<div className="flex flex-wrap items-center justify-between gap-3">
@@ -102,6 +102,7 @@ export function HomeTasks({
 					<Button
 						variant="ghost"
 						size="sm"
+						className="h-auto min-h-7 max-w-full whitespace-normal"
 						onClick={() => onOpenFile(board.path)}
 					>
 						{t("home.openBoard")}
@@ -111,7 +112,7 @@ export function HomeTasks({
 			</div>
 			{board && (
 				<div className="flex flex-wrap gap-3">
-					<label className="flex min-w-0 basis-full items-center gap-2 text-muted-foreground text-xs sm:flex-1 sm:basis-auto">
+					<label className="flex min-w-0 basis-full items-center gap-2 text-muted-foreground text-xs @min-[28rem]/home-widget:flex-1 @min-[28rem]/home-widget:basis-0">
 						{t("home.board")}
 						<select
 							disabled={busy}
@@ -130,11 +131,11 @@ export function HomeTasks({
 							))}
 						</select>
 					</label>
-					<label className="flex items-center gap-2 text-muted-foreground text-xs">
+					<label className="flex min-w-0 basis-full items-center gap-2 text-muted-foreground text-xs @min-[28rem]/home-widget:flex-1 @min-[28rem]/home-widget:basis-0">
 						{t("home.doneColumn")}
 						<select
 							disabled={busy}
-							className="h-9 max-w-40 rounded-md border bg-background px-2 text-foreground"
+							className="h-9 min-w-0 flex-1 rounded-md border bg-background px-2 text-foreground"
 							value={done?.id ?? ""}
 							onChange={(event) =>
 								choose({
@@ -157,13 +158,14 @@ export function HomeTasks({
 				</div>
 			)}
 			<form
-				className="flex gap-2"
+				className="flex min-w-0 gap-2"
 				onSubmit={(event) => {
 					event.preventDefault();
 					void add();
 				}}
 			>
 				<Input
+					className="min-w-0 flex-1"
 					aria-label={t("home.newTask")}
 					placeholder={t("home.newTask")}
 					value={title}
@@ -186,7 +188,10 @@ export function HomeTasks({
 			)}
 			<ul className="divide-y">
 				{pending.map((card) => (
-					<li key={card.id} className="flex items-start gap-3 py-3">
+					<li
+						key={card.id}
+						className="flex flex-wrap items-start gap-x-3 gap-y-1 py-3"
+					>
 						<Checkbox
 							className="mt-1"
 							checked={false}
@@ -202,7 +207,7 @@ export function HomeTasks({
 								</p>
 							)}
 						</div>
-						<span className="max-w-28 truncate text-muted-foreground text-xs">
+						<span className="min-w-0 basis-full truncate pl-7 text-muted-foreground text-xs @min-[24rem]/home-widget:max-w-28 @min-[24rem]/home-widget:basis-auto @min-[24rem]/home-widget:pl-0">
 							{card.columnTitle}
 						</span>
 					</li>
@@ -222,7 +227,7 @@ export function HomeTasks({
 									aria-label={t("home.reopenTask", { title: card.title })}
 									onCheckedChange={() => void toggle(card.id, false)}
 								/>
-								<span className="break-words text-muted-foreground text-sm line-through">
+								<span className="min-w-0 flex-1 break-words text-muted-foreground text-sm line-through">
 									{card.title}
 								</span>
 							</li>

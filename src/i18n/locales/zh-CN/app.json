@@ -316,6 +316,8 @@
 		"width1": "小",
 		"width2": "中",
 		"width4": "整行",
+		"dragWidget": "拖动{{name}}排序（也可使用方向键）",
+		"widgetMoved": "{{name}}已移至第{{position}}位",
 		"moveUp": "上移{{name}}",
 		"moveDown": "下移{{name}}",
 		"background": "背景",

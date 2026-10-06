@@ -316,6 +316,8 @@
 		"width1": "Small",
 		"width2": "Medium",
 		"width4": "Full",
+		"dragWidget": "Drag {{name}} to reorder (or use arrow keys)",
+		"widgetMoved": "{{name}} moved to position {{position}}",
 		"moveUp": "Move {{name}} up",
 		"moveDown": "Move {{name}} down",
 		"background": "Background",

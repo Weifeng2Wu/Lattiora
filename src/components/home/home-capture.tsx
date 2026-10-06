@@ -88,7 +88,7 @@ export function HomeCapture({
 					value={draft}
 					maxLength={10000}
 					disabled={busy}
-					className="min-h-24 resize-y bg-background/70"
+					className="min-h-24 max-h-64 min-w-0 resize-y bg-background/70"
 					onChange={(event) => change(event.target.value)}
 					onKeyDown={(event) => {
 						if (
@@ -107,7 +107,8 @@ export function HomeCapture({
 						size="icon-sm"
 						disabled={busy || !draft.trim()}
 						aria-label={t("home.capture.save")}
-						title={t("home.capture.save")}
+						title={`${t("home.capture.save")} (Ctrl/⌘+Enter)`}
+						aria-keyshortcuts="Control+Enter Meta+Enter"
 					>
 						<Send className="size-4" />
 					</Button>

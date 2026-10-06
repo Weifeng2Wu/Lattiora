@@ -50,7 +50,9 @@ export function HomeRecent({
 							}
 						>
 							<span className="min-w-0 flex-1">
-								<span className="line-clamp-2 text-sm">{paper.title}</span>
+								<span className="line-clamp-2 break-words text-sm">
+									{paper.title}
+								</span>
 								<span className="mt-1 block text-xs text-muted-foreground">
 									{t("home.pageCoverage", {
 										count: reading?.pages.length ?? 0,
@@ -108,12 +110,12 @@ export function HomeFocus() {
 	}, [remaining, timer, save, t]);
 	return (
 		<div className="h-full space-y-4 rounded-xl border bg-card/90 p-5">
-			<div className="flex items-center justify-between">
+			<div className="flex items-center justify-between gap-2">
 				<h2 className="text-sm font-medium">{t("home.widgets.focus")}</h2>
-				<Timer className="size-4 text-muted-foreground" />
+				<Timer className="size-4 shrink-0 text-muted-foreground" />
 			</div>
 			<p
-				className="text-4xl font-light tabular-nums"
+				className="text-[clamp(1.75rem,14cqw,2.5rem)] font-light tabular-nums"
 				role="timer"
 				aria-label={t("home.widgets.focus")}
 			>
@@ -259,7 +261,10 @@ export function HomeWeather({ city }: { city: HomeSettings["city"] }) {
 	return (
 		<div className="h-full rounded-xl border bg-card/90 p-5">
 			<div className="flex items-center justify-between gap-2">
-				<h2 className="truncate text-sm font-medium" title={city?.name}>
+				<h2
+					className="min-w-0 flex-1 break-words text-sm font-medium"
+					title={city?.name}
+				>
 					{city?.name ?? t("home.widgets.weather")}
 				</h2>
 				<IconButton
@@ -274,9 +279,9 @@ export function HomeWeather({ city }: { city: HomeSettings["city"] }) {
 			</div>
 			{weather ? (
 				<>
-					<div className="my-3 flex items-center gap-4">
-						<CloudSun className="size-9 text-primary" />
-						<p className="text-4xl font-light tabular-nums">
+					<div className="my-3 flex flex-wrap items-center gap-4">
+						<CloudSun className="size-9 shrink-0 text-primary" />
+						<p className="text-[clamp(1.75rem,14cqw,2.5rem)] font-light tabular-nums">
 							{Math.round(weather.temperature)}°
 						</p>
 					</div>

@@ -83,7 +83,7 @@ function CountdownRows({
 					<article
 						key={id}
 						aria-label={title}
-						className="grid min-w-0 grid-cols-[minmax(0,1fr)_auto_auto] items-center gap-x-2 gap-y-0.5 py-2"
+						className="grid min-w-0 grid-cols-[minmax(0,1fr)_auto] @min-[24rem]/home-widget:grid-cols-[minmax(0,1fr)_auto_auto] items-center gap-x-2 gap-y-0.5 py-2"
 					>
 						<h3 className="min-w-0 font-medium text-sm">
 							{conference?.link ? (
@@ -106,7 +106,7 @@ function CountdownRows({
 								</span>
 							)}
 						</h3>
-						<div className="col-span-2 col-start-1 row-start-2 min-w-0 text-muted-foreground text-xs tabular-nums">
+						<div className="col-start-1 row-start-3 min-w-0 @min-[24rem]/home-widget:col-span-2 @min-[24rem]/home-widget:row-start-2 text-muted-foreground text-xs tabular-nums">
 							{round?.at != null && (
 								<time
 									dateTime={new Date(round.at).toISOString()}
@@ -119,7 +119,7 @@ function CountdownRows({
 						<div
 							role="timer"
 							aria-label={t("home.conferences.countdown", { title })}
-							className="col-start-2 row-start-1 flex flex-wrap items-baseline justify-end gap-x-1 font-medium text-sm tabular-nums"
+							className="col-start-1 row-start-2 min-w-0 flex flex-wrap items-baseline @min-[24rem]/home-widget:col-start-2 @min-[24rem]/home-widget:row-start-1 @min-[24rem]/home-widget:justify-end gap-x-1 font-medium text-sm tabular-nums"
 						>
 							{countdown ? (
 								<>
@@ -144,7 +144,7 @@ function CountdownRows({
 						<Button
 							variant="ghost"
 							size="icon-sm"
-							className="col-start-3 row-span-2 row-start-1 size-11 text-muted-foreground sm:size-8"
+							className="col-start-2 row-span-3 row-start-1 @min-[24rem]/home-widget:col-start-3 @min-[24rem]/home-widget:row-span-2 size-11 text-muted-foreground sm:size-8"
 							aria-label={t("home.conferences.remove", { title })}
 							title={t("home.conferences.remove", { title })}
 							onClick={() => remove(id)}
