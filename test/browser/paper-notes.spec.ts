@@ -38,10 +38,12 @@ test("paper notes are discoverable in the tree and retain edits after an offline
 		await library.click();
 	await page.getByRole("treeitem", { name: new RegExp(`^${title}`) }).click();
 	const editor = page
-		.locator('[contenteditable="true"][role="textbox"]')
+		.locator('[data-slate-editor="true"]')
+		.filter({ visible: true })
 		.first();
-	await expect(editor).toBeVisible();
+	await expect(editor).toContainText(title);
 	await editor.click();
+	await expect(editor).toBeFocused();
 	await editor.press("Control+End");
 	await editor.press("Enter");
 	await editor.pressSequentially(

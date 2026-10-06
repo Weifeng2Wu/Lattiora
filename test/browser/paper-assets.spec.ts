@@ -90,7 +90,19 @@ test("original bulk asset action downloads PDF and TeX, preserves edits and surv
 	await expect.poll(localFiles).toContain(`papers/${arxivId}/source/main.tex`);
 	await expect.poll(localFiles).toContain(`papers/${arxivId}/paper.pdf`);
 	const before = sourceCalls;
-	await run();
+	await page
+		.getByRole("treeitem", { name: "Library", exact: true })
+		.click({ button: "right" });
+	await expect(
+		page.getByRole("menuitem", {
+			name: "Download all incomplete paper assets",
+			exact: true,
+		}),
+	).toHaveCount(0);
+	await expect(
+		page.getByRole("menuitem", { name: "Export library", exact: true }),
+	).toBeVisible();
+	await page.keyboard.press("Escape");
 	await page.waitForTimeout(500);
 	expect(sourceCalls).toBe(before);
 	// Original paper tree intentionally surfaces attachments only. Quick Open
