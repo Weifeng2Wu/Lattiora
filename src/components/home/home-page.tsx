@@ -1,101 +1,35 @@
 import {
 	ArrowLeft,
-	ArrowUpRight,
 	BookCheck,
 	BookOpen,
 	CheckCheck,
 	FileText,
-	Plus,
 } from "lucide-react";
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { useTranslation } from "react-i18next";
-import { useStore } from "zustand";
-import { Button } from "@/components/ui/button";
-import { Checkbox } from "@/components/ui/checkbox";
-import { Input } from "@/components/ui/input";
-import { useVisibleNow } from "@/hooks/use-visible-now";
-import { cloudAiError } from "@/lib/cloud/ai";
-import { subscribeCloudFiles } from "@/lib/cloud/files";
 import {
-	createHomeBoard,
-	homeDoneColumn,
-	loadHomeOverview,
-	saveHomeBoard,
-} from "@/lib/cloud/home";
+	type ReactNode,
+	useCallback,
+	useEffect,
+	useRef,
+	useState,
+} from "react";
+import { useTranslation } from "react-i18next";
+import { Button } from "@/components/ui/button";
+import { cloudAiError } from "@/lib/cloud/ai";
+import { readLocalFile, subscribeCloudFiles } from "@/lib/cloud/files";
+import {
+	defaultHomeSettings,
+	HOME_SETTINGS_PATH,
+	type HomeSettings,
+	type HomeWidgetId,
+	readHomeSettings,
+} from "@/lib/cloud/home-settings";
 import { notifyError } from "@/lib/core/notify";
-import { libraryStore } from "@/lib/paper/library-store";
-import { moveKanbanCard } from "@/lib/workspace/visual-documents";
 import { ConferenceCountdowns } from "./conference-countdowns";
-
-const preferenceKey = "agentero-home-view-v1";
-type Preferences = { board?: string; done: Record<string, string> };
-function readPreferences(): Preferences {
-	try {
-		const value = JSON.parse(localStorage.getItem(preferenceKey) ?? "null");
-		if (value && typeof value.done === "object" && value.done) return value;
-	} catch {
-		/* View preferences are optional. */
-	}
-	return { done: {} };
-}
-
-function HomeClock() {
-	const { t, i18n } = useTranslation("app");
-	const now = new Date(useVisibleNow());
-	return (
-		<div className="shrink-0 text-left sm:text-right">
-			<time
-				role="timer"
-				aria-label={t("home.clock")}
-				dateTime={now.toISOString()}
-				className="font-light text-4xl tabular-nums tracking-tight sm:text-5xl"
-			>
-				{now.toLocaleTimeString(i18n.language, { hour12: false })}
-			</time>
-			<p className="mt-2 text-muted-foreground text-sm">
-				{now.toLocaleDateString(i18n.language, {
-					year: "numeric",
-					month: "long",
-					day: "numeric",
-					weekday: "long",
-				})}
-			</p>
-		</div>
-	);
-}
-
-function HomeProgress({
-	label,
-	completed,
-	total,
-}: {
-	label: string;
-	completed: number;
-	total: number;
-}) {
-	const percent = total ? Math.round((completed / total) * 100) : 0;
-	return (
-		<div className="space-y-3 rounded-xl border bg-card p-5">
-			<div className="flex items-center justify-between gap-3">
-				<h2 className="font-medium text-sm">{label}</h2>
-				<span className="text-muted-foreground text-xs tabular-nums">
-					{completed} / {total}
-				</span>
-			</div>
-			<div className="flex items-center gap-4">
-				<progress
-					aria-label={label}
-					max={100}
-					value={percent}
-					className="h-2 w-full overflow-hidden rounded-full accent-primary [&::-webkit-progress-bar]:bg-muted [&::-webkit-progress-value]:bg-primary [&::-moz-progress-bar]:bg-primary"
-				/>
-				<span className="w-12 text-right font-medium text-sm tabular-nums">
-					{percent}%
-				</span>
-			</div>
-		</div>
-	);
-}
+import { HomeCapture } from "./home-capture";
+import { HomeClock, HomeProgress, HomeTasks } from "./home-core-widgets";
+import { HomeCustomizer } from "./home-customizer";
+import { HomeFocus, HomeRecent, HomeWeather } from "./home-extra-widgets";
+import { useHomeData } from "./use-home-data";
 
 export function HomePage({
 	onBack,
@@ -104,333 +38,242 @@ export function HomePage({
 	onBack?: () => void;
 	onOpenFile?: (path: string) => void;
 }) {
-	const { t } = useTranslation(["app", "viewer", "common"]);
-	const papers = useStore(libraryStore, (state) => state.papers);
-	const [overview, setOverview] = useState<Awaited<
-		ReturnType<typeof loadHomeOverview>
-	> | null>(null);
-	const [preferences, setPreferences] = useState(readPreferences);
-	const [title, setTitle] = useState("");
-	const [busy, setBusy] = useState(false);
-	const running = useRef(false);
+	const { t } = useTranslation(["app", "common"]);
+	const data = useHomeData();
+	const [settings, setSettings] = useState<{
+		value: HomeSettings;
+		localId: string | null;
+	}>({ value: defaultHomeSettings, localId: null });
+	const [settingsReady, setSettingsReady] = useState(false);
+	const [background, setBackground] = useState<string | null>(null);
+	const mounted = useRef(true);
 	const generation = useRef(0);
 	const refresh = useCallback(async () => {
-		const id = ++generation.current;
+		const request = ++generation.current;
 		try {
-			const next = await loadHomeOverview();
-			if (id !== generation.current) return;
-			setOverview(next);
-			if (next.unavailable)
-				notifyError(t("home.unavailableBoards", { count: next.unavailable }), {
-					id: "home-boards",
-				});
+			const next = await readHomeSettings();
+			if (mounted.current && request === generation.current) {
+				setSettings(next);
+				setSettingsReady(true);
+			}
 		} catch (error) {
-			notifyError(cloudAiError(error));
+			if (mounted.current && request === generation.current)
+				notifyError(cloudAiError(error));
 		}
-	}, [t]);
+	}, []);
 	useEffect(() => {
+		mounted.current = true;
 		void refresh();
-		let timer: ReturnType<typeof setTimeout> | undefined;
-		const unsubscribe = subscribeCloudFiles(() => {
-			clearTimeout(timer);
-			timer = setTimeout(() => void refresh(), 150);
+		const unsubscribe = subscribeCloudFiles((paths) => {
+			if (paths.includes(HOME_SETTINGS_PATH)) void refresh();
 		});
 		return () => {
+			mounted.current = false;
 			generation.current++;
-			clearTimeout(timer);
 			unsubscribe();
 		};
 	}, [refresh]);
-	const choose = (next: Preferences) => {
-		setPreferences(next);
-		try {
-			localStorage.setItem(preferenceKey, JSON.stringify(next));
-		} catch {
-			/* The current view still works. */
-		}
-	};
-	const board =
-		overview?.boards.find((item) => item.path === preferences.board) ??
-		overview?.boards[0];
-	const done = board
-		? homeDoneColumn(board.doc, preferences.done[board.path])
-		: null;
-	const inbox = board?.doc.columns.find((column) => column.id !== done?.id);
-	const cards = useMemo(
-		() =>
-			board?.doc.columns.flatMap((column) =>
-				column.cards.map((card) => ({
-					...card,
-					columnId: column.id,
-					columnTitle: column.title,
-				})),
-			) ?? [],
-		[board],
-	);
-	const pending = cards.filter((card) => card.columnId !== done?.id);
-	const completed = cards.filter((card) => card.columnId === done?.id);
-	const read = papers.filter((paper) => paper.is_read).length;
-	const run = async (operation: () => Promise<void>) => {
-		if (running.current) return;
-		running.current = true;
-		setBusy(true);
-		try {
-			await operation();
-		} catch (error) {
-			notifyError(cloudAiError(error));
-		} finally {
-			await refresh();
-			running.current = false;
-			setBusy(false);
-		}
-	};
-	const add = () =>
-		run(async () => {
-			if (!title.trim()) return;
-			if (board) {
-				if (!inbox) return;
-				await saveHomeBoard(board, {
-					...board.doc,
-					columns: board.doc.columns.map((column) =>
-						column.id === inbox.id
-							? {
-									...column,
-									cards: [
-										...column.cards,
-										{
-											id: crypto.randomUUID(),
-											title: title.trim(),
-											description: "",
-										},
-									],
-								}
-							: column,
-					),
-				});
-			} else {
-				const path = await createHomeBoard(title.trim(), [
-					t("viewer:visual.todo"),
-					t("viewer:visual.doing"),
-					t("viewer:visual.done"),
-				]);
-				choose({ ...preferences, board: path });
+	useEffect(() => {
+		let disposed = false,
+			generation = 0,
+			url: string | undefined;
+		setBackground(null);
+		const path = settings.value.background.path;
+		const load = async () => {
+			if (!path) return;
+			const request = ++generation;
+			try {
+				const blob = await readLocalFile(path);
+				if (disposed || request !== generation) return;
+				if (url) URL.revokeObjectURL(url);
+				url = URL.createObjectURL(blob);
+				setBackground(url);
+			} catch {
+				if (!disposed && request === generation)
+					notifyError(t("home.backgroundFailed"), { id: "home-background" });
 			}
-			setTitle("");
+		};
+		void load();
+		const unsubscribe = subscribeCloudFiles((paths) => {
+			if (path && paths.includes(path)) void load();
 		});
-	const toggle = (cardId: string, checked: boolean) =>
-		run(async () => {
-			if (!board || !done || !inbox) return;
-			await saveHomeBoard(
-				board,
-				moveKanbanCard(board.doc, cardId, checked ? done.id : inbox.id),
+		return () => {
+			disposed = true;
+			unsubscribe();
+			if (url) URL.revokeObjectURL(url);
+		};
+	}, [settings.value.background.path, t]);
+	const readingRatio = data.papers.reduce((sum, paper) => {
+		const progress = paper.path
+			? data.overview?.reading.get(paper.path)
+			: undefined;
+		return (
+			sum +
+			(paper.is_read
+				? 1
+				: progress?.pageCount
+					? progress.pages.length / progress.pageCount
+					: 0)
+		);
+	}, 0);
+	const started = data.papers.filter(
+		(paper) =>
+			!paper.is_read &&
+			paper.path &&
+			(data.overview?.reading.get(paper.path)?.pages.length ?? 0) > 0,
+	).length;
+	const stats = {
+		papers: {
+			label: t("home.papers"),
+			value: data.papers.length,
+			icon: BookOpen,
+		},
+		read: { label: t("home.read"), value: data.read, icon: BookCheck },
+		notes: {
+			label: t("home.notes"),
+			value: data.overview?.notes ?? "—",
+			icon: FileText,
+		},
+		pending: {
+			label: t("home.pending"),
+			value: data.overview ? data.pending.length : "—",
+			icon: CheckCheck,
+		},
+	};
+	const renderWidget = (id: HomeWidgetId): ReactNode => {
+		if (id in stats) {
+			const { label, value, icon: Icon } = stats[id as keyof typeof stats];
+			return (
+				<div className="h-full rounded-xl border bg-card/90 p-5">
+					<div className="mb-4 flex items-center justify-between gap-2 text-muted-foreground">
+						<h2 className="text-xs">{label}</h2>
+						<Icon className="size-4" />
+					</div>
+					<p className="font-semibold text-3xl tabular-nums tracking-tight">
+						{value}
+					</p>
+				</div>
 			);
-		});
+		}
+		switch (id) {
+			case "capture":
+				return <HomeCapture onOpenFile={onOpenFile} />;
+			case "clock":
+				return (
+					<div className="flex h-full items-center justify-center rounded-xl border bg-card/90 p-5">
+						<HomeClock />
+					</div>
+				);
+			case "conferences":
+				return (
+					<div className="h-full rounded-xl border bg-card/90 p-5">
+						<ConferenceCountdowns />
+					</div>
+				);
+			case "reading":
+				return (
+					<HomeProgress
+						label={t("home.readingProgress")}
+						completed={data.read}
+						total={data.papers.length}
+						percent={
+							data.papers.length
+								? Math.round((readingRatio / data.papers.length) * 100)
+								: 0
+						}
+						detail={t("home.readingDetail", { read: data.read, started })}
+					/>
+				);
+			case "taskProgress":
+				return (
+					<HomeProgress
+						label={t("home.taskProgress")}
+						completed={data.completed.length}
+						total={data.cards.length}
+					/>
+				);
+			case "tasks":
+				return <HomeTasks data={data} onOpenFile={onOpenFile} />;
+			case "recent":
+				return <HomeRecent data={data} onOpenFile={onOpenFile} />;
+			case "weather":
+				return <HomeWeather city={settings.value.city} />;
+			case "focus":
+				return <HomeFocus />;
+		}
+	};
 	return (
 		<section
 			aria-label={t("home.title")}
-			className="h-full overflow-auto overscroll-contain bg-muted/20"
+			className="relative isolate h-full overflow-hidden bg-muted/20"
 		>
-			<div className="mx-auto max-w-5xl space-y-6 p-5 sm:p-8 lg:p-10">
-				<header className="flex flex-col items-stretch gap-6 lg:flex-row lg:items-start">
-					<div className="shrink-0">
-						<p className="mb-2 font-medium text-muted-foreground text-xs tracking-widest">
-							{t("common:brand.name")}
-						</p>
-						<h1 className="font-semibold text-3xl tracking-tight">
-							{t("home.title")}
-						</h1>
-						{onBack && (
-							<Button
-								variant="ghost"
-								size="sm"
-								className="mt-3 -ml-2"
-								onClick={onBack}
-							>
-								<ArrowLeft className="size-4" />
-								{t("home.back")}
-							</Button>
-						)}
-					</div>
-					<ConferenceCountdowns />
-					<HomeClock />
-				</header>
-				<div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
-					{[
-						{ label: t("home.papers"), value: papers.length, icon: BookOpen },
-						{ label: t("home.read"), value: read, icon: BookCheck },
-						{
-							label: t("home.notes"),
-							value: overview?.notes ?? "—",
-							icon: FileText,
-						},
-						{
-							label: t("home.pending"),
-							value: overview ? pending.length : "—",
-							icon: CheckCheck,
-						},
-					].map(({ label, value, icon: Icon }) => (
-						<div key={label} className="rounded-xl border bg-card p-5">
-							<div className="mb-4 flex items-center justify-between gap-2 text-muted-foreground">
-								<span className="text-xs">{label}</span>
-								<Icon className="size-4" />
-							</div>
-							<p className="font-semibold text-3xl tabular-nums tracking-tight">
-								{value}
-							</p>
-						</div>
-					))}
-				</div>
-				<div className="grid gap-3 sm:grid-cols-2">
-					<HomeProgress
-						label={t("home.readingProgress")}
-						completed={read}
-						total={papers.length}
-					/>
-					<HomeProgress
-						label={t("home.taskProgress")}
-						completed={completed.length}
-						total={cards.length}
-					/>
-				</div>
-				<div
-					className="space-y-4 rounded-xl border bg-card p-5 sm:p-6"
-					aria-busy={busy}
-				>
-					<div className="flex flex-wrap items-center justify-between gap-3">
-						<h2 className="font-semibold">{t("home.tasks")}</h2>
-						{board && onOpenFile && (
-							<Button
-								variant="ghost"
-								size="sm"
-								onClick={() => onOpenFile(board.path)}
-							>
-								{t("home.openBoard")}
-								<ArrowUpRight className="size-4" />
-							</Button>
-						)}
-					</div>
-					{board && (
-						<div className="flex flex-wrap gap-3">
-							<label className="flex min-w-0 basis-full items-center gap-2 text-muted-foreground text-xs sm:flex-1 sm:basis-auto">
-								{t("home.board")}
-								<select
-									disabled={busy}
-									className="h-9 min-w-0 flex-1 rounded-md border bg-background px-2 text-foreground"
-									value={board.path}
-									onChange={(event) =>
-										choose({ ...preferences, board: event.target.value })
-									}
-								>
-									{overview?.boards.map((item) => (
-										<option key={item.path} value={item.path}>
-											{item.path
-												.replace(/^notes\//, "")
-												.replace(/\.kanban\.json$/i, "")}
-										</option>
-									))}
-								</select>
-							</label>
-							<label className="flex items-center gap-2 text-muted-foreground text-xs">
-								{t("home.doneColumn")}
-								<select
-									disabled={busy}
-									className="h-9 max-w-40 rounded-md border bg-background px-2 text-foreground"
-									value={done?.id ?? ""}
-									onChange={(event) =>
-										choose({
-											...preferences,
-											done: {
-												...preferences.done,
-												[board.path]: event.target.value,
-											},
-										})
-									}
-								>
-									<option value="">{t("home.chooseDone")}</option>
-									{board.doc.columns.map((column) => (
-										<option key={column.id} value={column.id}>
-											{column.title}
-										</option>
-									))}
-								</select>
-							</label>
-						</div>
-					)}
-					<form
-						className="flex gap-2"
-						onSubmit={(event) => {
-							event.preventDefault();
-							void add();
+			{background && (
+				<>
+					<div
+						className="pointer-events-none absolute -inset-10 -z-20 bg-cover bg-center"
+						style={{
+							backgroundImage: `url(${background})`,
+							filter: `blur(${settings.value.background.blur}px)`,
 						}}
-					>
-						<Input
-							aria-label={t("home.newTask")}
-							placeholder={t("home.newTask")}
-							value={title}
-							disabled={busy || !overview || (!!board && !inbox)}
-							onChange={(event) => setTitle(event.target.value)}
-						/>
-						<Button
-							type="submit"
-							size="icon"
-							aria-label={t("home.addTask")}
-							disabled={
-								busy || !overview || !title.trim() || (!!board && !inbox)
-							}
-						>
-							<Plus className="size-4" />
-						</Button>
-					</form>
-					{!pending.length && (
-						<p className="py-6 text-center text-muted-foreground text-sm">
-							{t(overview ? "home.noTasks" : "home.loading")}
-						</p>
-					)}
-					<ul className="divide-y">
-						{pending.map((card) => (
-							<li key={card.id} className="flex items-start gap-3 py-3">
-								<Checkbox
-									className="mt-1"
-									checked={false}
-									disabled={busy || !done || !inbox}
-									aria-label={t("home.completeTask", { title: card.title })}
-									onCheckedChange={() => void toggle(card.id, true)}
+						data-home-background
+					/>
+					<div
+						className="pointer-events-none absolute inset-0 -z-10 bg-background"
+						style={{ opacity: settings.value.background.shade / 100 }}
+					/>
+				</>
+			)}
+			<div className="h-full overflow-auto overscroll-contain">
+				<div className="mx-auto max-w-6xl space-y-6 p-5 sm:p-8 lg:p-10">
+					<header className="flex flex-wrap items-center justify-between gap-4">
+						<div>
+							<p className="mb-2 font-medium text-muted-foreground text-xs tracking-widest">
+								{t("common:brand.name")}
+							</p>
+							<h1 className="font-semibold text-3xl tracking-tight">
+								{t("home.title")}
+							</h1>
+						</div>
+						<div className="flex flex-wrap gap-2">
+							{onBack && (
+								<Button variant="ghost" size="sm" onClick={onBack}>
+									<ArrowLeft className="size-4" />
+									{t("home.back")}
+								</Button>
+							)}
+							{settingsReady && (
+								<HomeCustomizer
+									settings={settings.value}
+									localId={settings.localId}
+									onSaved={refresh}
 								/>
-								<div className="min-w-0 flex-1">
-									<p className="break-words text-sm">{card.title}</p>
-									{card.description && (
-										<p className="mt-1 whitespace-pre-wrap break-words text-muted-foreground text-xs">
-											{card.description}
-										</p>
-									)}
-								</div>
-								<span className="max-w-28 truncate text-muted-foreground text-xs">
-									{card.columnTitle}
-								</span>
-							</li>
+							)}
+						</div>
+					</header>
+					<div
+						className="grid grid-cols-1 items-start gap-4 sm:grid-cols-2 lg:grid-cols-4"
+						data-home-widgets
+					>
+						{settings.value.widgets.map((widget) => (
+							<div
+								key={widget.id}
+								data-home-widget={widget.id}
+								className={
+									widget.width === 4
+										? "min-w-0 sm:col-span-2 lg:col-span-4"
+										: widget.width === 2
+											? "min-w-0 sm:col-span-2"
+											: "min-w-0"
+								}
+							>
+								{renderWidget(widget.id)}
+							</div>
 						))}
-					</ul>
-					{!!completed.length && (
-						<details>
-							<summary className="text-muted-foreground text-sm">
-								{t("home.completed", { count: completed.length })}
-							</summary>
-							<ul className="mt-2 divide-y">
-								{completed.map((card) => (
-									<li key={card.id} className="flex items-center gap-3 py-3">
-										<Checkbox
-											checked
-											disabled={busy || !inbox}
-											aria-label={t("home.reopenTask", { title: card.title })}
-											onCheckedChange={() => void toggle(card.id, false)}
-										/>
-										<span className="break-words text-muted-foreground text-sm line-through">
-											{card.title}
-										</span>
-									</li>
-								))}
-							</ul>
-						</details>
+					</div>
+					{!settings.value.widgets.length && (
+						<p className="py-12 text-center text-sm text-muted-foreground">
+							{t("home.noWidgets")}
+						</p>
 					)}
 				</div>
 			</div>

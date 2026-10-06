@@ -99,7 +99,7 @@ test("conference selections count down, survive failed refreshes and remain edit
 	});
 	await expect(
 		page
-			.locator("header")
+			.locator('[data-home-widget="conferences"]')
 			.getByRole("region", { name: "Conference deadlines", exact: true }),
 	).toBeVisible();
 	await panel.getByRole("button", { name: "Choose conferences" }).click();

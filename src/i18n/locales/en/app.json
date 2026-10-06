@@ -311,9 +311,67 @@
 			"loadFailed": "Could not refresh conferences. Previously cached deadlines are kept.",
 			"saveFailed": "Could not save your conference selection."
 		},
+		"customize": "Customize home",
+		"widgetWidth": "Width of {{name}}",
+		"width1": "Small",
+		"width2": "Medium",
+		"width4": "Full",
+		"moveUp": "Move {{name}} up",
+		"moveDown": "Move {{name}} down",
+		"background": "Background",
+		"chooseBackground": "Choose image",
+		"removeBackground": "Remove background",
+		"blur": "Blur",
+		"shade": "Overlay",
+		"saveLayout": "Save layout",
+		"backgroundFailed": "Could not load the background image.",
+		"noWidgets": "Choose widgets in Customize home.",
 		"readingSaveFailed": "Could not save reading progress.",
 		"readingDetail": "{{read}} read · {{started}} in progress",
-		"pageCoverage": "{{count}} / {{total}} pages viewed"
+		"pageCoverage": "{{count}} / {{total}} pages viewed",
+		"noRecent": "Read a paper to see it here.",
+		"widgets": {
+			"title": "Widgets",
+			"clock": "Clock and date",
+			"conferences": "Conference deadlines",
+			"papers": "Paper count",
+			"read": "Read count",
+			"notes": "Note count",
+			"pending": "Pending count",
+			"reading": "Reading progress",
+			"taskProgress": "Task progress",
+			"tasks": "Tasks",
+			"recent": "Recent reading",
+			"weather": "Weather",
+			"focus": "Focus timer",
+			"capture": "Quick capture"
+		},
+		"focus": {
+			"complete": "Focus session complete",
+			"pause": "Pause timer",
+			"start": "Start timer",
+			"reset": "Reset timer",
+			"minutes": "Minutes"
+		},
+		"weather": {
+			"city": "Weather location",
+			"searchCity": "Search city…",
+			"search": "Search",
+			"noCities": "No cities found.",
+			"clear": "Clear",
+			"cloudy": "Cloudy",
+			"fog": "Fog",
+			"storm": "Thunderstorm",
+			"snow": "Snow",
+			"rain": "Rain",
+			"updated": "Updated {{time}}",
+			"unavailable": "Weather is unavailable; refresh when online.",
+			"chooseCity": "Choose a city in Customize home."
+		},
+		"capture": {
+			"placeholder": "Catch a thought…",
+			"save": "Save thought"
+		}
 	},
 	"research": {
 		"refresh": "Refresh",

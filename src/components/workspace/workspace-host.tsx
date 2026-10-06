@@ -54,6 +54,7 @@ import {
 	ensureLibraryTabPresent,
 	handleActivePanelChange,
 	hydratePlaceholderTabs,
+	openGraphPath,
 	openTab,
 	openTabNotes,
 	openTranslationTab,
@@ -406,7 +407,7 @@ export function WorkspaceHost() {
 					>
 						<HomePage
 							onBack={() => setHomeOpen(false)}
-							onOpenFile={(path) => openTab(`/cloud/${path}`)}
+							onOpenFile={openGraphPath}
 						/>
 					</Suspense>
 				</div>

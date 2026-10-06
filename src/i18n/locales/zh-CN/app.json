@@ -311,9 +311,67 @@
 			"loadFailed": "会议数据刷新失败，已保留之前缓存的截止日期。",
 			"saveFailed": "无法保存所选会议。"
 		},
+		"customize": "自定义首页",
+		"widgetWidth": "{{name}}的宽度",
+		"width1": "小",
+		"width2": "中",
+		"width4": "整行",
+		"moveUp": "上移{{name}}",
+		"moveDown": "下移{{name}}",
+		"background": "背景",
+		"chooseBackground": "选择图片",
+		"removeBackground": "移除背景",
+		"blur": "模糊",
+		"shade": "遮罩",
+		"saveLayout": "保存布局",
+		"backgroundFailed": "无法加载背景图片。",
+		"noWidgets": "在“自定义首页”中选择组件。",
 		"readingSaveFailed": "无法保存阅读进度。",
 		"readingDetail": "已读 {{read}} 篇 · 在读 {{started}} 篇",
-		"pageCoverage": "已浏览 {{count}} / {{total}} 页"
+		"pageCoverage": "已浏览 {{count}} / {{total}} 页",
+		"noRecent": "阅读论文后会显示在这里。",
+		"widgets": {
+			"title": "组件",
+			"clock": "时间与日期",
+			"conferences": "会议截稿",
+			"papers": "论文数量",
+			"read": "已读数量",
+			"notes": "笔记数量",
+			"pending": "待办数量",
+			"reading": "阅读进度",
+			"taskProgress": "任务进度",
+			"tasks": "待办事项",
+			"recent": "最近阅读",
+			"weather": "天气",
+			"focus": "专注计时",
+			"capture": "闪念胶囊"
+		},
+		"focus": {
+			"complete": "专注时间结束",
+			"pause": "暂停计时",
+			"start": "开始计时",
+			"reset": "重置计时",
+			"minutes": "分钟"
+		},
+		"weather": {
+			"city": "天气城市",
+			"searchCity": "搜索城市…",
+			"search": "搜索",
+			"noCities": "未找到城市。",
+			"clear": "晴",
+			"cloudy": "多云",
+			"fog": "雾",
+			"storm": "雷雨",
+			"snow": "雪",
+			"rain": "雨",
+			"updated": "更新于 {{time}}",
+			"unavailable": "天气暂不可用，可联网后刷新。",
+			"chooseCity": "在“自定义首页”中选择城市。"
+		},
+		"capture": {
+			"placeholder": "记下此刻的想法…",
+			"save": "保存闪念"
+		}
 	},
 	"research": {
 		"refresh": "刷新",

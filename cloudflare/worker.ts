@@ -19,6 +19,7 @@ import { publicShareRoutes, shareRoutes } from "./shares";
 import { skillRoutes } from "./skills";
 import { translateRoutes } from "./translate";
 import { translatorRoutes } from "./translator";
+import { weatherRoutes } from "./weather";
 
 export type Env = {
 	DB: D1Database;
@@ -116,6 +117,7 @@ async function route(request: Request, env: Env): Promise<Response> {
 			});
 	}
 	return (
+		(await weatherRoutes(request)) ??
 		(await shareRoutes(request, env)) ??
 		(await referenceRoutes(request)) ??
 		(await recognitionRoutes(request, env)) ??
