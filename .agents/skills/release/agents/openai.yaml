@@ -1,0 +1,4 @@
+interface:
+  display_name: "Agentero Release"
+  short_description: "Prepare bilingual Agentero release notes"
+  default_prompt: "Use $release to prepare a bilingual Agentero release and show the notes for review."

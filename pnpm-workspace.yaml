@@ -1,0 +1,34 @@
+allowBuilds:
+  core-js: false
+  esbuild: false
+  protobufjs: false
+  workerd: true
+minimumReleaseAgeExclude:
+  - '@ai-sdk/gateway@4.0.19'
+  - '@ai-sdk/provider-utils@5.0.9'
+  - ai@7.0.26
+  - '@hono/node-server@1.19.17'
+overrides:
+  brace-expansion@<5.0.9: '>=5.0.9'
+  browserslist@<4.28.7: '>=4.28.7 <5'
+  dompurify@<3.4.13: '>=3.4.13 <4'
+  fast-uri@<3.1.6: '>=3.1.6 <4'
+  hono@<4.12.34: '>=4.12.34 <5'
+  ip-address@<10.3.1: '>=10.3.1 <11'
+  js-yaml@<4.3.1: '>=4.3.1 <5'
+  lodash-es@<4.18.0: '>=4.18.0 <5'
+  mermaid@<11.16.1: '>=11.16.1 <12'
+  # Scoped to 3.x: nanoid 5/6 are also installed and unaffected by the advisory.
+  nanoid@<3.3.18: '>=3.3.18 <4'
+  # Scoped to the vulnerable 4.x–5.1.15 range (Dependabot #42/#46/#47/#48).
+  nanoid@>=4.0.0 <5.1.16: '>=5.1.16 <6'
+  postcss@<8.5.23: '>=8.5.23'
+  qs@<6.16.0: '>=6.16.0 <7'
+  undici@<7.29.0: '>=7.29.0 <8'
+  '@hono/node-server@<1.19.17': '>=1.19.17 <2'
+  # Keep re-installs (e.g. pnpm patch-commit) from drifting the pinned types.
+  '@types/react-dom': 19.2.3
+patchedDependencies:
+  '@embedpdf/ai@0.0.1': patches/@embedpdf__ai@0.0.1.patch
+  '@embedpdf/engines@2.14.4': patches/@embedpdf__engines@2.14.4.patch
+  '@embedpdf/plugin-tiling@2.14.4': patches/@embedpdf__plugin-tiling@2.14.4.patch

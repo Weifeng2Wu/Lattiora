@@ -1,0 +1,829 @@
+{
+	"title": "Settings",
+	"host": {
+		"remote": "Remote",
+		"remoteContextHint": "Vault is open on {{host}} ({{path}}). App appearance stays local; Agent catalog below probes that host when you open the Agent section."
+	},
+	"nav": {
+		"general": "General",
+		"appearance": "Appearance",
+		"agent": "Agent",
+		"translate": "Translate",
+		"layout": "Layout",
+		"doctor": "Doctor",
+		"keyboard": "Keyboard",
+		"remote-access": "Remote access",
+		"about": "About",
+		"quickSetup": "Quick setup wizard",
+		"featureTour": "Feature tour",
+		"sync": "Sync"
+	},
+	"remoteAccess": {
+		"title": "Remote access",
+		"localVaultRequired": "Open a local Vault to provide remote access.",
+		"hostName": {
+			"label": "Computer name"
+		},
+		"status": {
+			"online": "Online",
+			"offline": "Offline"
+		},
+		"start": "Enable remote access",
+		"stop": "Disable remote access",
+		"qrAlt": "Pairing QR code",
+		"pairing": {
+			"title": "Pair an iPhone or iPad"
+		},
+		"copyLink": "Copy pairing link",
+		"copied": "Pairing link copied",
+		"copyFailed": "Could not copy pairing link",
+		"request": {
+			"title": "Pair {{device}}",
+			"code": "Confirmation code: {{code}}"
+		},
+		"approve": "Approve",
+		"deny": "Deny",
+		"devices": {
+			"revoke": "Revoke {{device}}"
+		},
+		"cache": {
+			"section": "Remote vault cache",
+			"label": "PDF preview cache",
+			"clear": "Clear remote cache",
+			"clearing": "Clearing…",
+			"clearFailed": "Failed to clear remote cache"
+		}
+	},
+	"general": {
+		"title": "General",
+		"paperTreeLabelMode": {
+			"label": "Paper names in file tree",
+			"title-author": "Title · Author",
+			"title": "Title",
+			"author-year-title": "Author (year) · Title",
+			"folder": "Folder name"
+		},
+		"paperTreeSortMode": {
+			"label": "Paper sort order in file tree",
+			"folder": "Display name A–Z",
+			"title": "Title A–Z",
+			"author": "Author A–Z",
+			"year-desc": "Year (newest first)",
+			"year-asc": "Year (oldest first)",
+			"added-desc": "Date added (newest first)"
+		},
+		"allowFileExtensionRename": {
+			"label": "Allow changing file extensions"
+		},
+		"paperNoteMode": {
+			"label": "Paper note initialization",
+			"standard": "Standard",
+			"title-only": "Title only",
+			"blank": "Blank",
+			"custom": "Custom template",
+			"seed": "Create starter template",
+			"seedCreated": "Starter template created",
+			"seedExists": "Template already exists"
+		},
+		"autoOpenPaperNotes": {
+			"label": "Open paper notes by default"
+		},
+		"autoIngest": {
+			"label": "Auto-import folders added under Papers"
+		},
+		"replaceCurrentTabOnOpenPaper": {
+			"label": "Replace current tab when opening a paper"
+		},
+		"autoUpdateInternalLinks": {
+			"label": "Update internal links after external renames",
+			"ask": "Ask",
+			"always": "Always when safe"
+		},
+		"batchImportConcurrency": {
+			"label": "Background task concurrency",
+			"value": "{{value}} simultaneous"
+		},
+		"networkProxy": {
+			"label": "Network proxy",
+			"systemDetected": "System proxy detected ({{url}}) — used automatically while this switch is off."
+		},
+		"githubMirror": {
+			"label": "GitHub mirror",
+			"description": "Choose a built-in public mirror for Skill import fallback when GitHub is unreachable."
+		},
+		"easyScholar": {
+			"section": "EasyScholar",
+			"keyLabel": "Key",
+			"placeholder": "Enter EasyScholar key",
+			"confirm": "Confirm",
+			"probeIdle": "Not configured",
+			"probeOk": "Available",
+			"probeFail": "Unavailable",
+			"probeProbing": "Checking…"
+		},
+		"plaza": {
+			"label": "Plaza"
+		},
+		"connector": {
+			"label": "Zotero Connector compatibility",
+			"hint": "Quit local Zotero first",
+			"portLabel": "Connector port",
+			"invalidPort": "Port must be between 1 and 65535."
+		},
+		"mcp": {
+			"label": "MCP server",
+			"portLabel": "MCP port",
+			"invalidPort": "Port must be between 1 and 65535.",
+			"copyUrl": "Copy MCP URL",
+			"copied": "Copied",
+			"tunnel": {
+				"tunnelIdLabel": "Tunnel ID",
+				"apiKeyLabel": "Runtime API key",
+				"invalidTunnelId": "Tunnel ID should look like `tunnel_` + 32 hex characters.",
+				"label": "ChatGPT tunnel",
+				"start": "Start",
+				"stop": "Stop",
+				"starting": "Starting…",
+				"ready": "Connected",
+				"error": "Not connected",
+				"stopped": "Stopped",
+				"binaryMissing": "tunnel-client not found",
+				"installHint": "Install it; this page detects it without a restart:",
+				"copyCommand": "Copy install command",
+				"copied": "Copied",
+				"openTunnels": "Open tunnels",
+				"openApiKeys": "Open API keys"
+			}
+		},
+		"export": {
+			"section": "Note export",
+			"watermark": {
+				"label": "Lattiora watermark by default"
+			}
+		},
+		"privacy": {
+			"section": "Privacy",
+			"telemetry": {
+				"label": "Share anonymous usage data"
+			},
+			"clearUsage": {
+				"label": "Clear activity history",
+				"action": "Clear",
+				"done": "Activity history cleared"
+			}
+		}
+	},
+	"appearance": {
+		"title": "Appearance",
+		"themeLabel": "Appearance",
+		"theme": {
+			"system": "System",
+			"light": "Light",
+			"dark": "Dark"
+		},
+		"uiThemeLabel": "Color theme",
+		"uiTheme": {
+			"default": "Default",
+			"select": "Use {{name}} theme"
+		},
+		"languageLabel": "Language",
+		"language": {
+			"system": "System",
+			"en": "English",
+			"zhCN": "简体中文"
+		},
+		"uiScale": {
+			"label": "Interface scale",
+			"value": "{{percent}}%"
+		},
+		"fonts": {
+			"section": "Fonts",
+			"interface": "Interface font",
+			"text": "Text font",
+			"mono": "Code font"
+		},
+		"markdownEditor": {
+			"section": "Markdown editor"
+		},
+		"fontSize": {
+			"label": "Editor font size",
+			"value": "{{size}} px",
+			"increase": "Increase font size",
+			"decrease": "Decrease font size",
+			"select": "Select font size"
+		},
+		"fontFamily": {
+			"default": "Default (System)",
+			"system": "System UI",
+			"geist": "Geist",
+			"serif": "Serif",
+			"mono": "Monospace",
+			"search": "Search fonts…",
+			"loading": "Loading system fonts…",
+			"noMatch": "No matching fonts",
+			"suggested": "Suggested",
+			"systemFonts": "System fonts"
+		},
+		"lineHeight": {
+			"label": "Line height",
+			"value": "{{value}}"
+		},
+		"editorToolbar": {
+			"label": "Formatting toolbar"
+		}
+	},
+	"agent": {
+		"title": "Agent",
+		"userAgent": {
+			"section": "Relay compatibility",
+			"label": "User-Agent",
+			"placeholder": "codex-cli/0.50.0",
+			"presetsAria": "User-Agent presets",
+			"off": "Off",
+			"providerIdsLabel": "Codex provider ids",
+			"providerIdsPlaceholder": "my_proxy, openai"
+		},
+		"embedding": {
+			"section": "Embedding model",
+			"source": {
+				"label": "Source",
+				"builtin": "Configured AI",
+				"custom": "Custom endpoint"
+			},
+			"baseUrl": {
+				"label": "Base URL"
+			},
+			"apiKey": {
+				"label": "API key"
+			},
+			"model": {
+				"label": "Model"
+			},
+			"test": "Test connection",
+			"testing": "Testing…",
+			"probeStatus": {
+				"idle": "Not tested yet",
+				"probing": "Testing…",
+				"ok": "Reachable",
+				"failed": "Unreachable",
+				"unconfigured": "Not configured"
+			}
+		},
+		"desktopOnly": "Agent registry requires the desktop app.",
+		"desktopHint": "Run `pnpm tauri dev` to scan agents on this machine.",
+		"commonAgents": "Common agents",
+		"commonAgentsHint": "If ACP fails, try configuring a proxy under General.",
+		"defaultAgent": {
+			"section": "Default agent",
+			"label": "Default Agent",
+			"description": "Used when a workflow or conversation does not choose a specific Agent.",
+			"placeholder": "Choose default Agent",
+			"empty": "No available Agent"
+		},
+		"custom": "Custom",
+		"addCustom": "Add custom agent",
+		"probe": "Refresh",
+		"probing": "Probing…",
+		"scanning": "Scanning…",
+		"installAgent": "Install",
+		"installAgentAria": "Install {{name}} agent CLI",
+		"installAgentTitle": "Install agent CLI",
+		"installAdapter": "Install ACP",
+		"installAdapterAria": "Install ACP adapter for {{name}}",
+		"installAdapterTitle": "Install ACP adapter",
+		"installSuccess": "Installed {{name}}",
+		"loginAgent": "Sign in",
+		"loginAgentAria": "Sign in to {{name}}",
+		"loginAgentTitle": "Open terminal for {{command}}",
+		"updateAgent": "Update",
+		"updateAgentAria": "Update {{name}} agent CLI",
+		"updateAgentTitle": "Update agent CLI",
+		"updateSuccess": "Updated {{name}}",
+		"lifecycleWaiting": "Waiting for installer…",
+		"lifecycleInstalling": "Running installer…",
+		"lifecycleScanning": "Scanning PATH…",
+		"lifecycleProbing": "Probing ACP…",
+		"lifecycleUninstalling": "Uninstalling…",
+		"npmCacheWriteFailed": "npm cannot write to its cache. Lattiora's managed installs use an isolated cache directory automatically — please retry. If it persists, run {{cacheCommand}} in Command Prompt and retry, close other Node/npm processes, allow Node.js in your antivirus, or correct the cache folder permissions.",
+		"uninstallAgentAria": "Uninstall {{name}} agent",
+		"uninstallAgentTitle": "Uninstall agent",
+		"uninstallSuccess": "Uninstalled {{name}}",
+		"removeSuccess": "Removed {{name}}",
+		"badges": {
+			"default": "default",
+			"agentInstalled": "Agent installed",
+			"agentMissing": "No agent",
+			"acpMissing": "No ACP",
+			"acpBundled": "Built-in",
+			"acpBundledTitle": "Bundled ACP adapter {{version}} — used only when no adapter is on PATH (a PATH install always wins; the bundled one moves with app releases)."
+		},
+		"permission": {
+			"label": "Permission mode",
+			"restricted": {
+				"label": "Restricted (default)"
+			},
+			"ask": {
+				"label": "Ask every time"
+			},
+			"auto": {
+				"label": "Auto-approve"
+			}
+		},
+		"autoPaperReader": {
+			"label": "Auto paper-reader after import"
+		},
+		"responseLanguage": {
+			"label": "Response language",
+			"auto": "Auto (follow content)",
+			"en": "English",
+			"zhCN": "简体中文"
+		},
+		"personalPrompt": {
+			"label": "Personal preference prompt",
+			"placeholder": "e.g. Prefer concise bullet points; always keep [[wikilinks]]; cite Vault paths."
+		},
+		"pdfAsk": {
+			"section": "PDF selection Ask",
+			"agentId": {
+				"label": "Ask agent",
+				"followDefault": "Follow default",
+				"followDefaultNamed": "Follow default ({{name}})",
+				"empty": "No available agents. Add one above first."
+			},
+			"modelId": {
+				"label": "Ask model",
+				"followAgent": "Follow agent default"
+			}
+		},
+		"form": {
+			"defaultName": "Desktop",
+			"name": "Name",
+			"command": "Command",
+			"args": "Args",
+			"hint": "Starts this command in the current Vault and connects over ACP on stdin/stdout. Arguments are split on spaces. Example: command opencode, args acp; or an absolute Python path with the bridge script’s absolute path as args."
+		},
+		"uninstallDialog": {
+			"title": "Uninstall {{name}}?",
+			"lead": "Choose what to remove:",
+			"removeAgent": "Remove Agent CLI",
+			"removeAcp": "Remove ACP adapter",
+			"dirsLabel": "Directories to delete",
+			"copyAria": "Copy to clipboard",
+			"registryOnly": "Only the Lattiora registry entry will be removed; installed files stay on disk.",
+			"customConfirm": "Remove this custom agent from Lattiora?",
+			"confirm": "Uninstall"
+		},
+		"remote": {
+			"banner": "Probing ACP agents on {{host}}. Binaries must be installed and logged in on the server (PATH / login shell).",
+			"commonAgents": "Agents on remote host",
+			"probeTitle": "Rescan & probe remote agents",
+			"empty": "No catalog results. Check the SSH session and remote PATH.",
+			"hint": "Refresh runs command -v then ACP initialize over SSH. If Claude shows “ACP adapter missing”, use Install ACP (opens Terminal → Enter → SSH install on the server). API keys stay on the remote machine (BYOA). If probe times out, enable Agent proxy (must be reachable from the server).",
+			"installAdapterAria": "Install ACP adapter for {{name}} on remote host via Terminal",
+			"installAdapterTitle": "Open Terminal, then SSH to {{host}} and run: {{command}} (press Enter to confirm)"
+		}
+	},
+	"translate": {
+		"title": "Translate",
+		"provider": {
+			"label": "Default service",
+			"agentero": "Configured AI",
+			"deeplx": "DeepLX",
+			"huoshanweb": "Volcengine Web",
+			"tencenttransmart": "Tencent Transmart",
+			"googleapi": "Google Translate (API)",
+			"google": "Google Translate",
+			"deepl": "DeepL API",
+			"azure": "Microsoft Translator",
+			"googleCloud": "Google Cloud Translate",
+			"openaiCompatible": "OpenAI-compatible",
+			"agent": "Agent",
+			"probeIdle": "Not checked yet",
+			"probeOk": "Available",
+			"probeFail": "Unavailable",
+			"probeProbing": "Checking availability…"
+		},
+		"errors": {
+			"noBuiltinKey": "Built-in translation is not available in this build."
+		},
+		"targetLang": {
+			"label": "Target language",
+			"ui": "Follow interface language",
+			"en": "English",
+			"zhCN": "简体中文"
+		},
+		"autoSelection": {
+			"label": "Auto-translate PDF selection"
+		},
+		"dualPane": {
+			"label": "Open rendered translation in a side window"
+		},
+		"providerConfig": {
+			"section": "API Services",
+			"confirm": "Confirm",
+			"openDocsLabel": "Get an API key",
+			"configured": "Configured",
+			"notConfigured": "Not configured",
+			"apiKey": {
+				"label": "API key",
+				"placeholder": ""
+			},
+			"baseUrl": {
+				"label": "Endpoint (optional)"
+			},
+			"region": {
+				"label": "Region",
+				"placeholder": "e.g. eastasia"
+			},
+			"model": {
+				"label": "Model",
+				"placeholder": "Provider model id"
+			}
+		},
+		"providerDesc": {
+			"deepl": "DeepL neural machine translation, configured with an official API key.",
+			"azure": "Microsoft Translator, configured with an Azure subscription key.",
+			"googleCloud": "Google Cloud Translation API, configured with a service-account key.",
+			"openaiCompatible": "OpenAI Chat Completions-compatible endpoint. Enter the Base URL, e.g. https://api.openai.com/v1; Lattiora appends /chat/completions."
+		},
+		"agentId": {
+			"label": "Agent",
+			"followDefault": "Follow default",
+			"followDefaultNamed": "Follow default ({{name}})",
+			"empty": "No available agents. Configure one in Agent settings.",
+			"openAgentSettings": "Open Agent settings"
+		},
+		"modelId": {
+			"label": "Model",
+			"followAgent": "Follow agent default",
+			"needWarm": "Open this agent in Chat once to list models here."
+		},
+		"customPrompt": {
+			"label": "Translation prompt",
+			"placeholder": "Empty = built-in academic prompt. Insert the default to edit a copy.",
+			"seed": "Insert default",
+			"reset": "Reset"
+		}
+	},
+	"layout": {
+		"title": "Layout Analysis",
+		"backend": {
+			"label": "Analysis engine",
+			"local": "On-device",
+			"paddle": "Paddle",
+			"mineru": "MinerU"
+		},
+		"parserBackend": {
+			"label": "Body parse engine",
+			"local": "On-device",
+			"agentero": "Configured AI",
+			"paddle": "Paddle",
+			"mineru": "MinerU",
+			"openaiCompatible": "OpenAI-compatible"
+		},
+		"providerConfig": {
+			"section": "Provider settings",
+			"providerName": {
+				"paddle": "Paddle",
+				"mineru": "MinerU",
+				"openaiCompatible": "OpenAI-compatible"
+			},
+			"confirm": "Confirm",
+			"openDocsLabel": "Get an API key",
+			"advanced": "Advanced",
+			"apiKey": {
+				"label": "API key",
+				"placeholder": {
+					"paddle": "Enter your Paddle API key",
+					"mineru": "Enter your MinerU API key",
+					"openaiCompatible": "Enter your API key (e.g. SiliconFlow)"
+				}
+			},
+			"baseUrl": {
+				"label": "Base URL"
+			},
+			"model": {
+				"label": "Model"
+			},
+			"prompt": {
+				"label": "Prompt",
+				"placeholder": "Auto, based on the model"
+			},
+			"language": {
+				"label": "Language",
+				"help": "Specify the document language",
+				"options": {
+					"ch": "Chinese–English",
+					"en": "Pure English"
+				}
+			},
+			"forceOcr": {
+				"label": "Force OCR",
+				"help": "Enable OCR for all pages."
+			},
+			"probeIdle": "Not checked yet",
+			"probeOk": "Available",
+			"probeFail": "Unavailable",
+			"probeProbing": "Checking availability…"
+		},
+		"clearResults": {
+			"clear": "Clear parse results",
+			"clearAndReparse": "Clear and reparse",
+			"clearing": "Clearing…",
+			"reparsing": "Reparsing…",
+			"confirmClear": "Clear",
+			"confirmReparse": "Clear & reparse",
+			"clearDone": "Cleared {{removed}} file(s) across {{scanned}} paper(s).",
+			"reparseDone": "Cleared {{removed}} file(s) and enqueued {{layout}} layout / {{paper}} body job(s).",
+			"scope": {
+				"layout": "Layout sidecars",
+				"paper": "Body parse results",
+				"all": "All (layout + body)"
+			},
+			"dialog": {
+				"clearTitle": "Clear parse results?",
+				"reparseTitle": "Clear and reparse?",
+				"scopeLabel": "Choose scope"
+			}
+		}
+	},
+	"doctor": {
+		"title": "Vault Doctor",
+		"refresh": "Run diagnosis again",
+		"remoteUnavailable": "Doctor is available for local Vaults only in this version.",
+		"openVault": "Open a local Vault to run Doctor.",
+		"sections": {
+			"host": "Host runtime",
+			"agents": "Agent ACP connectivity",
+			"network": "Network connectivity",
+			"vault": "Vault structure",
+			"catalog": "Catalog schema",
+			"wikilinks": "Wiki links",
+			"aliases": "Paper aliases",
+			"visualMarks": "Visual annotations"
+		},
+		"sectionHints": {
+			"host": "Advisory checks for the Node.js and npm used by ACP Agents (path and version).",
+			"agents": "Re-probes each registered Agent via ACP initialize (no prompt is sent). Slow Agents can take up to 30s.",
+			"network": "Probes the paper sources and common hosts through the configured proxy.",
+			"vault": "Checks top-level papers/, notes/, and .agentero/ folders.",
+			"catalog": "Checks that .agentero/catalog.sqlite exists and its schema matches this app.",
+			"wikilinks": "Checks local wiki links for missing, ambiguous, or invalid heading targets.",
+			"aliases": "Checks paper NOTES.md for at least two distinct frontmatter aliases.",
+			"visualMarks": "Migrates legacy agent-trace marks to nested visual v2 (note-only marks stay valid)."
+		},
+		"host": {
+			"toolStatus": {
+				"available": "Available",
+				"missing": "Not found",
+				"unusable": "Cannot run"
+			},
+			"install": {
+				"button": "Install Node.js",
+				"installing": "Installing…",
+				"tooltip": "Install the Node.js LTS through your system package manager (winget or Homebrew)",
+				"hint": "Some ACP Agents need Node.js and npm on PATH. Install the LTS via your system package manager, then re-detect.",
+				"noPackageManager": "No supported package manager found. Install Node.js manually from nodejs.org, then re-detect."
+			}
+		},
+		"network": {
+			"probing": "Probing…",
+			"none": "No endpoints configured.",
+			"status": {
+				"reachable": "Reachable",
+				"timeout": "Timeout",
+				"unreachable": "Unreachable"
+			},
+			"hints": {
+				"timeout": "Check the proxy / network and try again.",
+				"unreachable": "Check DNS, firewall, or proxy settings."
+			},
+			"endpoints": {
+				"baidu": "Baidu",
+				"google": "Google",
+				"google-scholar": "Google Scholar",
+				"github": "GitHub",
+				"arxiv": "arXiv",
+				"semantic-scholar": "Semantic Scholar"
+			},
+			"latency": "{{ms}} ms",
+			"proxy": "Proxy: {{proxy}}"
+		},
+		"agent": {
+			"probing": "Probing agents…",
+			"none": "No Agents registered yet.",
+			"locationMissing": "Not found",
+			"authLabel": "Sign-in",
+			"authStatus": {
+				"authenticated": "Signed in",
+				"unauthenticated": "Not signed in",
+				"not-applicable": "Not applicable",
+				"unknown": "Unknown"
+			},
+			"categories": {
+				"command-missing": "Command missing",
+				"not-logged-in": "Not signed in",
+				"timeout": "Timeout",
+				"spawn-failed": "Launch failed",
+				"protocol-failed": "Protocol error",
+				"unknown": "Unknown"
+			},
+			"hints": {
+				"command-missing": "Install the CLI (Settings → Agent) or fix PATH, then run the diagnosis again.",
+				"not-logged-in": "Sign in with the Agent's own CLI in a terminal (e.g. codex login), then run the diagnosis again.",
+				"timeout": "Check the proxy / network and the Agent's cold-start time.",
+				"spawn-failed": "The process could not start; check the executable permission and path.",
+				"protocol-failed": "The process started but the ACP handshake failed; update the ACP adapter.",
+				"unknown": "See the raw error above."
+			},
+			"login": "Sign in",
+			"loginAria": "Sign in to {{name}}",
+			"loginTitle": "Open terminal for {{command}}"
+		},
+		"visualMarks": {
+			"select": "Select {{path}}",
+			"apply": "Upgrade {{count}}",
+			"applying": "Upgrading…",
+			"success": "Upgraded {{count}} visual mark file(s)."
+		},
+		"catalogDuplicates": {
+			"fix": "Remove duplicates",
+			"success": "Removed {{removed}} duplicate catalog row(s), kept {{kept}}."
+		},
+		"issueCount": "{{count}} issue(s)",
+		"repair": {
+			"select": "Select {{path}}",
+			"titleAlias": "Title alias",
+			"shortAlias": "Short alias",
+			"preserved": "Existing aliases preserved: {{aliases}}",
+			"manual": "Manual review required",
+			"apply": "Fix",
+			"ignore": "Ignore {{path}}",
+			"ignoreHint": "Ignore this paper’s alias check (saved in the Vault)",
+			"ignoreSelected": "Ignore selected",
+			"ignored": "Ignored alias check for {{count}} paper note(s).",
+			"ignoredCount": "{{count}} ignored paper note(s)",
+			"restore": "Restore",
+			"restoreAll": "Restore all",
+			"restored": "Restored alias check for {{count}} paper note(s).",
+			"confirmTitle": "Rewrite paper aliases?",
+			"confirmDescription": "Doctor will update {{count}} note(s) as one transaction. Existing aliases and unrelated frontmatter are preserved.",
+			"cancel": "Cancel",
+			"confirm": "Apply changes",
+			"applying": "Applying…",
+			"success": "Updated aliases in {{count}} paper note(s)."
+		},
+		"wikilink": {
+			"probe": "Probe",
+			"planning": "Running lightweight probe…",
+			"working": "Working…",
+			"probeDone": "Probe done: {{auto}} auto, {{manual}} manual ({{total}} total)",
+			"agentHint": "Not sure? Hand the prompt below to your Agent and ask for a fix plan first.",
+			"agentPromptLabel": "Agent prompt",
+			"copyPrompt": "Copy",
+			"promptCopied": "Prompt copied",
+			"openInAgent": "Open in Agent",
+			"select": "Select repair in {{source}}",
+			"replacement": "Replacement",
+			"editHint": "Edit the green replacement or choose a target below. Changed rows are selected automatically; then click Fix.",
+			"chooseTarget": "Choose target file",
+			"selectAll": "Select all",
+			"deselectAll": "Deselect all",
+			"noSuggestions": "No automatic suggestions. Edit links in the notes manually.",
+			"confirmTitle": "Apply link repairs?",
+			"confirmDescription": "Doctor will rewrite {{count}} link target(s) as one transaction. Only the selected byte ranges change.",
+			"success": "Updated links in {{count}} file(s)."
+		}
+	},
+	"keyboard": {
+		"title": "Keyboard"
+	},
+	"about": {
+		"attribution": "Based on poco-ai/Agentero · MIT License",
+		"title": "About",
+		"starGithub": "Star us on GitHub",
+		"version": "Version {{version}}",
+		"logs": {
+			"label": "Logs",
+			"open": "Open log folder",
+			"openFailed": "Couldn't open the log folder.",
+			"clear": "Clear logs",
+			"clearDone": "Logs cleared",
+			"clearFailed": "Couldn't clear logs."
+		},
+		"scratch": {
+			"label": "Paper full-text cache",
+			"summary": "{{papers}} papers · {{size}}",
+			"clear": "Clear cache",
+			"clearDone": "Cache cleared",
+			"clearFailed": "Couldn't clear the paper full-text cache."
+		},
+		"update": {
+			"available": "Version {{version}} is ready",
+			"downloading": "Downloading update...",
+			"downloadingProgress": "Downloading update: {{progress}}%",
+			"installing": "Installing update and restarting...",
+			"installFailed": "Couldn't install the update. Try again",
+			"check": "Check for updates",
+			"downloadInstall": "Install and restart",
+			"tagNew": "New version",
+			"tagUpdating": "Updating…",
+			"tagDownloading": "Updating {{progress}}%",
+			"tagInstalling": "Installing…",
+			"toastTitle": "Lattiora {{version}} is available",
+			"toastDescription": "Download the verified update and restart Lattiora"
+		},
+		"cli": {
+			"label": "Command-line tools",
+			"description": "Headless Vault / Catalog for scripts and external agents",
+			"notBundled": "CLI is not bundled in this build",
+			"versionMismatch": "CLI {{cli}} ≠ app {{app}}; reinstall to match",
+			"pathMissing": "CLI is installed; this terminal has not refreshed PATH",
+			"verifyHint": "Verify in a new terminal:",
+			"windowsVerifyHint": "Copy the CMD command below to verify:",
+			"verifyCopy": "Copy verification command",
+			"verifyCopied": "Verification command copied",
+			"verifyCopyFailed": "Could not copy the command",
+			"install": "Install",
+			"update": "Update",
+			"uninstall": "Remove",
+			"openRelease": "Open release",
+			"brewHint": "Or install with Homebrew (Apple Silicon Mac):",
+			"brewCopy": "Copy command",
+			"brewCopied": "Homebrew command copied",
+			"brewCopyFailed": "Could not copy the command",
+			"installSuccess": "CLI command installed",
+			"downloadInstallSuccess": "CLI downloaded and installed",
+			"uninstallSuccess": "CLI command removed",
+			"installFailed": "Could not install CLI command",
+			"uninstallFailed": "Could not remove CLI command",
+			"statusFailed": "Could not read CLI status",
+			"openReleaseFailed": "Could not open the release page",
+			"syncFailed": "Could not auto-sync the installed CLI with this app version. Update it from Settings → About"
+		},
+		"finder": {
+			"label": "Finder integration",
+			"description": "Adds \"Open with Lattiora\" to the right-click menu for folders in Finder",
+			"descriptionInstalled": "Right-click a folder in Finder to open it as a Vault",
+			"stale": "Lattiora was moved — update to fix the menu entry",
+			"install": "Install",
+			"update": "Update",
+			"uninstall": "Remove",
+			"installSuccess": "Finder Quick Action installed",
+			"uninstallSuccess": "Finder Quick Action removed",
+			"installFailed": "Could not install the Finder Quick Action",
+			"uninstallFailed": "Could not remove the Finder Quick Action"
+		}
+	},
+	"sync": {
+		"title": "Cloud sync",
+		"advanced": "Advanced",
+		"localVaultOnly": "Cloud sync is available for local vaults only.",
+		"backend": "Sync method",
+		"backendS3": "Object storage",
+		"backendWebdav": "WebDAV",
+		"backendLocked": "Disconnect before switching the storage backend.",
+		"serverUrl": "Server URL",
+		"username": "Username",
+		"password": "Password",
+		"endpoint": "Endpoint",
+		"region": "Region",
+		"bucket": "Bucket",
+		"prefix": "Key prefix",
+		"prefixHint": "Optional. Lets multiple vaults share one bucket.",
+		"accessKey": "Access key ID",
+		"secretKey": "Secret access key",
+		"pathStyle": "Path-style addressing",
+		"pathStyleHint": "Keep on for R2 / MinIO; turn off for bucket subdomains.",
+		"noConditionalWrites": "This storage doesn't support conditional (atomic) writes, so sync falls back to plain uploads. Fine for single-device use; concurrent edits from multiple devices may need an extra sync round to converge.",
+		"saved": "Sync configured",
+		"disconnect": "Disconnect",
+		"syncNow": "Sync now",
+		"statusConnected": "Connected",
+		"statusDisconnected": "Not connected",
+		"statusSyncing": "Syncing",
+		"statusError": "Connection error",
+		"providerDocsAria": "Open {{name}} setup guide",
+		"lastSync": "Last synced {{time}}",
+		"neverSynced": "Not synced yet.",
+		"done": "Sync complete: {{up}} uploaded, {{down}} downloaded",
+		"conflicts": "{{count}} conflict copy(ies) saved next to the originals",
+		"phase": {
+			"scan": "Scanning vault…",
+			"pull": "Fetching remote state…",
+			"download": "Downloading {{current}}/{{total}}…",
+			"upload": "Uploading {{current}}/{{total}}…",
+			"finalize": "Finalizing…"
+		},
+		"connect": "Connect",
+		"save": "Save",
+		"autoSync": "Auto sync",
+		"interval": "Sync interval",
+		"intervalMinutes": "{{count}} min",
+		"scope": "Sync scope",
+		"scopeHint": "Notes, metadata and highlights always sync. Unselected content is neither uploaded nor downloaded — and is never deleted because of the filter. PDFs and LaTeX sources can be re-downloaded from their source at any time.",
+		"scopePdf": "PDFs",
+		"scopeSource": "LaTeX sources",
+		"scopeAttachments": "Attachments"
+	}
+}

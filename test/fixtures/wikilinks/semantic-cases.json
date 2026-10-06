@@ -1,0 +1,191 @@
+{
+	"documents": [
+		{
+			"path": "notes/Source.md",
+			"content": "---\naliases:\n  - Source alias\n---\n# Root\n## Child\nBlock text ^summary\n[[notes/Target#Overview]] [[#Root#Child]] [[#^summary]] ![[notes/Target#^target-block]] [relative](./Target.md#Overview)\n`[[ignored-inline]]`\n```md\n[[ignored-fence]]\n```\n"
+		},
+		{
+			"path": "notes/Target.md",
+			"content": "---\naliases: [Target alias]\n---\n# Overview\nTarget block ^target-block\n"
+		},
+		{
+			"path": "Target.md",
+			"content": "# Root target\n"
+		},
+		{
+			"path": "notes/Headings.md",
+			"content": "# Parent\n## Child\n# Other\n## Child\n"
+		},
+		{
+			"path": "notes/Nested.md",
+			"content": "# 2026-W31\n## 07-28 周二\n### 复盘分析\n#### paper 阅读\n"
+		},
+		{
+			"path": "notes/AmbiguousNested.md",
+			"content": "# Week A\n## 复盘分析\n### paper 阅读\n# Week B\n## 复盘分析\n### paper 阅读\n"
+		},
+		{
+			"path": "notes/HeadingSyntax.md",
+			"content": "---\n# Frontmatter only\n---\n  # Indented\n   ## Deep\n```md\n# Fence\n## Ghost\n```\n"
+		},
+		{
+			"path": "a/Shared.md",
+			"content": "# Shared A\n"
+		},
+		{
+			"path": "b/Shared.md",
+			"content": "# Shared B\n"
+		},
+		{
+			"path": "duplicates/Target.md",
+			"content": "# Different\n"
+		},
+		{
+			"path": "notes/Repeated.md",
+			"content": "First occurrence ^duplicate\nSecond occurrence ^duplicate\n"
+		}
+	],
+	"cases": [
+		{
+			"source": "notes/Source.md",
+			"link": "Target alias#Overview",
+			"status": "resolved",
+			"path": "notes/Target.md"
+		},
+		{
+			"source": "notes/Source.md",
+			"link": "#Root#Child",
+			"status": "resolved",
+			"path": "notes/Source.md"
+		},
+		{
+			"source": "notes/Source.md",
+			"link": "#^summary",
+			"status": "resolved",
+			"path": "notes/Source.md"
+		},
+		{ "source": "notes/Source.md", "link": "Missing", "status": "missing" },
+		{
+			"source": "notes/Source.md",
+			"link": "Target",
+			"status": "resolved",
+			"path": "Target.md"
+		},
+		{
+			"source": "notes/Source.md",
+			"link": "notes/Target#Absent",
+			"status": "invalidFragment",
+			"path": "notes/Target.md"
+		},
+		{
+			"source": "notes/Source.md",
+			"link": "notes/Repeated#^duplicate",
+			"status": "ambiguous",
+			"path": "notes/Repeated.md"
+		},
+		{
+			"source": "notes/Source.md",
+			"link": "Target.md",
+			"syntax": "markdown",
+			"status": "resolved",
+			"path": "notes/Target.md"
+		},
+		{
+			"source": "notes/Source.md",
+			"link": "./Target.md#Overview",
+			"syntax": "markdown",
+			"status": "resolved",
+			"path": "notes/Target.md"
+		},
+		{
+			"source": "notes/Source.md",
+			"link": "Target.md#^target-block",
+			"syntax": "markdown",
+			"status": "resolved",
+			"path": "notes/Target.md"
+		},
+		{
+			"source": "notes/Source.md",
+			"link": "Headings.md#Parent#Child",
+			"syntax": "markdown",
+			"status": "resolved",
+			"path": "notes/Headings.md"
+		},
+		{
+			"source": "notes/Source.md",
+			"link": "Shared.md",
+			"syntax": "markdown",
+			"status": "ambiguous"
+		},
+		{
+			"source": "notes/Source.md",
+			"link": "../../Target.md",
+			"syntax": "markdown",
+			"status": "missing"
+		},
+		{
+			"source": "notes/Source.md",
+			"link": "notes/Headings#Parent#Child",
+			"status": "resolved",
+			"path": "notes/Headings.md"
+		},
+		{
+			"source": "notes/Source.md",
+			"link": "notes/Headings#Child",
+			"status": "ambiguous",
+			"path": "notes/Headings.md"
+		},
+		{
+			"source": "notes/Source.md",
+			"link": "notes/Nested#2026-W31#07-28 周二#复盘分析#paper 阅读",
+			"status": "resolved",
+			"path": "notes/Nested.md"
+		},
+		{
+			"source": "notes/Source.md",
+			"link": "notes/Nested#复盘分析#paper 阅读",
+			"status": "resolved",
+			"path": "notes/Nested.md"
+		},
+		{
+			"source": "notes/Source.md",
+			"link": "notes/AmbiguousNested#复盘分析#paper 阅读",
+			"status": "ambiguous",
+			"path": "notes/AmbiguousNested.md"
+		},
+		{
+			"source": "notes/Source.md",
+			"link": "notes/HeadingSyntax#Indented#Deep",
+			"status": "resolved",
+			"path": "notes/HeadingSyntax.md"
+		},
+		{
+			"source": "notes/Source.md",
+			"link": "notes/HeadingSyntax#Frontmatter only",
+			"status": "invalidFragment",
+			"path": "notes/HeadingSyntax.md"
+		},
+		{
+			"source": "notes/Source.md",
+			"link": "notes/HeadingSyntax#Fence#Ghost",
+			"status": "invalidFragment",
+			"path": "notes/HeadingSyntax.md"
+		}
+	],
+	"moveCases": [
+		{
+			"source": "notes/Source.md",
+			"link": "./Target.md#Overview",
+			"from": "notes/Target.md",
+			"to": "archive/Target.md",
+			"expected": "../archive/Target.md#Overview"
+		},
+		{
+			"source": "notes/Source.md",
+			"link": "notes/Target#Overview",
+			"from": "notes/Target.md",
+			"to": "archive/Target.md",
+			"expected": "archive/Target#Overview"
+		}
+	]
+}

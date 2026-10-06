@@ -1,0 +1,146 @@
+[
+	{
+		"name": "modern-minimal",
+		"title": "Modern Minimal"
+	},
+	{
+		"name": "t3-chat",
+		"title": "T3 Chat"
+	},
+	{
+		"name": "twitter",
+		"title": "Twitter"
+	},
+	{
+		"name": "mocha-mousse",
+		"title": "Mocha Mousse"
+	},
+	{
+		"name": "bubblegum",
+		"title": "Bubblegum"
+	},
+	{
+		"name": "doom-64",
+		"title": "Doom 64"
+	},
+	{
+		"name": "catppuccin",
+		"title": "Catppuccin"
+	},
+	{
+		"name": "graphite",
+		"title": "Graphite"
+	},
+	{
+		"name": "perpetuity",
+		"title": "Perpetuity"
+	},
+	{
+		"name": "kodama-grove",
+		"title": "Kodama Grove"
+	},
+	{
+		"name": "cosmic-night",
+		"title": "Cosmic Night"
+	},
+	{
+		"name": "tangerine",
+		"title": "Tangerine"
+	},
+	{
+		"name": "quantum-rose",
+		"title": "Quantum Rose"
+	},
+	{
+		"name": "nature",
+		"title": "Nature"
+	},
+	{
+		"name": "bold-tech",
+		"title": "Bold Tech"
+	},
+	{
+		"name": "elegant-luxury",
+		"title": "Elegant Luxury"
+	},
+	{
+		"name": "amber-minimal",
+		"title": "Amber Minimal"
+	},
+	{
+		"name": "supabase",
+		"title": "Supabase"
+	},
+	{
+		"name": "neo-brutalism",
+		"title": "Neo Brutalism"
+	},
+	{
+		"name": "solar-dusk",
+		"title": "Solar Dusk"
+	},
+	{
+		"name": "claymorphism",
+		"title": "Claymorphism"
+	},
+	{
+		"name": "cyberpunk",
+		"title": "Cyberpunk"
+	},
+	{
+		"name": "pastel-dreams",
+		"title": "Pastel Dreams"
+	},
+	{
+		"name": "clean-slate",
+		"title": "Clean Slate"
+	},
+	{
+		"name": "caffeine",
+		"title": "Caffeine"
+	},
+	{
+		"name": "ocean-breeze",
+		"title": "Ocean Breeze"
+	},
+	{
+		"name": "retro-arcade",
+		"title": "Retro Arcade"
+	},
+	{
+		"name": "midnight-bloom",
+		"title": "Midnight Bloom"
+	},
+	{
+		"name": "candyland",
+		"title": "Candyland"
+	},
+	{
+		"name": "northern-lights",
+		"title": "Northern Lights"
+	},
+	{
+		"name": "vintage-paper",
+		"title": "Vintage Paper"
+	},
+	{
+		"name": "sunset-horizon",
+		"title": "Sunset Horizon"
+	},
+	{
+		"name": "starry-night",
+		"title": "Starry Night"
+	},
+	{
+		"name": "claude",
+		"title": "Claude"
+	},
+	{
+		"name": "vercel",
+		"title": "Vercel"
+	},
+	{
+		"name": "mono",
+		"title": "Mono"
+	}
+]

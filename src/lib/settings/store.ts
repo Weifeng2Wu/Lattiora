@@ -1,0 +1,723 @@
+import { useEffect, useState } from "react";
+import { cloudAiError } from "@/lib/cloud/ai";
+import { subscribeCloudFiles } from "@/lib/cloud/files";
+import {
+	DEFAULT_RECOGNIZER_BASE_URL,
+	normalizeScholarService,
+} from "@/lib/cloud/scholar-defaults";
+import {
+	persistCloudSettings,
+	readCloudSettings,
+	SETTINGS_FILE,
+} from "@/lib/cloud/settings";
+import { redactSettings } from "@/lib/cloud/settings-secrets";
+import { notifyError } from "@/lib/core/notify";
+import {
+	isPaperTreeLabelMode,
+	isPaperTreeSortMode,
+} from "@/lib/paper/tree-modes";
+import {
+	DEFAULT_LAYOUT_SETTINGS,
+	DEFAULT_MINERU_LANGUAGE,
+	isLayoutBackend,
+	isLayoutProviderId,
+	isMineruLanguage,
+	isParserBackend,
+	type LayoutSettings,
+} from "@/lib/pdf/layout/settings";
+import {
+	clampEditorLineHeight,
+	DEFAULT_EMBEDDING_SETTINGS,
+	DEFAULT_PDF_ASK_SETTINGS,
+	DEFAULT_SETTINGS,
+	DEFAULT_TRANSLATOR_BASE_URL,
+	GITHUB_MIRROR_PRESETS,
+	snapUiScale,
+} from "@/lib/settings/defaults";
+import { normalizeFontFamilyValue } from "@/lib/settings/fonts";
+import {
+	type AppSettings,
+	DEFAULT_LIBRARY_COLUMNS,
+	type EmbeddingSettings,
+	type EmbeddingSource,
+	isPaperNoteMode,
+	LIBRARY_COLUMN_KEYS,
+	type LibraryColumnKey,
+	type LibraryColumnPref,
+	type PdfAskSettings,
+} from "@/lib/settings/types";
+import { DEFAULT_TRANSLATE_SETTINGS } from "@/lib/translate/defaults";
+import type {
+	TranslateSettings,
+	TranslateTargetLang,
+} from "@/lib/translate/types";
+import {
+	isCommercialTranslateProvider,
+	isTranslateProviderId,
+} from "@/lib/translate/types";
+import { isKnownUiTheme } from "@/lib/ui/theme";
+
+/** Legacy browser key — migrated once into the synchronized preferences file. */
+const LEGACY_SETTINGS_KEY = "agentero-settings";
+
+/** Redacted in-memory snapshot, mirrored to React while writes are pending. */
+let cache: AppSettings = {
+	...DEFAULT_SETTINGS,
+	libraryColumns: DEFAULT_LIBRARY_COLUMNS.map((c) => ({ ...c })),
+	translate: { ...DEFAULT_TRANSLATE_SETTINGS },
+	layout: { ...DEFAULT_SETTINGS.layout, providerConfigs: {} },
+	pdfAsk: { ...DEFAULT_PDF_ASK_SETTINGS },
+	embedding: { ...DEFAULT_EMBEDDING_SETTINGS },
+};
+let loaded = false;
+let loadPromise: Promise<AppSettings> | null = null;
+
+function cloneSettings(s: AppSettings): AppSettings {
+	return structuredClone(s);
+}
+
+function setCache(s: AppSettings): AppSettings {
+	cache = cloneSettings(s);
+	return cache;
+}
+
+/**
+ * Synchronous read of the in-memory cache.
+ * Call {@link ensureSettingsLoaded} at boot so this reflects the browser work copy.
+ */
+export function loadSettings(): AppSettings {
+	return cloneSettings(cache);
+}
+
+/**
+ * Load preferences from the browser work copy of `.agentero/settings.json`.
+ * One-shot: migrates legacy `localStorage` when the file does not exist yet.
+ */
+export async function ensureSettingsLoaded(): Promise<AppSettings> {
+	if (loaded) return loadSettings();
+	if (loadPromise) return loadPromise;
+	loadPromise = (async () => {
+		try {
+			const stored = await readCloudSettings();
+			const legacy = stored ? null : readLegacyLocalStorage();
+			if (stored || legacy)
+				setCache(normalizePartial(stored ?? redactSettings(legacy!, "")));
+			// Retired browser builds could have stored plaintext credentials. Never
+			// copy them into the outbox; users re-enter those keys while online.
+			if (legacy) await persistCloudSettings(cache, cache);
+			localStorage.removeItem(LEGACY_SETTINGS_KEY);
+		} catch (e) {
+			console.warn("[settings] load failed, using defaults", e);
+			setCache({ ...DEFAULT_SETTINGS });
+		} finally {
+			loaded = true;
+		}
+		return loadSettings();
+	})();
+	return loadPromise;
+}
+
+/**
+ * Update the redacted cache and persist preferences and independent secrets.
+ * Fire-and-forget for interactive controls; errors surface through the toast.
+ */
+export function saveSettings(settings: AppSettings): void {
+	void saveSettingsAsync(settings).catch((error) =>
+		notifyError(cloudAiError(error)),
+	);
+}
+
+type SettingsListener = (settings: AppSettings) => void;
+
+const settingsListeners = new Set<SettingsListener>();
+
+/** Subscribe to settings changes coming from other windows. Returns unsubscribe. */
+export function subscribeSettings(listener: SettingsListener): () => void {
+	settingsListeners.add(listener);
+	return () => {
+		settingsListeners.delete(listener);
+	};
+}
+
+/** React hook that tracks the current `uiScale` without re-rendering on other
+ *  settings changes. Useful for scale-aware virtualized lists. */
+export function useUiScale(): number {
+	const [scale, setScale] = useState(() => loadSettings().uiScale);
+	useEffect(() => {
+		return subscribeSettings((next) => {
+			setScale((prev) => (prev === next.uiScale ? prev : next.uiScale));
+		});
+	}, []);
+	return scale;
+}
+
+/** Apply a redacted settings snapshot after loading or synchronizing files. */
+export function applyExternalSettings(raw: Partial<AppSettings>): void {
+	const next = normalizePartial(redactSettings(raw));
+	setCache(next);
+	for (const listener of settingsListeners) {
+		try {
+			listener(loadSettings());
+		} catch (e) {
+			console.warn("[settings] listener failed", e);
+		}
+	}
+}
+
+/**
+ * Listen for downloaded preference revisions and other browser tabs.
+ * Serialize the reload after outstanding local preference writes.
+ */
+export function initSettingsSync(): void {
+	if (syncStarted) return;
+	syncStarted = true;
+	subscribeCloudFiles((paths, remote) => {
+		if (!remote || !paths.includes(SETTINGS_FILE)) return;
+		const readRevision = revision;
+		const refresh = writes
+			.catch(() => undefined)
+			.then(async () => {
+				const settings = await readCloudSettings();
+				if (settings && readRevision === revision)
+					applyExternalSettings(normalizePartial(settings));
+			});
+		// Reading the baseline participates in the same queue as writes. An
+		// edit made during this read must keep its optimistic UI snapshot.
+		writes = refresh;
+		void refresh.catch((error) => notifyError(cloudAiError(error)));
+	});
+}
+
+let syncStarted = false;
+let writes: Promise<unknown> = Promise.resolve();
+let revision = 0;
+
+/** Awaitable save (settings UI / tests). */
+export async function saveSettingsAsync(
+	settings: AppSettings,
+): Promise<AppSettings> {
+	const next = normalizeSettings(settings);
+	const previous = loadSettings();
+	const currentRevision = ++revision;
+	applyExternalSettings(redactSettings(next));
+	const operation = writes
+		.catch(() => undefined)
+		.then(async () => {
+			try {
+				return await persistCloudSettings(next, previous);
+			} catch (error) {
+				if (revision === currentRevision) applyExternalSettings(previous);
+				throw error;
+			}
+		});
+	writes = operation;
+	return operation;
+}
+
+function readLegacyLocalStorage(): AppSettings | null {
+	try {
+		if (typeof localStorage === "undefined") return null;
+		const raw = localStorage.getItem(LEGACY_SETTINGS_KEY);
+		if (!raw) return null;
+		const parsed = JSON.parse(raw) as Partial<AppSettings> & {
+			agentBaseUrl?: string;
+			agentApiKey?: string;
+			agentModel?: string;
+			agentYolo?: boolean;
+			downloadFulltextToLocal?: boolean;
+			downloadFulltextWhenNoRemotePreview?: boolean;
+		};
+		return normalizePartial(parsed);
+	} catch {
+		return null;
+	}
+}
+
+function normalizeSettings(raw: AppSettings): AppSettings {
+	return normalizePartial(raw);
+}
+
+function normalizePartial(
+	parsed: Partial<AppSettings> & {
+		agentBaseUrl?: string;
+		agentApiKey?: string;
+		agentModel?: string;
+		agentYolo?: boolean;
+		downloadFulltextToLocal?: boolean;
+		downloadFulltextWhenNoRemotePreview?: boolean;
+		/** @deprecated pre-#242 single editor font preset */
+		editorFontFamily?: string;
+	},
+): AppSettings {
+	const {
+		agentBaseUrl: _u,
+		agentApiKey: _k,
+		agentModel: _m,
+		agentYolo: _y,
+		downloadFulltextToLocal: _d1,
+		downloadFulltextWhenNoRemotePreview: _d2,
+		editorFontFamily: legacyEditorFontFamily,
+		...rest
+	} = parsed;
+	const merged = { ...DEFAULT_SETTINGS, ...rest };
+	if (
+		parsed.agentYolo !== undefined &&
+		rest.agentPermissionMode === undefined
+	) {
+		merged.agentPermissionMode = parsed.agentYolo ? "auto" : "restricted";
+	}
+	merged.translator = normalizeScholarService(
+		{
+			...rest.translator,
+			baseUrl:
+				typeof rest.translator?.baseUrl === "string"
+					? rest.translator.baseUrl
+					: merged.translatorBaseUrl,
+		},
+		DEFAULT_TRANSLATOR_BASE_URL,
+	);
+	merged.scholar = {
+		baseUrl:
+			typeof merged.scholar?.baseUrl === "string"
+				? merged.scholar.baseUrl.trim()
+				: "",
+		apiKey:
+			typeof merged.scholar?.apiKey === "string" ? merged.scholar.apiKey : "",
+	};
+	merged.recognizer = normalizeScholarService(
+		merged.recognizer,
+		DEFAULT_RECOGNIZER_BASE_URL,
+	);
+	if (!merged.translatorBaseUrl?.trim()) {
+		merged.translatorBaseUrl = DEFAULT_TRANSLATOR_BASE_URL;
+	} else {
+		merged.translatorBaseUrl = merged.translatorBaseUrl
+			.trim()
+			.replace(/\/+$/, "");
+	}
+	if (typeof parsed.easyScholarKey !== "string") {
+		merged.easyScholarKey = DEFAULT_SETTINGS.easyScholarKey;
+	} else {
+		merged.easyScholarKey = parsed.easyScholarKey.trim();
+	}
+	if (typeof parsed.networkProxyEnabled !== "boolean") {
+		merged.networkProxyEnabled = DEFAULT_SETTINGS.networkProxyEnabled;
+	}
+	if (
+		typeof parsed.networkProxyUrl !== "string" ||
+		!parsed.networkProxyUrl.trim()
+	) {
+		merged.networkProxyUrl = DEFAULT_SETTINGS.networkProxyUrl;
+	} else {
+		merged.networkProxyUrl = parsed.networkProxyUrl.trim();
+	}
+	if (typeof parsed.githubMirrorEnabled !== "boolean") {
+		merged.githubMirrorEnabled = DEFAULT_SETTINGS.githubMirrorEnabled;
+	}
+	if (typeof parsed.githubMirrorBaseUrl !== "string") {
+		merged.githubMirrorBaseUrl = DEFAULT_SETTINGS.githubMirrorBaseUrl;
+	} else {
+		const trimmed = parsed.githubMirrorBaseUrl.trim().replace(/\/+$/, "");
+		merged.githubMirrorBaseUrl = (
+			GITHUB_MIRROR_PRESETS as readonly string[]
+		).includes(trimmed)
+			? trimmed
+			: GITHUB_MIRROR_PRESETS[0];
+	}
+	if (!isPaperTreeLabelMode(merged.paperTreeLabelMode)) {
+		merged.paperTreeLabelMode = DEFAULT_SETTINGS.paperTreeLabelMode;
+	}
+	if (!isPaperTreeSortMode(merged.paperTreeSortMode)) {
+		merged.paperTreeSortMode = DEFAULT_SETTINGS.paperTreeSortMode;
+	}
+	if (typeof parsed.allowFileExtensionRename !== "boolean") {
+		merged.allowFileExtensionRename = DEFAULT_SETTINGS.allowFileExtensionRename;
+	}
+	if (!isPaperNoteMode(merged.paperNoteMode)) {
+		merged.paperNoteMode = DEFAULT_SETTINGS.paperNoteMode;
+	}
+	if (typeof parsed.autoOpenPaperNotes !== "boolean") {
+		merged.autoOpenPaperNotes = DEFAULT_SETTINGS.autoOpenPaperNotes;
+	}
+	if (typeof parsed.autoIngest !== "boolean") {
+		merged.autoIngest = DEFAULT_SETTINGS.autoIngest;
+	}
+	if (typeof parsed.replaceCurrentTabOnOpenPaper !== "boolean") {
+		merged.replaceCurrentTabOnOpenPaper =
+			DEFAULT_SETTINGS.replaceCurrentTabOnOpenPaper;
+	}
+	if (
+		merged.autoUpdateInternalLinks !== "ask" &&
+		merged.autoUpdateInternalLinks !== "always"
+	) {
+		merged.autoUpdateInternalLinks = DEFAULT_SETTINGS.autoUpdateInternalLinks;
+	}
+	merged.libraryColumns = normalizeLibraryColumns(merged.libraryColumns);
+	if (typeof parsed.autoPaperReader !== "boolean") {
+		merged.autoPaperReader = DEFAULT_SETTINGS.autoPaperReader;
+	}
+	if (typeof parsed.agentPersonalPrompt !== "string") {
+		merged.agentPersonalPrompt = DEFAULT_SETTINGS.agentPersonalPrompt;
+	} else {
+		// Cap extreme values from hand-edited storage; UI does not enforce a hard max.
+		merged.agentPersonalPrompt = parsed.agentPersonalPrompt.slice(0, 8000);
+	}
+	if (typeof parsed.connectorEnabled !== "boolean") {
+		merged.connectorEnabled = DEFAULT_SETTINGS.connectorEnabled;
+	}
+	if (typeof parsed.mcpEnabled !== "boolean") {
+		merged.mcpEnabled = DEFAULT_SETTINGS.mcpEnabled;
+	}
+	if (
+		!Number.isInteger(merged.mcpPort) ||
+		merged.mcpPort < 1 ||
+		merged.mcpPort > 65535
+	) {
+		merged.mcpPort = DEFAULT_SETTINGS.mcpPort;
+	}
+	if (typeof merged.mcpTunnelId !== "string") {
+		merged.mcpTunnelId = DEFAULT_SETTINGS.mcpTunnelId;
+	}
+	if (typeof merged.mcpTunnelApiKey !== "string") {
+		merged.mcpTunnelApiKey = DEFAULT_SETTINGS.mcpTunnelApiKey;
+	}
+	if (typeof parsed.exportWatermarkEnabled !== "boolean") {
+		merged.exportWatermarkEnabled = DEFAULT_SETTINGS.exportWatermarkEnabled;
+	}
+	if (typeof parsed.telemetryEnabled !== "boolean") {
+		merged.telemetryEnabled = DEFAULT_SETTINGS.telemetryEnabled;
+	}
+	if (typeof parsed.plazaEnabled !== "boolean") {
+		merged.plazaEnabled = DEFAULT_SETTINGS.plazaEnabled;
+	}
+	if (!Array.isArray(parsed.plazaHiddenSources)) {
+		merged.plazaHiddenSources = DEFAULT_SETTINGS.plazaHiddenSources;
+	} else {
+		merged.plazaHiddenSources = [
+			...new Set(
+				parsed.plazaHiddenSources.filter(
+					(id): id is string => typeof id === "string",
+				),
+			),
+		];
+	}
+	if (typeof parsed.onboardingDone !== "boolean") {
+		merged.onboardingDone = DEFAULT_SETTINGS.onboardingDone;
+	}
+	if (typeof parsed.featureTourDone !== "boolean") {
+		merged.featureTourDone = DEFAULT_SETTINGS.featureTourDone;
+	}
+	if (
+		!Number.isInteger(merged.batchImportConcurrency) ||
+		merged.batchImportConcurrency < 1 ||
+		merged.batchImportConcurrency > 10
+	) {
+		merged.batchImportConcurrency = DEFAULT_SETTINGS.batchImportConcurrency;
+	}
+	if (
+		merged.theme !== "system" &&
+		merged.theme !== "light" &&
+		merged.theme !== "dark"
+	) {
+		merged.theme = DEFAULT_SETTINGS.theme;
+	}
+	if (!isKnownUiTheme(merged.uiTheme)) {
+		merged.uiTheme = DEFAULT_SETTINGS.uiTheme;
+	}
+	if (!Number.isFinite(merged.uiScale)) {
+		// Migrate the old per-icon-size setting (12–22 px, default 14) to a global
+		// scale ratio. 14 px was 100%; snap to the closest preset.
+		const oldIconSize = (parsed as { toolbarIconSize?: unknown })
+			.toolbarIconSize;
+		if (Number.isFinite(oldIconSize)) {
+			merged.uiScale = snapUiScale(Number(oldIconSize) / 14);
+		} else {
+			merged.uiScale = DEFAULT_SETTINGS.uiScale;
+		}
+	} else {
+		merged.uiScale =
+			Math.round(Math.min(1.5, Math.max(0.8, merged.uiScale)) * 100) / 100;
+	}
+	if (
+		merged.locale !== "system" &&
+		merged.locale !== "en" &&
+		merged.locale !== "zh-CN"
+	) {
+		merged.locale = DEFAULT_SETTINGS.locale;
+	}
+	merged.interfaceFontFamily = normalizeFontFamilyValue(
+		merged.interfaceFontFamily,
+	);
+	merged.textFontFamily = normalizeFontFamilyValue(merged.textFontFamily);
+	merged.monoFontFamily = normalizeFontFamilyValue(merged.monoFontFamily);
+	// Migrate short-lived editorFontFamily preset → textFontFamily when the
+	// newer field was never set in storage.
+	if (
+		!parsed.textFontFamily &&
+		typeof legacyEditorFontFamily === "string" &&
+		legacyEditorFontFamily.trim() &&
+		legacyEditorFontFamily !== "default"
+	) {
+		merged.textFontFamily = normalizeFontFamilyValue(legacyEditorFontFamily);
+	}
+	merged.editorLineHeight = clampEditorLineHeight(merged.editorLineHeight);
+	if (
+		merged.agentPermissionMode !== "restricted" &&
+		merged.agentPermissionMode !== "ask" &&
+		merged.agentPermissionMode !== "auto"
+	) {
+		merged.agentPermissionMode = DEFAULT_SETTINGS.agentPermissionMode;
+	}
+	if (
+		merged.aiResponseLanguage !== "auto" &&
+		merged.aiResponseLanguage !== "en" &&
+		merged.aiResponseLanguage !== "zh-CN"
+	) {
+		merged.aiResponseLanguage = DEFAULT_SETTINGS.aiResponseLanguage;
+	}
+	merged.pdfAsk = normalizePdfAskSettings(
+		(parsed as { pdfAsk?: Partial<PdfAskSettings> }).pdfAsk,
+	);
+	merged.embedding = normalizeEmbeddingSettings(
+		(parsed as { embedding?: Partial<EmbeddingSettings> }).embedding,
+	);
+	merged.translate = normalizeTranslateSettings(parsed.translate);
+	merged.layout = normalizeLayoutSettings(parsed.layout);
+	return merged;
+}
+
+function isTranslateTargetLang(v: unknown): v is TranslateTargetLang {
+	return v === "ui" || v === "en" || v === "zh-CN";
+}
+
+/**
+ * Reconcile stored column prefs against the canonical set:
+ * drop unknown/duplicate keys, append missing columns with their default visibility, and keep
+ * `title` visible so rows stay identifiable.
+ *
+ * Migration: if the saved order matches the old canonical layout (before the
+ * standalone publication column was added), adopt the new canonical order so
+ * publication lands right after the date. Custom user orders are preserved.
+ * The `year` column key was renamed to `date`; it keeps its saved position.
+ */
+function normalizeLibraryColumns(raw: unknown): LibraryColumnPref[] {
+	const known = new Set<string>(LIBRARY_COLUMN_KEYS);
+	const seen = new Set<LibraryColumnKey>();
+	const saved: LibraryColumnPref[] = [];
+	if (Array.isArray(raw)) {
+		for (const item of raw) {
+			if (!item || typeof item !== "object") continue;
+			const rawKey = (item as { key?: unknown }).key;
+			if (typeof rawKey !== "string") continue;
+			const key = rawKey === "year" ? "date" : rawKey;
+			if (!known.has(key)) continue;
+			const k = key as LibraryColumnKey;
+			if (seen.has(k)) continue;
+			seen.add(k);
+			const visible = (item as { visible?: unknown }).visible;
+			const width = (item as { widthRem?: unknown }).widthRem;
+			saved.push({
+				key: k,
+				visible: typeof visible === "boolean" ? visible : true,
+				...(typeof width === "number" && Number.isFinite(width) && width > 0
+					? { widthRem: Math.min(120, Math.max(5, width)) }
+					: {}),
+			});
+		}
+	}
+
+	const oldCanonicalKeys: LibraryColumnKey[] = [
+		"title",
+		"authors",
+		"date",
+		"tags",
+		"id",
+	];
+	const matchesOldLayout =
+		saved.length >= oldCanonicalKeys.length &&
+		oldCanonicalKeys.every((k, i) => saved[i]?.key === k);
+
+	const out: LibraryColumnPref[] = [];
+	if (matchesOldLayout) {
+		for (const fallback of DEFAULT_LIBRARY_COLUMNS) {
+			const pref = saved.find((c) => c.key === fallback.key);
+			out.push(pref ?? { ...fallback });
+		}
+	} else {
+		out.push(...saved);
+		for (const fallback of DEFAULT_LIBRARY_COLUMNS) {
+			if (!seen.has(fallback.key)) out.push({ ...fallback });
+		}
+	}
+
+	for (const c of out) {
+		if (c.key === "title") c.visible = true;
+	}
+	return out;
+}
+
+function normalizePdfAskSettings(
+	raw: Partial<PdfAskSettings> | undefined,
+): PdfAskSettings {
+	const base = { ...DEFAULT_PDF_ASK_SETTINGS };
+	if (!raw || typeof raw !== "object") return base;
+	if (typeof raw.agentId === "string") {
+		base.agentId = raw.agentId.trim();
+	}
+	if (typeof raw.modelId === "string") {
+		base.modelId = raw.modelId.trim();
+	}
+	return base;
+}
+
+function normalizeEmbeddingSettings(
+	raw: Partial<EmbeddingSettings> | undefined,
+): EmbeddingSettings {
+	const base = { ...DEFAULT_EMBEDDING_SETTINGS };
+	if (!raw || typeof raw !== "object") return base;
+	// No trailing-slash strip here: normalize runs on every keystroke save,
+	// which would eat the "/" while typing e.g. ".../v1". The Host and the
+	// settings UI onBlur already trim trailing slashes.
+	if (typeof raw.baseUrl === "string") base.baseUrl = raw.baseUrl.trim();
+	if (typeof raw.apiKey === "string") base.apiKey = raw.apiKey.trim();
+	if (typeof raw.model === "string") base.model = raw.model.trim();
+	// Wire `source` is a plain string (empty on a fresh install); narrow it here.
+	base.source = resolveEmbeddingSource(
+		(raw as { source?: unknown }).source,
+		base,
+	);
+	return base;
+}
+
+/** Browser/dev counterpart of Rust `resolve_embedding_source`. */
+function resolveEmbeddingSource(
+	rawSource: unknown,
+	_fields: Pick<EmbeddingSettings, "baseUrl" | "apiKey" | "model">,
+): EmbeddingSource {
+	const explicit =
+		typeof rawSource === "string" ? rawSource.trim().toLowerCase() : "";
+	if (explicit === "builtin" || explicit === "custom") return explicit;
+	// Browser/dev cannot know whether a Host key was compiled in. Keep inferred
+	// values on the BYOK side; keyed desktop builds send an explicit source.
+	return "custom";
+}
+
+function normalizeTranslateSettings(
+	raw: Partial<TranslateSettings> | undefined,
+): TranslateSettings {
+	const base: TranslateSettings = {
+		...DEFAULT_TRANSLATE_SETTINGS,
+		providerConfigs: {},
+	};
+	if (!raw || typeof raw !== "object") return base;
+	if (raw.provider && isTranslateProviderId(raw.provider)) {
+		base.provider = raw.provider;
+	}
+	if (raw.targetLang && isTranslateTargetLang(raw.targetLang)) {
+		base.targetLang = raw.targetLang;
+	}
+	if (raw.sourceLang === "auto") {
+		base.sourceLang = "auto";
+	}
+	base.providerConfigs = normalizeTranslateProviderConfigs(
+		(raw as { providerConfigs?: unknown }).providerConfigs,
+	);
+	if (typeof raw.autoTranslateSelection === "boolean") {
+		base.autoTranslateSelection = raw.autoTranslateSelection;
+	}
+	if (typeof raw.dualPaneTranslate === "boolean") {
+		base.dualPaneTranslate = raw.dualPaneTranslate;
+	}
+	if (typeof raw.agentId === "string") {
+		base.agentId = raw.agentId.trim();
+	}
+	if (typeof raw.modelId === "string") {
+		base.modelId = raw.modelId.trim();
+	}
+	if (typeof raw.customPrompt === "string") {
+		// Cap extreme values from hand-edited storage (the UI slices to 8000).
+		base.customPrompt = raw.customPrompt.slice(0, 8000);
+	}
+	return base;
+}
+
+function normalizeTranslateProviderConfigs(
+	raw: unknown,
+): TranslateSettings["providerConfigs"] {
+	const out: TranslateSettings["providerConfigs"] = {};
+	if (!raw || typeof raw !== "object") return out;
+	for (const [id, value] of Object.entries(raw)) {
+		if (!isTranslateProviderId(id) || id === "agent" || id === "agentero")
+			continue;
+		if (!value || typeof value !== "object") continue;
+		const cfg = value as {
+			apiKey?: unknown;
+			baseUrl?: unknown;
+			region?: unknown;
+			model?: unknown;
+		};
+		out[id] = {
+			apiKey:
+				isCommercialTranslateProvider(id) && typeof cfg.apiKey === "string"
+					? cfg.apiKey.trim()
+					: "",
+			// No trailing-slash strip here: this runs on every keystroke save,
+			// which would eat the "/" while typing e.g. ".../v1". Host and the
+			// settings UI onBlur already trim trailing slashes.
+			baseUrl: typeof cfg.baseUrl === "string" ? cfg.baseUrl.trim() : "",
+			region: typeof cfg.region === "string" ? cfg.region.trim() : "",
+			model: typeof cfg.model === "string" ? cfg.model.trim() : "",
+		};
+	}
+	return out;
+}
+
+function normalizeLayoutSettings(
+	raw: Partial<LayoutSettings> | undefined,
+): LayoutSettings {
+	const base: LayoutSettings = {
+		...DEFAULT_LAYOUT_SETTINGS,
+		providerConfigs: {},
+	};
+	if (!raw || typeof raw !== "object") return base;
+	if (isLayoutBackend(raw.backend)) {
+		base.backend = raw.backend;
+	}
+	if (isParserBackend(raw.parserBackend)) {
+		base.parserBackend = raw.parserBackend;
+	}
+	base.providerConfigs = normalizeLayoutProviderConfigs(
+		(raw as { providerConfigs?: unknown }).providerConfigs,
+	);
+	return base;
+}
+
+function normalizeLayoutProviderConfigs(
+	raw: unknown,
+): LayoutSettings["providerConfigs"] {
+	const out: LayoutSettings["providerConfigs"] = {};
+	if (!raw || typeof raw !== "object") return out;
+	for (const [id, value] of Object.entries(raw)) {
+		if (!isLayoutProviderId(id)) continue;
+		if (!value || typeof value !== "object") continue;
+		const cfg = value as {
+			apiKey?: unknown;
+			baseUrl?: unknown;
+			model?: unknown;
+			prompt?: unknown;
+			language?: unknown;
+			isOcr?: unknown;
+		};
+		const language =
+			typeof cfg.language === "string" ? cfg.language.trim() : "";
+		out[id] = {
+			apiKey: typeof cfg.apiKey === "string" ? cfg.apiKey.trim() : "",
+			baseUrl: typeof cfg.baseUrl === "string" ? cfg.baseUrl.trim() : "",
+			model: typeof cfg.model === "string" ? cfg.model.trim() : "",
+			prompt: typeof cfg.prompt === "string" ? cfg.prompt.trim() : "",
+			language: isMineruLanguage(language) ? language : DEFAULT_MINERU_LANGUAGE,
+			isOcr: cfg.isOcr === true,
+		};
+	}
+	return out;
+}

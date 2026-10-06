@@ -1,0 +1,108 @@
+# 工作台壳
+
+## 布局
+
+- **左栏**：文件树 + Paper Info（显示最近选中的论文；切换到非论文文档时保持不消失；无卡片容器、常驻 collapsible，点标题行即可折叠，高度 200ms 过渡；上边缘可拖拽调整高度，`preserve-pixel-size`；内容区可滚动但不显示滚动条；文件树多选时复用固定高度标题栏显示批量操作，不压缩或遮挡树；arXiv 论文在资源按钮下显示 arXiv PDF、魔搭论文解读与 alphaXiv 外链，不再显示摘要按钮；窄宽度下资源按钮退化为仅图标；元信息修改入口位于 Info 底部）。Cool Papers / Kimi 解析入口在论文 `NOTES.md` 的 Markdown 工具栏，不在 Paper Info。左右栏共用 `bg-sidebar` 材质，与中间内容区分层。
+- **中间**：无 Vault 欢迎页；有 Vault 时为全局 Dockview（见 [workspace.md](workspace.md)）。Dock 页签条略软于实色 muted，活动页签用 `background` 抬起；页签按下有轻 opacity 反馈。
+- **右栏**（可选）：Agent / 批注（`bg-sidebar`，与左栏同色）。
+  - 参考文献与版面解析已移入 PDF 阅读器左侧浮层面板（见 [pdf.md](pdf.md)），不再占用右栏。
+  - **移至新窗口**：标题栏右栏功能图标 **右键** →「移动至新窗口」→ 单例 `feature-{view}` Webview；主窗右栏收起。工具视图默认 **跟随主窗当前激活文档**（`workspace:active-changed`）。
+- 左右栏折叠：`⌥⌘S` / `⌘L`（不重叠）。折叠/展开带 200ms `flex-grow` 过渡（`data-rail-animating`，见 `index.css`）；过渡中拖动分隔条立即接管（可打断）；`prefers-reduced-motion` 下直接切换。
+- **标题栏**：`bg-background/75` + `backdrop-blur-xl` + `backdrop-saturate-150`（`supports-backdrop-blur` 回退更实色；`prefers-reduced-transparency` 下实色无 blur）。macOS 左侧留出避让原生三色按钮的拖拽条（`TrafficLightSpacer`，主窗 / 功能窗 / 文档弹出窗 / 设置窗共用），进入原生全屏（绿灯按钮）后三色按钮隐藏，该条收窄为常规 8px，避免首个控件被顶到 ~92px；进出全屏由 tao 的 resize 事件重新查询 `isFullscreen()`。右侧：更新指示器、窗口布局菜单、Agent 切换；有新版本可更新时显示更新指示器按钮（见 [settings.md](settings.md) 「应用更新」）。布局菜单提供 **Agent**（PDF / Agent `2:1`）、**笔记**（折叠左右侧栏，中间 PDF / Notes）和 **阅读**（仅 PDF）三种预设。预设只调整 panel 宽度并开关当前论文的 Notes / Agent，不关闭其它 PDF tab。
+- **布局宽度记忆**：手动拖拽调整过的左右栏宽度按布局模式记成窗口宽度比例，持久化在 localStorage `agentero.shellLayout.v1`（`layout-persist.ts`）；重进该布局或重启应用都按记忆比例恢复（恢复时按面板 min/max 收窄 clamp，双击分隔条重置也会被记住）。提交走 `ResizableGroup.onLayoutChanged` 且只认 `isUserInteraction`（拖拽释放 / 键盘调整），程序化预设应用、挂载回声与窗口重排不写入；拖到折叠（< 80px）不污染记忆宽度。布局模式本身与折叠态一并持久化，启动时在 `boot()` 经 `initShellLayoutFromPrefs()` 预置，首帧即上次布局。
+  - 手动修改后模式变为 `custom`，但宽度仍归属最近选择的预设；`lastPreset` 一并保存，重启后恢复相同的宽度槽位，后续拖动继续更新该预设。进入 `custom` 时同时快照左右栏折叠态。所有会改变折叠态的入口（`⌥⌘S` / `⌘L`、布局菜单外展开右栏、PDF pin 打开 Agent、聚焦侧栏展开左栏）都同样切到 `custom` 并持久化；功能窗口承接时不影响主窗布局。
+  - 宽度比例统一以窗口宽度为基准（保存用面板实测 px ÷ 窗口宽，恢复按窗口宽 × 比例再 clamp），保存与恢复共用同一基准，双击重置直接提交已知的重置目标。
+  - 切换预设时先更新归属，再应用折叠状态；没有记忆宽度的左右栏使用 200px / 320px 默认值，Agent 预设首次展开右栏仍按阅读区域的 1/3。重新展开时优先按当前窗口宽度换算已保存比例，避免沿用其他预设的宽度或过期像素值。
+  - 左栏随 Vault 有无条件挂载。启动或切换 Vault 后，在面板注册完成的下一帧重新读取当前槽位的保存比例并应用左栏宽度（保留折叠态）；不只依赖 App 首次渲染的 `initialLeftPx` 或面板库内部布局缓存。该程序化恢复不写回用户宽度。
+  - 此处记忆的是左右侧栏；中间 Dockview 保存当前工作区布局；标准 PDF / Notes 双列另以 `agentero.notesSplitRatio.v1` 保存共用比例（跨 Vault），重复选择笔记布局不均分，关闭再打开时按当前可用宽度恢复。已有笔记列、多列、上下分屏与浮动布局保持原排列，不套用双列比例。
+- **默认配色**：冷灰系统材质（侧栏重、内容轻），见 [settings.md](settings.md)「主题」。
+
+实现：`src/components/shell/`、`src/lib/shell/ui-store.ts`、`src/lib/shell/leaf.ts`、`src/lib/shell/feature-window.ts`、`src/lib/shell/layout-persist.ts`、`hooks/use-shell-layout.ts`。
+
+## 字号
+
+壳层（顶栏、左右栏、PaneHeader、Dock 页签、底栏任务条）与库表 / Agent chrome 共用 Appearance 字号阶梯：`body` 默认 `text-sm`（13 / 行高约 1.385），次要 `text-xs`（12），密集元数据 `text-caption`（11，略开字距）。Dock 页签字号为 `0.8125rem`（与 Body 同档）；PaneHeader / Dock 页签栏高度均为 `2.25rem`（`h-9`）。细则见 [settings.md](settings.md)。
+
+## 欢迎页与多窗口
+
+- 无 Vault：最近路径 MRU、打开 / 创建 / 从 Zotero 迁移。
+- `⌘N` → Host `window_new`（`?fresh=1`）；Vault 与 dock 布局按窗口 session 隔离。
+- **功能单例窗**：`feature_window_open` → `?window=feature&view=…`（`FeatureWindowRoot`）。
+- **文档弹出窗**：文档 tab 右键「移动至新窗口」→ `doc_window_open` → `?window=doc&path=…`（`DocWindowRoot`）；同 path 再开则聚焦。弹出窗自启 per-window Vault watcher，Agent / 外部改盘后按主窗同一套规则就地重载 Markdown / PDF（Markdown 有未存改动则 toast 确认，PDF 重新读入最新字节）；本窗 autosave 会同步本地 seed，避免自写回声误触发重载。
+- 当前窗口 Vault：`sessionStorage`；MRU / 上次路径：`localStorage`。
+- Vault 切换菜单与欢迎页的最近路径使用 `displayPath` 展示普通 Windows 盘符 / UNC 路径；兼容历史记录中的 `\\?\` 前缀，不改写持久化路径或 Vault 身份。
+- 桌面窗口在 Webview 页面加载完成后显示；React 首次提交前由 `index.html` 的零依赖启动壳占位，避免冷启动和 dev 模块加载期间出现空白窗口。
+
+## 全局 Toast
+
+- 操作失败 / 警告：右上角 Sonner。
+- API：`notifyError` / `notifyWarning`（`src/lib/core/notify.ts`）。
+- 表单就地校验不走 Toast。
+
+## 后台任务条
+
+- 左下角：下载、入库、导入导出、paper-reader、版面解析等。
+- **折叠 = 进度圆环**；**悬停约 400ms 或点击圆环 → 详情列表**；**指针离开约 100ms 后收回圆环**（不常驻详情 Toast）。展开/收起沿左下角 `origin-bottom-left` 做 opacity + scale（200ms，无 bounce）；`prefers-reduced-motion` 下仅短淡入淡出。
+- 圆环使用不透明 `bg-background` 圆盘 + `ring-1 ring-border`（不用 border，避免内容区缩小导致圆环与底盘错位）+ 轨道（`muted-foreground/30`）与进度弧（`primary` / 失败 destructive / 完成 emerald）；中心图标用 `foreground`。按下 `active:scale-[0.96]`。避免浅色模式下底层内容透出或轨道过浅。
+- **完成态**：全部任务结束后圆环合并为满环（100%），成功时播放短暂合并/勾选动画（`task-ring-success-*`）；失败为满环 + destructive。进行中无数值进度时短弧旋转（indeterminate），不把完成态画成未闭合短弧；`prefers-reduced-motion` 下不轮换圆环中心 progress/icon。
+- 新任务 / 打开页面不自动展开。任务失败时短暂展开详情，未悬停约 5s 后收回；进行中可取消，可清除已完成。
+- 论文资源下载的总体进度由 **Host 侧聚合**：PDF 与 TeX 并发下载，两条流的字节合并成一个 `downloadedBytes` / `totalBytes` 后经 `job:progress`（`phase` = `assets`）写回同一行，前端 `mapDownloadProgress` 只做 clamp。这样先下完的一条流不会把进度条钉在 100%，纯 PDF（无 TeX 流）的入库也能走满 0–100%。
+- 版面解析 / 引用解析 / 正文解析 / 资源下载 / 元数据识别 / 论文导入（魔棒、本地 PDF、Skill、广场、Cool Papers）/ Connector 附件保存 / 库级批量操作（引用扫描、书目导入导出、批量元数据刷新）/ 版面模型下载由 JobCenter 投影到任务条（前端门面 `src/lib/core/tasks.ts`，投影/执行器桥接在其内部模块 `job-center.ts`）。取消走 `job_cancel`；迟到的 `running` 事件不得把已取消/已完成的行复活。
+- 导入与 Connector 是 Renderer-host job：Rust 只负责调度（并发、去重、取消），编排在渲染端执行器里（`src/lib/paper/import/import-tasks.ts` 按 `params.mode` 分发；`connector-tasks.ts` 把 `connector:progress` 中继成 job）。库级批量操作同理（`src/lib/paper/library-tasks.ts`：`citingScan` / `libraryIo` 按 `params.op` / `metadataRefresh` 按 `params.papers` 逐项上报 N/M）。job id 同时作为 Host 的 `task_id`：字节/批次进度经 `job:progress`（`taskId` = job id）由投影层写回面板行，协作取消由 JobCenter 的 cancel token 按 task id 索引（`features::jobs::is_task_cancelled`，注入为 `agentero_core::cancel` 探针）。版面模型下载（`modelDownload`）是 Host runner job：全局资源、cap 1，重复触发按 fingerprint 合并。
+- 打开论文时的资源自动下载（`src/lib/workspace/tabs/resources.ts`）同样是 JobCenter `downloadAssets` job：Host runner 下载后续接 PAPER.md / 版面分析，去重合并同篇的并发下载。
+- 纯前端 UI 本地活动不进 JobCenter（无去重/依赖/重启恢复语义）：paper-reader、Zotero 迁移向导、散落 PDF 的 viewer 内版面分析经门面 `runLocalActivity`（`src/lib/core/tasks.ts`）创建本地任务行；取消纯靠本地 AbortController（不经 Rust），同类并发由 `tasks.ts` 内的信号量执行。`background-tasks.ts` 只保留面板 store 与视图辅助（行 CRUD、字节/进度格式化），不含执行编排。
+- 论文相关行的次要文案优先显示 **论文标题**（catalog `title`），不展示 `papers/<id>` 或裸 identifier；状态/字节进度以 `标题 · 状态` 拼接。魔棒导入的拉取阶段不再附带 id。
+- 实现：`src/lib/core/background-tasks.ts` + `background-tasks-panel.tsx`；标题解析见 `src/lib/paper/task-label.ts`。
+
+## 弹层栈
+
+- `overlay-stack`：`Esc` / `⌘W` 先关最顶层 sheet/Dialog，再关 active panel。
+- 弹层可标记为 `modal: false`（如 Agent 面板底部 ask-user 表单），保留 `Esc` 关闭能力，但不阻塞 `whenSettingsClosed` 类的全局快捷键（如 `⌘B` / `⌥⌘S` 切换侧边栏）。
+- 仅剩全库 Library 且无弹层时，`⌘W` 关窗。
+
+## 快捷键（壳层）
+
+| 快捷键 | 行为 |
+|---|---|
+| `⌘,` | 开/关设置窗口 |
+| `⌘.` | PDF 视觉批注框选（当前论文：焦点在 PDF 或 NOTES 均可，handle 落在 body 标签） |
+| `⌘N` | 新窗口 |
+| `⌘W` / `Esc` | 关弹层 → 关 panel → 关窗 |
+| `⇧⌘T` | 重新打开最近关闭的 panel（内存历史，最多 10 条；关论文正文记正文，恢复时连带 NOTES；切 Vault 清空） |
+| `⌥⌘←/→` | 循环 Dockview panel |
+| `⌘\` | 向右 Split pane：当前论文未打开 NOTES 时右侧打开 NOTES；否则复制当前 pane，并将横向 pane 等宽 |
+| `⌘P` | 快速打开 |
+| `⇧⌘P` | 命令面板 |
+| `⇧⌘I` | 魔棒 |
+| `⌘R` | 刷新文件树 |
+| `⌥⌘R` | Finder 显示 |
+| `⌥⌘T` | 终端打开 |
+| `⌘⌫` | 移入回收站 |
+| `⌘+` / `⌘=` | 放大全局 UI |
+| `⌘-` | 缩小全局 UI |
+| `⌘0` | 重置全局 UI 缩放 |
+| `⌘1` | 聚焦左侧文件树 |
+| `⌘2` | 聚焦中间编辑器 |
+| `⌘3` | 聚焦右侧笔记/Agent 面板 |
+| `⌘←` | 折叠当前选中文件夹 |
+| `⇧⌘←` | 折叠树到默认状态 |
+| `⌥⌘S` | 开关左侧边栏（`⌘B` 别名） |
+| `⌘L` | 有选区时「加入对话」（固定选区并打开右侧 Agent）；无选区时开关右侧栏 |
+| `⌘K` | 有划词工具栏时「快速对话」（页内 Ask） |
+| `⇧⌘A` | 固定当前选区为 Agent 上下文，打开 Agent 面板并聚焦输入框（无选区时只打开并聚焦） |
+| `F11` | **Windows only**：切换无边框（exclusive）全屏；再按一次退出。实现：`toggleBorderlessFullscreen`（`src/lib/shell/window-fullscreen.ts`） |
+
+完整快捷键绑定：`src/lib/shell/shortcuts.ts`。文案 i18n 见 [settings.md](settings.md)。
+
+## 设计约定
+
+- **Motion tokens**（`index.css` / `src/lib/core/motion.ts` 的 `MOTION_MS`）：`micro` 100ms（按压/hover）、`fast` 150ms（浮层进出）、`normal` 200ms（栏折叠 / 任务 HUD）。壳层默认无 bounce；可打断的手势再考虑弹簧。
+- **按压反馈**：`Button` 为 `active:scale-[0.97]`；文件树行 / Dock 页签 / 任务圆环共享同档微反馈（色阶或轻 scale/opacity）。Layout 菜单触发器保留 ghost hover fill。
+- 工具栏优先图标 + `aria-label` + Tooltip；避免常驻解释文案。
+- 操作型 Chrome（按钮、导航、标题栏、工具栏、Dock 标签、可点击卡片、Agent 空状态）默认禁用浏览器文字选择；正文、可复制 metadata、编辑器、PDF 译文层（`.select-text`）和输入控件必须保持可选。不要在应用根节点统一设置 `user-select: none`，避免误伤第三方内容层和移动端长按选择。
+- **⌘A / Ctrl+A**：仅在输入框、`contenteditable`、`[role=textbox]` 或带 `.select-text` / `.select-all` 的区域内走浏览器原生全选；点在页面空白或 chrome 上时由 `useNativeSelectAllGuard`（主窗经 `useAppShortcuts`，文档/功能弹窗各自挂载）吞掉，避免整页扫到侧栏/标签/空状态文案。⇧⌘A 仍是「固定选区并聚焦 Agent」。判定见 `src/lib/shell/native-select-all.ts`。
+- 基础组件 shadcn/ui；Chat/树 AI UI 用 AI Elements（[components.md](components.md)）。
+- **启动种子放 `boot()`**（`src/main.tsx`），不要在 render 期做副作用。`initSettingsStore` / `initVaultStore` / `initWorkspaceStore` 在 `createRoot` 前调用：既保证首帧前完成，又不依赖 `useState` 初始化器（StrictMode 下可能跑两次）。
+- **订阅 Host 事件一律用类型化事件绑定（`src/lib/core/bindings.ts` 的 `events.*`）：组件内 `useTauriEvent(events.x, cb)`，非 UI 模块 `listenEventSafe(events.x, cb)`（`src/lib/core/tauri-events.ts`）**；字符串事件名仅限前端窗口间广播（`workspace:*`、`agent:attach-context` 等）与 iOS bridge client 事件，非 Tauri wire 的 promise 式订阅（bridge、workspace-broadcast）用 `toSafeDisposer()`。手写 `let off; void (async () => { off = await listen(...) })(); return () => off?.()` 会在 `listen` resolve 前 dispose 时泄漏监听器 —— StrictMode 每次开发挂载都会命中。
+- **注册全局订阅的 `init*` / `start*` 必须返回 disposer**，并由调用方 effect 返回。
+- 每个 vault 的副作用挂在 `vault:opened` 作用域上，清理写在同一 handler 的 teardown 里，见 [../development/lifecycle-events.md](../development/lifecycle-events.md)。

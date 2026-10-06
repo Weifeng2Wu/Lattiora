@@ -1,0 +1,42 @@
+{
+	"$schema": "node_modules/wrangler/config-schema.json",
+	"name": "agentero-web",
+	"main": "cloudflare/worker.ts",
+	"compatibility_date": "2026-09-01",
+	"assets": {
+		"directory": "./dist-web",
+		"binding": "ASSETS",
+		"not_found_handling": "single-page-application",
+		"run_worker_first": ["/", "/index.html", "/api/*"]
+	},
+	"d1_databases": [
+		{
+			"binding": "DB",
+			"database_name": "agentero-web",
+			"database_id": "aa94e2aa-78c4-4f30-999d-81fb127e50e4",
+			"migrations_dir": "cloudflare/migrations"
+		}
+	],
+	"r2_buckets": [
+		{
+			"binding": "FILES",
+			"bucket_name": "agentero-web"
+		}
+	],
+	"ratelimits": [
+		{
+			"name": "LOGIN_LIMIT",
+			"namespace_id": "1001",
+			"simple": {
+				"limit": 10,
+				"period": 60
+			}
+		}
+	],
+	"workers_dev": true,
+	"preview_urls": false,
+	"vars": {
+		"PLAZA_COOL_ORIGIN": "https://agentero-plaza-coolpapers.minjunkirs.workers.dev",
+		"PLAZA_MODELSCOPE_ORIGIN": "https://agentero-plaza-modelscope.minjunkirs.workers.dev"
+	}
+}

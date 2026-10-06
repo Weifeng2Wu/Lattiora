@@ -1,0 +1,68 @@
+{
+	"context": {
+		"iconLabel": "模型上下文用量"
+	},
+	"tool": {
+		"status": {
+			"awaitingApproval": "等待批准",
+			"responded": "已响应",
+			"running": "运行中",
+			"pending": "待处理",
+			"completed": "已完成",
+			"denied": "已拒绝",
+			"error": "错误"
+		},
+		"parameters": "参数",
+		"result": "结果",
+		"error": "错误"
+	},
+	"reasoning": {
+		"thinking": "思考中…",
+		"thought": "思考过程"
+	},
+	"conversation": {
+		"empty": {
+			"title": "暂无消息",
+			"description": "开始对话后，消息会显示在这里"
+		}
+	},
+	"modelSelector": {
+		"label": "模型选择器"
+	},
+	"plan": {
+		"toggle": "切换计划",
+		"status": {
+			"pending": "待处理",
+			"in_progress": "进行中",
+			"completed": "已完成"
+		}
+	},
+	"chainOfThought": {
+		"title": "思维链"
+	},
+	"table": {
+		"copy": "复制表格",
+		"copyAsCsv": "复制为 CSV",
+		"copyAsMarkdown": "复制为 Markdown",
+		"copyAsTsv": "复制为 TSV",
+		"download": "下载表格",
+		"downloadAsCsv": "下载为 CSV",
+		"downloadAsMarkdown": "下载为 Markdown",
+		"viewFullscreen": "全屏查看"
+	},
+	"code": {
+		"copy": "复制代码",
+		"download": "下载代码"
+	},
+	"promptInput": {
+		"placeholder": "想了解些什么？",
+		"uploadFiles": "上传文件",
+		"stop": "停止",
+		"submit": "发送",
+		"error": {
+			"accept": "没有符合所选类型的文件。",
+			"maxFileSize": "所有文件都超过了大小上限。",
+			"maxFiles": "文件过多，部分文件未添加。"
+		}
+	}
+}

@@ -1,0 +1,204 @@
+{
+	"acpStatus": {
+		"ready": "ACP ready",
+		"failed": "ACP failed",
+		"notLoggedIn": "Not logged in",
+		"notProbed": "Not probed",
+		"notInstalled": "Not installed"
+	},
+	"defaultName": "Agent",
+	"login": {
+		"action": "Sign in"
+	},
+	"permission": {
+		"title": "Agent permission",
+		"deny": "Deny",
+		"kind": {
+			"allowOnce": "Allow once",
+			"allowAlways": "Always allow",
+			"rejectOnce": "Reject once",
+			"rejectAlways": "Always reject"
+		}
+	},
+	"switchAgent": "Agent settings",
+	"configBar": {
+		"label": "Model and session options"
+	},
+	"suggestions": {
+		"summarizePaper": "Summarize the open paper",
+		"askLibrary": "Ask a question across my library",
+		"listClaims": "List key claims and evidence",
+		"draftRelatedWork": "Draft a Related Work section"
+	},
+	"history": {
+		"aria": "Open chat history",
+		"label": "History",
+		"title": "Session history",
+		"description": "Saved conversations in this workspace.",
+		"empty": "No sessions yet.",
+		"restoring": "Restoring session…",
+		"status": {
+			"running": "Running",
+			"completed": "Completed",
+			"cancelled": "Cancelled",
+			"failed": "Failed"
+		}
+	},
+	"tabs": {
+		"new": "Start a new conversation"
+	},
+	"agentMenu": {
+		"title": "Built-in Lattiora agent",
+		"empty": "No ready ACP agents. Configure one in Settings.",
+		"openSettings": "Open Agent settings"
+	},
+	"composer": {
+		"placeholder": "How can I help you today?",
+		"queueLabel": "Queued",
+		"queueRemove": "Remove from queue",
+		"contextInstruction": "Read these Vault files before answering when relevant:",
+		"plazaContextInstruction": "Plaza entries referenced with @ (not yet in the Vault):",
+		"plazaEntryUnavailable": "Entry metadata is unavailable (no longer in the Plaza cache). Ask the user to re-reference it from the Plaza tab.",
+		"plazaScratchInstruction": "Full texts are provided as read-only scratch copies outside the Vault. Read the listed files directly; do not download papers or write anything into the Vault unless the user explicitly asks to import a paper.",
+		"plazaCollectionTitle": "Today's recommendations ({{count}})",
+		"plazaCollectionInstruction": "Above is the abstract catalog of today's recommended papers. Triage from the abstracts alone: if filtering / comparing is enough to answer, give the final report directly. Only when a question requires deep reading, output `NEED_FULLTEXT <arXiv id> ...` (at most {{max}} ids) as the FIRST line of your reply and stop — the system will supply those full texts automatically. Do not fetch or download these papers yourself.",
+		"plazaFulltextFollowup": "Full texts have been retrieved (see context). Please complete the final report based on them.",
+		"resizeHandle": "Resize composer height",
+		"removeContext": "Remove {{path}} from context",
+		"removeSkill": "Remove ${{skill}} from context",
+		"removeSelection": "Remove selected text from context",
+		"selection": "Selection",
+		"selectionChip": "{{title}}",
+		"selectionChipWithPage": "{{title}}:p.{{page}}",
+		"selectionChipWithLine": "{{title}} line {{from}}",
+		"selectionChipWithLines": "{{title}} lines {{from}}-{{to}}",
+		"removeVisualDraft": "Remove visual annotation from context",
+		"visualAnnotation": "Visual annotation",
+		"visualAnnotationPage": "p.{{page}}",
+		"visualAnnotationsTitle": "Visual annotations ({{count}})",
+		"visualAnnotationOpen": "View crop and comment",
+		"visualAnnotationOpenAria": "Open visual annotation {{index}}: {{label}}",
+		"visualAnnotationDetailTitle": "Visual annotation {{index}}",
+		"visualAnnotationCommentLabel": "Your note",
+		"visualAnnotationNoComment": "(no note)",
+		"visualAnnotationPreviewAlt": "Cropped PDF region from page {{page}}",
+		"attachImage": "Attach image",
+		"imageFilter": "Images",
+		"attachedImage": "Image",
+		"attachedImagesTitle": "Images ({{count}})",
+		"removeAttachedImage": "Remove image",
+		"attachedImageOpen": "View image",
+		"attachedImageOpenAria": "Open attached image {{index}}",
+		"attachedImageDetailTitle": "Image {{index}}",
+		"attachedImagePreviewAlt": "Attached image {{index}}",
+		"dropImageHint": "Drop image to attach",
+		"imageAcceptError": "Only image files can be attached (PNG, JPEG, WebP, GIF, …).",
+		"imageMaxFilesError": "Too many images. Remove one before adding more.",
+		"imageMaxSizeError": "One or more images exceed the 10 MB size limit.",
+		"imagePickFailed": "Could not open the image picker.",
+		"imageOnlyPrompt": "Please analyze the attached image(s).",
+		"currentFileRemove": "Remove current file from context",
+		"mentionEnterFolder": "Open {{name}}",
+		"mentionBack": "Back to parent folder",
+		"mentionEmptyFolder": "No items in this folder",
+		"fastToggle": "Toggle Fast mode",
+		"collaborationTooltip": "Session mode",
+		"collaboration": {
+			"label": "Mode"
+		},
+		"effort": {
+			"label": "Reasoning effort"
+		}
+	},
+	"empty": {
+		"title": "Chat with your vault",
+		"description": "Messages go to your ACP agent. Click the agent name above to switch backends.",
+		"waiting": "Waiting for agent…"
+	},
+	"thinking": "Thinking…",
+	"working": "Working…",
+	"solving": "Solving…",
+	"streaming": {
+		"thinking": "Thinking",
+		"reasoning": "Reasoning",
+		"plan": "Planning",
+		"starting": "Starting agent…",
+		"waitingModel": "Waiting for model…",
+		"reconnecting": "Upstream reconnecting",
+		"elapsed": "{{count}}s"
+	},
+	"copy": "Copy",
+	"copied": "Copied",
+	"edit": {
+		"action": "Edit",
+		"resend": "Resend",
+		"cancel": "Cancel"
+	},
+	"plan": {
+		"title": "Plan",
+		"steps": "{{completed}}/{{total}} steps"
+	},
+	"tool": {
+		"defaultTitle": "Tool",
+		"failed": "Tool failed"
+	},
+	"askUserQuestion": {
+		"submit": "Submit",
+		"submitted": "Submitted",
+		"cancel": "Cancel",
+		"prev": "Back",
+		"next": "Next",
+		"progress": "{{current}} / {{total}}",
+		"freeTextPlaceholder": "Type your answer",
+		"pendingInComposer": "Answer in the questionnaire below",
+		"keyboardHint": "↑↓ options · Space select · Enter confirm",
+		"keyboardHintMulti": "↑↓ options · Space select · Enter next · ←→ pages",
+		"collapse": "Collapse questionnaire",
+		"expand": "Expand questionnaire"
+	},
+	"citation": {
+		"resolveFailed": "Could not open citation: {{source}}",
+		"figureNotFound": "Figure not found: {{source}}",
+		"sectionNotFound": "Section not found: {{source}}",
+		"tableNotFound": "Table not found: {{source}}",
+		"algorithmNotFound": "Algorithm not found: {{source}}",
+		"formulaNotFound": "Formula not found: {{source}}",
+		"pageNotFound": "Page not found: {{source}}",
+		"regionNotFound": "Region not found: {{source}}"
+	},
+	"models": {
+		"currentSelection": "Current selection",
+		"locateCurrent": "Locate current model",
+		"defaultGroup": "Models",
+		"favorites": "Favorites",
+		"addToFavorites": "Add to favorites",
+		"removeFromFavorites": "Remove from favorites",
+		"selectTooltip": "Select model (ACP)",
+		"customOrReportedTooltip": "Search or type a custom model id (third-party / gateway)",
+		"loading": "Loading…",
+		"button": "Model",
+		"searchOrCustomPlaceholder": "Search or type a model id…",
+		"customGroup": "Custom",
+		"useCustom": "Use “{{id}}”",
+		"emptyNoneCustom": "No models yet. Type a model id above to use a third-party model.",
+		"emptyNoMatch": "No match. Type a full model id to use it as custom."
+	},
+	"messages": {
+		"cancelled": "Stopped the current run.",
+		"desktopOnly": "Open the desktop app to run agents.",
+		"noAgent": "No available agent. Open Settings → Agent to configure one.",
+		"sessionUnavailable": "Could not restore this Agent session. Showing the saved answer snapshot when available.",
+		"sessionEmpty": "This session has no replayable messages."
+	},
+	"web": {
+		"singleAgent": "This workspace uses the built-in Lattiora agent.",
+		"writePermission": "Review the proposed note before saving.",
+		"before": "Before",
+		"after": "After",
+		"keep": "Keep",
+		"revert": "Revert",
+		"kept": "Kept",
+		"reverted": "Reverted",
+		"editorRefreshFailed": "Note saved. Reopen it to refresh the editor."
+	}
+}

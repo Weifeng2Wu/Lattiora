@@ -1,0 +1,387 @@
+import { ArrowUp, Trash2 } from "lucide-react";
+import { useEffect, useLayoutEffect, useRef, useState } from "react";
+import { createPortal } from "react-dom";
+import { useTranslation } from "react-i18next";
+import { useStore } from "zustand";
+import { Button } from "@/components/ui/button";
+import { agentSessionStore } from "@/lib/agent/agent-session-store";
+import {
+	annotationRanges,
+	editAnnotation,
+} from "@/lib/agent/selection-annotations";
+import {
+	beginSelectionComment,
+	confirmSelectionChat,
+	dismissSelectionChat,
+	openSelectionChat,
+	resumeSelectionChat,
+	type SelectionChatDraft,
+	selectionChatStore,
+	suspendSelectionChat,
+	updateSelectionChatComment,
+} from "@/lib/agent/selection-chat-store";
+import {
+	captureQuoteContext,
+	normalizeQuoteContext,
+} from "@/lib/agent/selection-context";
+import {
+	captureTextAnchor,
+	resolveSelectionRange,
+} from "@/lib/agent/selection-source";
+import { openRightTab } from "@/lib/shell/ui-window-actions";
+import { AnnotationBadges } from "./selection-annotation-badges";
+
+const SURFACE = "[data-selection-chat-source]";
+
+function surfaceOf(node: Node | null): HTMLElement | null {
+	const element = node instanceof Element ? node : node?.parentElement;
+	return element?.closest<HTMLElement>(SURFACE) ?? null;
+}
+
+/** One host per window: survives PDF selection teardown and portalled editors. */
+export function SelectionChatPopover() {
+	const draft = useStore(selectionChatStore, (state) => state.draft);
+	const popoverRef = useRef<HTMLDivElement>(null);
+	useEffect(() => {
+		let frame = 0;
+		const capture = (event: Event) => {
+			const selection = window.getSelection();
+			if (!selection || selection.isCollapsed || !selection.rangeCount) {
+				if (event instanceof PointerEvent && event.button === 0) {
+					for (const saved of selectionChatStore.getState().suspended) {
+						const range = resolveSelectionRange(saved.selection);
+						if (
+							range &&
+							Array.from(range.getClientRects()).some(
+								(rect) =>
+									event.clientX >= rect.left &&
+									event.clientX <= rect.right &&
+									event.clientY >= rect.top &&
+									event.clientY <= rect.bottom,
+							)
+						) {
+							resumeSelectionChat(saved.selection.id, {
+								x: event.clientX,
+								y: event.clientY,
+							});
+							break;
+						}
+					}
+				}
+				return;
+			}
+			const source = surfaceOf(selection.anchorNode);
+			if (!source || source !== surfaceOf(selection.focusNode)) return;
+			// Source editors may contain nested form controls; never quote their drafts.
+			if (document.activeElement?.matches("input, textarea")) return;
+			const origin = source.dataset.selectionChatOrigin;
+			if (origin !== "markdown" && origin !== "chat") return;
+			const range = selection.getRangeAt(0);
+			const rect = range.getBoundingClientRect();
+			if (!rect.width && !rect.height) return;
+			const context = captureQuoteContext(source, range);
+			if (origin === "chat") {
+				const state = agentSessionStore.getState();
+				const lines =
+					state.sessions.find(
+						(session) =>
+							`Chat ${session.id}` === source.dataset.selectionChatSource,
+					)?.lines ??
+					(source.dataset.selectionChatSource === "Chat draft"
+						? state.draftLines
+						: []);
+				const index = lines.findIndex(
+					(line) => line.id === source.dataset.selectionChatMessage,
+				);
+				const question = lines
+					.slice(0, Math.max(0, index))
+					.reverse()
+					.find((line) => line.kind === "user");
+				if (lines[index]?.kind !== "user" && question?.kind === "user")
+					context.question = question.text;
+			}
+			openSelectionChat(
+				{
+					text: selection.toString(),
+					sourcePath: source.dataset.selectionChatSource ?? "",
+					origin,
+					messageId: source.dataset.selectionChatMessage,
+					chatSessionId:
+						origin === "chat"
+							? (agentSessionStore
+									.getState()
+									.sessions.find(
+										(session) =>
+											`Chat ${session.id}` ===
+											source.dataset.selectionChatSource,
+									)?.providerSessionId ??
+								source.dataset.selectionChatSource?.slice(5))
+							: undefined,
+					context: normalizeQuoteContext(context),
+					textAnchor: captureTextAnchor(source, range),
+				},
+				{ x: rect.left + rect.width / 2, y: rect.top },
+				"menu",
+			);
+			const draft = selectionChatStore.getState().draft;
+			if (draft) {
+				annotationRanges.set(draft.selection.id, range.cloneRange());
+				if (annotationRanges.size > 256) {
+					const oldest = annotationRanges.keys().next().value;
+					if (oldest) annotationRanges.delete(oldest);
+				}
+			}
+		};
+		const scheduleCapture = (event: Event) => {
+			if (event instanceof PointerEvent && event.button !== 0) return;
+			if (
+				event.target instanceof Node &&
+				(popoverRef.current?.contains(event.target) ||
+					(event.target instanceof Element &&
+						event.target.closest("[data-annotation-ui]")))
+			)
+				return;
+			if (
+				event instanceof KeyboardEvent &&
+				(event.key === "Escape" ||
+					event.key === "Enter" ||
+					event.metaKey ||
+					event.ctrlKey)
+			)
+				return;
+			cancelAnimationFrame(frame);
+			frame = requestAnimationFrame(() => capture(event));
+		};
+		const onDown = (event: PointerEvent) => {
+			if (
+				event.target instanceof Node &&
+				(popoverRef.current?.contains(event.target) ||
+					(event.target instanceof Element &&
+						event.target.closest("[data-annotation-ui]")))
+			)
+				return;
+			suspendSelectionChat();
+		};
+		const onScroll = (event: Event) => {
+			if (
+				event.target instanceof Node &&
+				(popoverRef.current?.contains(event.target) ||
+					(event.target instanceof Element &&
+						event.target.closest("[data-annotation-ui]")))
+			)
+				return;
+			if (selectionChatStore.getState().draft?.stage === "menu")
+				dismissSelectionChat();
+		};
+		const onSelectionChange = () => {
+			if (
+				selectionChatStore.getState().draft?.stage === "menu" &&
+				window.getSelection()?.isCollapsed
+			)
+				dismissSelectionChat();
+		};
+		document.addEventListener("pointerdown", onDown, true);
+		document.addEventListener("pointerup", scheduleCapture);
+		document.addEventListener("keyup", scheduleCapture);
+		document.addEventListener("selectionchange", onSelectionChange);
+		window.addEventListener("scroll", onScroll, true);
+		return () => {
+			cancelAnimationFrame(frame);
+			document.removeEventListener("pointerdown", onDown, true);
+			document.removeEventListener("pointerup", scheduleCapture);
+			document.removeEventListener("keyup", scheduleCapture);
+			document.removeEventListener("selectionchange", onSelectionChange);
+			window.removeEventListener("scroll", onScroll, true);
+		};
+	}, []);
+
+	return createPortal(
+		<div ref={popoverRef}>
+			<AnnotationBadges />
+			{draft && <SelectionChatCard key={draft.selection.id} draft={draft} />}
+		</div>,
+		document.body,
+	);
+}
+
+function SelectionChatCard({ draft }: { draft: SelectionChatDraft }) {
+	const { t } = useTranslation(["viewer", "common"]);
+	const comment = draft.comment ?? draft.selection.comment ?? "";
+	const inputRef = useRef<HTMLTextAreaElement>(null);
+	const cardRef = useRef<HTMLDivElement>(null);
+	const [cardHeight, setCardHeight] = useState(draft.editing ? 120 : 54);
+	const priorFocus = useRef(document.activeElement);
+	const [viewport, setViewport] = useState({
+		width: window.innerWidth,
+		height: window.innerHeight,
+	});
+	useEffect(() => {
+		const resize = () =>
+			setViewport({ width: window.innerWidth, height: window.innerHeight });
+		window.addEventListener("resize", resize);
+		return () => window.removeEventListener("resize", resize);
+	}, []);
+	useEffect(() => {
+		if (draft.stage === "comment")
+			inputRef.current?.focus({ preventScroll: true });
+	}, [draft.stage]);
+	useEffect(() => {
+		const onEscape = (event: KeyboardEvent) => {
+			if (event.key !== "Escape" || event.isComposing) return;
+			event.preventDefault();
+			event.stopPropagation();
+			dismissSelectionChat();
+			if (
+				priorFocus.current instanceof HTMLElement &&
+				priorFocus.current.isConnected
+			)
+				priorFocus.current.focus({ preventScroll: true });
+		};
+		document.addEventListener("keydown", onEscape, true);
+		return () => document.removeEventListener("keydown", onEscape, true);
+	}, []);
+	useEffect(() => {
+		const range = resolveSelectionRange(draft.selection);
+		if (
+			draft.stage === "comment" &&
+			range?.startContainer.isConnected &&
+			typeof Highlight !== "undefined"
+		)
+			CSS.highlights.set("agentero-annotation-selection", new Highlight(range));
+		return () => {
+			CSS.highlights?.delete("agentero-annotation-selection");
+		};
+	}, [draft.stage, draft.selection]);
+	// biome-ignore lint/correctness/useExhaustiveDependencies: Controlled text and viewport width change the textarea DOM scrollHeight.
+	useLayoutEffect(() => {
+		const input = inputRef.current;
+		if (!input || draft.stage !== "comment") return;
+		input.style.height = "0px";
+		input.style.height = `${Math.min(128, Math.max(32, input.scrollHeight))}px`;
+	}, [comment, draft.stage, viewport.width]);
+	useLayoutEffect(() => {
+		const card = cardRef.current;
+		if (!card) return;
+		const observer = new ResizeObserver(() =>
+			setCardHeight(card.getBoundingClientRect().height),
+		);
+		observer.observe(card);
+		return () => observer.disconnect();
+	}, []);
+	const isComment = draft.stage === "comment";
+	const width = Math.min(isComment ? 360 : 144, viewport.width - 24);
+	const height = cardHeight;
+	const left = Math.max(
+		12,
+		Math.min(draft.screen.x - width / 2, viewport.width - width - 12),
+	);
+	const preferredTop = draft.screen.y - height - 10;
+	const top = Math.max(
+		12,
+		Math.min(
+			preferredTop >= 12 ? preferredTop : draft.screen.y + 24,
+			viewport.height - height - 12,
+		),
+	);
+	const confirm = () => {
+		if (confirmSelectionChat(comment)) openRightTab("agent");
+	};
+	return (
+		<div
+			ref={cardRef}
+			role="dialog"
+			aria-label={t("selection.addToChat")}
+			className={`fixed z-50 border border-border bg-popover text-popover-foreground shadow-lg ${isComment && !draft.editing ? "rounded-[1.75rem]" : "rounded-xl"}`}
+			style={{ left, top, width }}
+		>
+			{isComment ? (
+				<form
+					className={
+						draft.editing
+							? "flex flex-col gap-2 p-3"
+							: "flex items-end gap-2 p-2 pl-4"
+					}
+					onSubmit={(event) => {
+						event.preventDefault();
+						confirm();
+					}}
+				>
+					<textarea
+						ref={inputRef}
+						rows={1}
+						aria-label={t("selection.chatCommentPlaceholder")}
+						placeholder={t("selection.chatCommentPlaceholder")}
+						className="min-w-0 flex-1 resize-none bg-transparent py-1 text-sm leading-6 outline-none"
+						value={comment}
+						onChange={(event) => updateSelectionChatComment(event.target.value)}
+						onKeyDown={(event) => {
+							event.stopPropagation();
+							if (
+								event.key === "Enter" &&
+								!event.shiftKey &&
+								!event.nativeEvent.isComposing &&
+								event.keyCode !== 229
+							) {
+								event.preventDefault();
+								confirm();
+							}
+						}}
+					/>
+					<div className="flex justify-end gap-1">
+						{draft.editing && (
+							<Button
+								type="button"
+								variant="ghost"
+								size="icon-sm"
+								className="mr-auto"
+								aria-label={t("common:remove")}
+								onClick={() => {
+									editAnnotation(draft.selection.id, null);
+									dismissSelectionChat();
+								}}
+							>
+								<Trash2 className="size-4" />
+							</Button>
+						)}
+						{draft.editing && (
+							<Button
+								type="button"
+								variant="ghost"
+								size="sm"
+								aria-label={t("common:cancel")}
+								onClick={dismissSelectionChat}
+							>
+								{t("common:cancel")}
+							</Button>
+						)}
+						<Button
+							type="submit"
+							className={
+								draft.editing ? undefined : "size-9 shrink-0 rounded-full"
+							}
+							size={draft.editing ? "sm" : "icon-sm"}
+							aria-label={
+								draft.editing ? t("common:save") : t("selection.addToChat")
+							}
+						>
+							{draft.editing ? (
+								t("common:save")
+							) : (
+								<ArrowUp className="size-4" />
+							)}
+						</Button>
+					</div>
+				</form>
+			) : (
+				<button
+					type="button"
+					className="h-9 w-full cursor-pointer rounded-xl px-3 text-sm font-medium hover:bg-accent focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+					onPointerDown={(event) => event.preventDefault()}
+					onClick={beginSelectionComment}
+				>
+					{t("selection.addToChat")}
+				</button>
+			)}
+		</div>
+	);
+}

@@ -1,0 +1,68 @@
+{
+	"context": {
+		"iconLabel": "Model context usage"
+	},
+	"tool": {
+		"status": {
+			"awaitingApproval": "Awaiting Approval",
+			"responded": "Responded",
+			"running": "Running",
+			"pending": "Pending",
+			"completed": "Completed",
+			"denied": "Denied",
+			"error": "Error"
+		},
+		"parameters": "Parameters",
+		"result": "Result",
+		"error": "Error"
+	},
+	"reasoning": {
+		"thinking": "Thinking...",
+		"thought": "Thought process"
+	},
+	"conversation": {
+		"empty": {
+			"title": "No messages yet",
+			"description": "Start a conversation to see messages here"
+		}
+	},
+	"modelSelector": {
+		"label": "Model Selector"
+	},
+	"plan": {
+		"toggle": "Toggle plan",
+		"status": {
+			"pending": "Pending",
+			"in_progress": "In progress",
+			"completed": "Completed"
+		}
+	},
+	"chainOfThought": {
+		"title": "Chain of Thought"
+	},
+	"table": {
+		"copy": "Copy table",
+		"copyAsCsv": "Copy as CSV",
+		"copyAsMarkdown": "Copy as Markdown",
+		"copyAsTsv": "Copy as TSV",
+		"download": "Download table",
+		"downloadAsCsv": "Download as CSV",
+		"downloadAsMarkdown": "Download as Markdown",
+		"viewFullscreen": "View fullscreen"
+	},
+	"code": {
+		"copy": "Copy code",
+		"download": "Download code"
+	},
+	"promptInput": {
+		"placeholder": "What would you like to know?",
+		"uploadFiles": "Upload files",
+		"stop": "Stop",
+		"submit": "Submit",
+		"error": {
+			"accept": "No files match the accepted types.",
+			"maxFileSize": "All files exceed the maximum size.",
+			"maxFiles": "Too many files. Some were not added."
+		}
+	}
+}

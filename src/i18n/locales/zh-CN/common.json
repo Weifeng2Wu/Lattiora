@@ -1,0 +1,13 @@
+{
+	"brand": { "name": "Lattiora", "fullName": "Lattiora · 研织" },
+	"tryAgain": "重试",
+	"somethingWrong": "出错了",
+	"close": "关闭",
+	"cancel": "取消",
+	"save": "保存",
+	"edit": "编辑",
+	"remove": "移除",
+	"loading": "加载中",
+	"steps": "步骤",
+	"listening": "监听中"
+}

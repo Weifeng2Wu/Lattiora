@@ -1,0 +1,17 @@
+site_name: Lattiora · 研织 Cloudflare 网页版
+site_description: 单人离线优先科研工作台
+repo_url: https://github.com/Weifeng2Wu/Lattiora
+theme:
+  name: material
+  language: zh
+  logo: assets/lattiora-icon.svg
+  favicon: assets/lattiora-icon.svg
+nav:
+  - 首页: index.md
+  - 部署与使用: deployment/cloudflare.md
+  - 功能与限制: deployment/capabilities.md
+  - 架构: architecture.md
+  - 前端组件: frontend/index.md
+  - 云后端: backend/index.md
+  - 验证: test/cloudflare.md
+  - Roadmap: development/web-migration.md

@@ -1,0 +1,13 @@
+{
+	"brand": { "name": "Lattiora", "fullName": "Lattiora" },
+	"tryAgain": "Try again",
+	"somethingWrong": "Something went wrong",
+	"close": "Close",
+	"cancel": "Cancel",
+	"save": "Save",
+	"edit": "Edit",
+	"remove": "Remove",
+	"loading": "Loading",
+	"steps": "Steps",
+	"listening": "listening"
+}

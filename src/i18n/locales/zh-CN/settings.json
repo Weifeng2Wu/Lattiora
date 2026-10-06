@@ -1,0 +1,829 @@
+{
+	"title": "设置",
+	"host": {
+		"remote": "远端",
+		"remoteContextHint": "当前 Vault 在 {{host}}（{{path}}）。外观等仍为本机偏好；打开 Agent 分区时会对远端主机做探测。"
+	},
+	"nav": {
+		"general": "通用",
+		"appearance": "外观",
+		"agent": "Agent",
+		"translate": "翻译",
+		"layout": "版面解析",
+		"doctor": "问题诊断",
+		"keyboard": "快捷键",
+		"remote-access": "远程访问",
+		"about": "关于",
+		"quickSetup": "快速配置向导",
+		"featureTour": "功能导引",
+		"sync": "同步"
+	},
+	"remoteAccess": {
+		"title": "远程访问",
+		"localVaultRequired": "请打开本地 Vault 后再提供远程访问。",
+		"hostName": {
+			"label": "电脑名称"
+		},
+		"status": {
+			"online": "在线",
+			"offline": "离线"
+		},
+		"start": "开启远程访问",
+		"stop": "关闭远程访问",
+		"qrAlt": "配对二维码",
+		"pairing": {
+			"title": "配对 iPhone 或 iPad"
+		},
+		"copyLink": "复制配对链接",
+		"copied": "已复制配对链接",
+		"copyFailed": "无法复制配对链接",
+		"request": {
+			"title": "配对 {{device}}",
+			"code": "确认码：{{code}}"
+		},
+		"approve": "允许",
+		"deny": "拒绝",
+		"devices": {
+			"revoke": "撤销 {{device}}"
+		},
+		"cache": {
+			"section": "远程 Vault 缓存",
+			"label": "PDF 预览缓存",
+			"clear": "清除远程缓存",
+			"clearing": "清除中…",
+			"clearFailed": "清除远程缓存失败"
+		}
+	},
+	"general": {
+		"title": "通用",
+		"paperTreeLabelMode": {
+			"label": "文件树论文名称",
+			"title-author": "标题 · 作者",
+			"title": "标题",
+			"author-year-title": "作者 (年份) · 标题",
+			"folder": "文件夹名"
+		},
+		"paperTreeSortMode": {
+			"label": "文件树论文排序方式",
+			"folder": "显示名称 A–Z",
+			"title": "标题 A–Z",
+			"author": "作者 A–Z",
+			"year-desc": "年份（新 → 旧）",
+			"year-asc": "年份（旧 → 新）",
+			"added-desc": "添加时间（新 → 旧）"
+		},
+		"allowFileExtensionRename": {
+			"label": "允许修改文件后缀"
+		},
+		"paperNoteMode": {
+			"label": "论文笔记初始化",
+			"standard": "标准",
+			"title-only": "仅标题",
+			"blank": "空白",
+			"custom": "自定义模板",
+			"seed": "生成起始模板",
+			"seedCreated": "已生成起始模板",
+			"seedExists": "模板已存在"
+		},
+		"autoOpenPaperNotes": {
+			"label": "默认打开论文笔记"
+		},
+		"autoIngest": {
+			"label": "自动收录 Papers 下新增的文件夹"
+		},
+		"replaceCurrentTabOnOpenPaper": {
+			"label": "打开新论文时替换当前标签页"
+		},
+		"autoUpdateInternalLinks": {
+			"label": "外部改名后更新双链",
+			"ask": "询问",
+			"always": "始终（安全时）"
+		},
+		"batchImportConcurrency": {
+			"label": "后台任务并发数",
+			"value": "同时 {{value}} 个"
+		},
+		"networkProxy": {
+			"label": "网络代理",
+			"systemDetected": "检测到系统代理（{{url}}）——开关关闭时将自动使用。"
+		},
+		"githubMirror": {
+			"label": "GitHub 镜像",
+			"description": "从内置公开镜像中选择一个，用于 Skill 导入时回退 GitHub 直连。"
+		},
+		"easyScholar": {
+			"section": "EasyScholar",
+			"keyLabel": "Key",
+			"placeholder": "填写 EasyScholar Key",
+			"confirm": "确定",
+			"probeIdle": "未配置",
+			"probeOk": "可用",
+			"probeFail": "不可用",
+			"probeProbing": "检测中…"
+		},
+		"plaza": {
+			"label": "广场"
+		},
+		"connector": {
+			"label": "兼容 Zotero Connector",
+			"hint": "请先退出本地Zotero",
+			"portLabel": "Connector 端口",
+			"invalidPort": "端口必须在 1 到 65535 之间。"
+		},
+		"mcp": {
+			"label": "MCP 服务器",
+			"portLabel": "MCP 端口",
+			"invalidPort": "端口必须在 1 到 65535 之间。",
+			"copyUrl": "复制 MCP 地址",
+			"copied": "已复制",
+			"tunnel": {
+				"tunnelIdLabel": "隧道 ID",
+				"apiKeyLabel": "Runtime API Key",
+				"invalidTunnelId": "隧道 ID 形如 tunnel_ 加 32 位十六进制。",
+				"label": "ChatGPT 隧道",
+				"start": "启动",
+				"stop": "停止",
+				"starting": "启动中…",
+				"ready": "已连接",
+				"error": "未连接",
+				"stopped": "已停止",
+				"binaryMissing": "未找到 tunnel-client",
+				"installHint": "安装后会自动检测到，无需重启：",
+				"copyCommand": "复制安装命令",
+				"copied": "已复制",
+				"openTunnels": "打开隧道列表",
+				"openApiKeys": "打开 API Key 页面"
+			}
+		},
+		"export": {
+			"section": "笔记导出",
+			"watermark": {
+				"label": "默认添加 Lattiora 水印"
+			}
+		},
+		"privacy": {
+			"section": "隐私",
+			"telemetry": {
+				"label": "共享匿名使用数据"
+			},
+			"clearUsage": {
+				"label": "清除使用记录",
+				"action": "清除",
+				"done": "已清除使用记录"
+			}
+		}
+	},
+	"appearance": {
+		"title": "外观",
+		"themeLabel": "外观",
+		"theme": {
+			"system": "跟随系统",
+			"light": "浅色",
+			"dark": "深色"
+		},
+		"uiThemeLabel": "配色主题",
+		"uiTheme": {
+			"default": "默认",
+			"select": "使用 {{name}} 主题"
+		},
+		"languageLabel": "语言",
+		"language": {
+			"system": "跟随系统",
+			"en": "English",
+			"zhCN": "简体中文"
+		},
+		"uiScale": {
+			"label": "界面缩放",
+			"value": "{{percent}}%"
+		},
+		"fonts": {
+			"section": "字体",
+			"interface": "界面字体",
+			"text": "正文字体",
+			"mono": "代码字体"
+		},
+		"markdownEditor": {
+			"section": "Markdown编辑器"
+		},
+		"fontSize": {
+			"label": "编辑器字号",
+			"value": "{{size}} px",
+			"increase": "增大字号",
+			"decrease": "减小字号",
+			"select": "选择字号"
+		},
+		"fontFamily": {
+			"default": "默认（系统）",
+			"system": "系统 UI",
+			"geist": "Geist",
+			"serif": "衬线",
+			"mono": "等宽",
+			"search": "搜索字体…",
+			"loading": "正在加载系统字体…",
+			"noMatch": "无匹配字体",
+			"suggested": "推荐",
+			"systemFonts": "系统字体"
+		},
+		"lineHeight": {
+			"label": "行距",
+			"value": "{{value}}"
+		},
+		"editorToolbar": {
+			"label": "格式工具栏"
+		}
+	},
+	"agent": {
+		"title": "Agent",
+		"userAgent": {
+			"section": "中转站兼容",
+			"label": "User-Agent",
+			"placeholder": "codex-cli/0.50.0",
+			"presetsAria": "User-Agent 预设",
+			"off": "关闭",
+			"providerIdsLabel": "Codex 服务商 ID",
+			"providerIdsPlaceholder": "my_proxy, openai"
+		},
+		"embedding": {
+			"section": "Embedding 模型",
+			"source": {
+				"label": "来源",
+				"builtin": "已配置的 AI",
+				"custom": "自定义接口"
+			},
+			"baseUrl": {
+				"label": "Base URL"
+			},
+			"apiKey": {
+				"label": "API Key"
+			},
+			"model": {
+				"label": "模型"
+			},
+			"test": "测试连接",
+			"testing": "测试中…",
+			"probeStatus": {
+				"idle": "尚未测试",
+				"probing": "测试中…",
+				"ok": "可用",
+				"failed": "不可达",
+				"unconfigured": "未配置"
+			}
+		},
+		"desktopOnly": "Agent 注册表需要桌面应用。",
+		"desktopHint": "运行 `pnpm tauri dev` 以扫描本机上的 Agent。",
+		"commonAgents": "常用 Agent",
+		"commonAgentsHint": "若 ACP 失败，可尝试在「通用」当中配置代理。",
+		"defaultAgent": {
+			"section": "默认 Agent",
+			"label": "默认 Agent",
+			"description": "工作流或对话未指定 Agent 时使用。",
+			"placeholder": "选择默认 Agent",
+			"empty": "暂无可用 Agent"
+		},
+		"custom": "自定义",
+		"addCustom": "添加自定义 Agent",
+		"probe": "刷新",
+		"probing": "探测中…",
+		"scanning": "扫描中…",
+		"installAgent": "安装",
+		"installAgentAria": "安装 {{name}} Agent CLI",
+		"installAgentTitle": "安装 Agent CLI",
+		"installAdapter": "安装 ACP",
+		"installAdapterAria": "安装 {{name}} 的 ACP 适配器",
+		"installAdapterTitle": "安装 ACP 适配器",
+		"installSuccess": "已安装 {{name}}",
+		"loginAgent": "登录",
+		"loginAgentAria": "登录 {{name}}",
+		"loginAgentTitle": "打开终端执行 {{command}}",
+		"updateAgent": "升级",
+		"updateAgentAria": "升级 {{name}} Agent CLI",
+		"updateAgentTitle": "升级 Agent CLI",
+		"updateSuccess": "已升级 {{name}}",
+		"lifecycleWaiting": "正在等待安装器…",
+		"lifecycleInstalling": "正在运行安装器…",
+		"lifecycleScanning": "正在扫描 PATH…",
+		"lifecycleProbing": "正在探测 ACP…",
+		"lifecycleUninstalling": "正在卸载…",
+		"npmCacheWriteFailed": "npm 无法写入缓存。Lattiora 的受管安装会自动使用独立缓存目录——请重试。若仍失败，请在“命令提示符”中运行 {{cacheCommand}} 后重试，并关闭其他 Node/npm 进程、在杀毒软件中允许 Node.js、修正缓存目录权限。",
+		"uninstallAgentAria": "卸载 {{name}} Agent",
+		"uninstallAgentTitle": "卸载 Agent",
+		"uninstallSuccess": "已卸载 {{name}}",
+		"removeSuccess": "已移除 {{name}}",
+		"badges": {
+			"default": "默认",
+			"agentInstalled": "Agent 已安装",
+			"agentMissing": "无 Agent",
+			"acpMissing": "无 ACP",
+			"acpBundled": "内置",
+			"acpBundledTitle": "内置 ACP 适配器 {{version}} —— 仅在 PATH 无适配器时启用（PATH 安装优先；内置版本随应用发版更新）。"
+		},
+		"permission": {
+			"label": "权限模式",
+			"restricted": {
+				"label": "受限（默认）"
+			},
+			"ask": {
+				"label": "每次询问"
+			},
+			"auto": {
+				"label": "自动批准"
+			}
+		},
+		"autoPaperReader": {
+			"label": "入库后自动精读"
+		},
+		"responseLanguage": {
+			"label": "回答语言",
+			"auto": "自动（跟随内容）",
+			"en": "English",
+			"zhCN": "简体中文"
+		},
+		"personalPrompt": {
+			"label": "个人偏好提示词",
+			"placeholder": "例如：优先简洁要点列表；始终保留 [[双链]]；引用 Vault 路径。"
+		},
+		"pdfAsk": {
+			"section": "PDF 划词提问",
+			"agentId": {
+				"label": "提问 Agent",
+				"followDefault": "跟随默认",
+				"followDefaultNamed": "跟随默认（{{name}}）",
+				"empty": "暂无可用 Agent，请先在上方添加。"
+			},
+			"modelId": {
+				"label": "提问模型",
+				"followAgent": "跟随 Agent 默认"
+			}
+		},
+		"form": {
+			"defaultName": "Desktop",
+			"name": "名称",
+			"command": "命令",
+			"args": "参数",
+			"hint": "在当前 Vault 中启动该命令，经标准输入/输出连接 ACP。参数按空格拆分。例如命令 opencode、参数 acp；或 Python 解释器绝对路径，参数为 bridge 脚本的绝对路径。"
+		},
+		"uninstallDialog": {
+			"title": "卸载 {{name}}？",
+			"lead": "选择要移除的内容：",
+			"removeAgent": "移除 Agent CLI",
+			"removeAcp": "移除 ACP 适配器",
+			"dirsLabel": "要删除的目录",
+			"copyAria": "复制到剪贴板",
+			"registryOnly": "仅移除 Lattiora 注册项，磁盘上的文件保留。",
+			"customConfirm": "从 Lattiora 中移除此自定义 Agent？",
+			"confirm": "卸载"
+		},
+		"remote": {
+			"banner": "正在探测 {{host}} 上的 ACP Agent。二进制需在服务器安装并完成登录（login shell PATH）。",
+			"commonAgents": "远端主机上的 Agent",
+			"probeTitle": "重新扫描并探测远端 Agent",
+			"empty": "没有目录结果。请检查 SSH 会话与远端 PATH。",
+			"hint": "刷新会经 SSH 执行 command -v 与 ACP initialize。若 Claude 显示「ACP adapter missing」，点「Install ACP」（打开终端 → Enter → 经 SSH 在服务器安装）。密钥留在远端（BYOA）。若探测超时，可开启 Agent 代理（代理需从服务器可达）。",
+			"installAdapterAria": "在终端中经 SSH 为 {{name}} 安装远端 ACP 适配器",
+			"installAdapterTitle": "打开终端，SSH 到 {{host}} 并执行：{{command}}（按 Enter 确认）"
+		}
+	},
+	"translate": {
+		"title": "翻译",
+		"provider": {
+			"label": "默认服务",
+			"agentero": "已配置的 AI",
+			"deeplx": "DeepLX",
+			"huoshanweb": "火山翻译 Web",
+			"tencenttransmart": "腾讯交互翻译",
+			"googleapi": "Google 翻译（API）",
+			"google": "Google 翻译",
+			"deepl": "DeepL API",
+			"azure": "微软翻译",
+			"googleCloud": "Google Cloud Translate",
+			"openaiCompatible": "OpenAI 兼容",
+			"agent": "Agent",
+			"probeIdle": "尚未检测",
+			"probeOk": "可用",
+			"probeFail": "不可用",
+			"probeProbing": "正在检测可用性…"
+		},
+		"errors": {
+			"noBuiltinKey": "当前构建未启用内置翻译。"
+		},
+		"targetLang": {
+			"label": "目标语言",
+			"ui": "跟随界面语言",
+			"en": "English",
+			"zhCN": "简体中文"
+		},
+		"autoSelection": {
+			"label": "PDF 划词后自动翻译"
+		},
+		"dualPane": {
+			"label": "在侧窗中打开渲染好的翻译"
+		},
+		"providerConfig": {
+			"section": "API 服务",
+			"confirm": "确定",
+			"openDocsLabel": "获取 API Key",
+			"configured": "已配置",
+			"notConfigured": "未配置",
+			"apiKey": {
+				"label": "API Key",
+				"placeholder": ""
+			},
+			"baseUrl": {
+				"label": "端点（可选）"
+			},
+			"region": {
+				"label": "区域",
+				"placeholder": "例如 eastasia"
+			},
+			"model": {
+				"label": "模型",
+				"placeholder": "服务商模型 ID"
+			}
+		},
+		"providerDesc": {
+			"deepl": "DeepL 神经机器翻译，使用官方 API Key。",
+			"azure": "微软翻译，使用 Azure 订阅密钥。",
+			"googleCloud": "谷歌云翻译 API，使用服务账号密钥。",
+			"openaiCompatible": "兼容 OpenAI Chat Completions 的接口。填写 Base URL，如 https://api.openai.com/v1；Lattiora 会自动追加 /chat/completions。"
+		},
+		"agentId": {
+			"label": "Agent",
+			"followDefault": "跟随默认",
+			"followDefaultNamed": "跟随默认（{{name}}）",
+			"empty": "暂无可用 Agent，请先在 Agent 设置中配置。",
+			"openAgentSettings": "打开 Agent 设置"
+		},
+		"modelId": {
+			"label": "模型",
+			"followAgent": "跟随 Agent 默认",
+			"needWarm": "在 Chat 中打开过该 Agent 后，可在此选择具体模型。"
+		},
+		"customPrompt": {
+			"label": "翻译提示词",
+			"placeholder": "留空使用内置学术翻译提示词；可先「填入默认」再修改。",
+			"seed": "填入默认",
+			"reset": "恢复默认"
+		}
+	},
+	"layout": {
+		"title": "版面解析",
+		"backend": {
+			"label": "解析方式",
+			"local": "本地推理",
+			"paddle": "Paddle",
+			"mineru": "MinerU"
+		},
+		"parserBackend": {
+			"label": "正文解析引擎",
+			"local": "本地解析",
+			"agentero": "已配置的 AI",
+			"paddle": "Paddle",
+			"mineru": "MinerU",
+			"openaiCompatible": "OpenAI 兼容"
+		},
+		"providerConfig": {
+			"section": "服务商配置",
+			"providerName": {
+				"paddle": "Paddle",
+				"mineru": "MinerU",
+				"openaiCompatible": "OpenAI 兼容"
+			},
+			"confirm": "确定",
+			"openDocsLabel": "获取 API Key",
+			"advanced": "高级",
+			"apiKey": {
+				"label": "API Key",
+				"placeholder": {
+					"paddle": "填写 Paddle API Key",
+					"mineru": "填写 MinerU API Key",
+					"openaiCompatible": "填写 API Key（如硅基流动）"
+				}
+			},
+			"baseUrl": {
+				"label": "Base URL"
+			},
+			"model": {
+				"label": "模型"
+			},
+			"prompt": {
+				"label": "提示词",
+				"placeholder": "留空则按模型自动选择"
+			},
+			"language": {
+				"label": "语言",
+				"help": "指定文档语言",
+				"options": {
+					"ch": "中英文",
+					"en": "纯英文"
+				}
+			},
+			"forceOcr": {
+				"label": "强制 OCR",
+				"help": "是否启动 OCR 功能"
+			},
+			"probeIdle": "尚未检测",
+			"probeOk": "可用",
+			"probeFail": "不可用",
+			"probeProbing": "正在检测可用性…"
+		},
+		"clearResults": {
+			"clear": "清除解析结果",
+			"clearAndReparse": "清除并重新解析",
+			"clearing": "正在清除…",
+			"reparsing": "正在重新解析…",
+			"confirmClear": "清除",
+			"confirmReparse": "清除并重新解析",
+			"clearDone": "已在 {{scanned}} 篇论文中清除 {{removed}} 个文件。",
+			"reparseDone": "已清除 {{removed}} 个文件，并排队 {{layout}} 个版面 / {{paper}} 个正文任务。",
+			"scope": {
+				"layout": "版面解析结果",
+				"paper": "正文解析结果",
+				"all": "全部（包括正文与版面解析结果）"
+			},
+			"dialog": {
+				"clearTitle": "清除解析结果？",
+				"reparseTitle": "清除并重新解析？",
+				"scopeLabel": "选择范围"
+			}
+		}
+	},
+	"doctor": {
+		"title": "问题诊断",
+		"refresh": "重新运行诊断",
+		"remoteUnavailable": "当前版本仅支持诊断本地 Vault。",
+		"openVault": "请打开本地 Vault 后运行诊断。",
+		"sections": {
+			"host": "主机运行环境",
+			"agents": "Agent ACP 连通性",
+			"network": "网络连通性",
+			"vault": "Vault 结构",
+			"catalog": "Catalog 结构",
+			"wikilinks": "双链语义",
+			"aliases": "论文别名",
+			"visualMarks": "视觉批注"
+		},
+		"sectionHints": {
+			"host": "提示性检查 ACP Agent 使用的 Node.js 与 npm（路径与版本）。",
+			"agents": "对每个已注册 Agent 重新执行 ACP initialize 探测（不发送 prompt），慢速 Agent 可能需要 30 秒。",
+			"network": "按当前代理设置探测论文源与常用站点的连通性。",
+			"vault": "检查顶层 papers/、notes/、.agentero/ 目录是否齐全。",
+			"catalog": "检查 .agentero/catalog.sqlite 是否存在，以及 schema 是否与当前应用一致。",
+			"wikilinks": "检查笔记中的本地双链是否可解析（缺失、歧义、无效标题锚点）。",
+			"aliases": "检查论文 NOTES.md 是否具备至少两个可区分的 frontmatter aliases。",
+			"visualMarks": "将旧版 agent-trace 批注升级为嵌套 visual v2（纯批注也可单独保存）。"
+		},
+		"host": {
+			"toolStatus": {
+				"available": "可用",
+				"missing": "未找到",
+				"unusable": "无法运行"
+			},
+			"install": {
+				"button": "一键安装 Node.js",
+				"installing": "正在安装…",
+				"tooltip": "通过系统包管理器（winget 或 Homebrew）安装 Node.js LTS",
+				"hint": "部分 ACP Agent 需要 PATH 中的 Node.js 与 npm。可通过系统包管理器安装 LTS 版本，安装完成后重新检测。",
+				"noPackageManager": "未找到受支持的系统包管理器，请前往 nodejs.org 手动安装 Node.js，然后重新检测。"
+			}
+		},
+		"network": {
+			"probing": "正在探测…",
+			"none": "未配置探测端点。",
+			"status": {
+				"reachable": "可达",
+				"timeout": "超时",
+				"unreachable": "不可达"
+			},
+			"hints": {
+				"timeout": "请检查代理与网络后重试。",
+				"unreachable": "请检查 DNS、防火墙或代理设置。"
+			},
+			"endpoints": {
+				"baidu": "百度",
+				"google": "谷歌",
+				"google-scholar": "谷歌学术",
+				"github": "GitHub",
+				"arxiv": "arXiv",
+				"semantic-scholar": "Semantic Scholar"
+			},
+			"latency": "{{ms}} ms",
+			"proxy": "代理：{{proxy}}"
+		},
+		"agent": {
+			"probing": "正在探测 Agent…",
+			"none": "尚未注册 Agent。",
+			"locationMissing": "未找到",
+			"authLabel": "登录",
+			"authStatus": {
+				"authenticated": "已登录",
+				"unauthenticated": "未登录",
+				"not-applicable": "不适用",
+				"unknown": "未知"
+			},
+			"categories": {
+				"command-missing": "命令缺失",
+				"not-logged-in": "未登录",
+				"timeout": "超时",
+				"spawn-failed": "启动失败",
+				"protocol-failed": "协议失败",
+				"unknown": "其他"
+			},
+			"hints": {
+				"command-missing": "安装对应 CLI（设置 → Agent）或修正 PATH 后重新诊断。",
+				"not-logged-in": "在终端用该 Agent 自带 CLI 登录（如 codex login）后重新诊断。",
+				"timeout": "检查代理/网络设置与 Agent 冷启动耗时。",
+				"spawn-failed": "进程无法启动，检查可执行权限与命令路径。",
+				"protocol-failed": "进程已启动但 ACP 握手失败，请更新 ACP adapter。",
+				"unknown": "查看上方原始错误信息。"
+			},
+			"login": "登录",
+			"loginAria": "登录 {{name}}",
+			"loginTitle": "打开终端执行 {{command}}"
+		},
+		"visualMarks": {
+			"select": "选择 {{path}}",
+			"apply": "升级 {{count}} 项",
+			"applying": "升级中…",
+			"success": "已升级 {{count}} 个视觉批注文件。"
+		},
+		"catalogDuplicates": {
+			"fix": "去重",
+			"success": "已删除 {{removed}} 行重复 Catalog 记录，保留 {{kept}} 行。"
+		},
+		"issueCount": "{{count}} 个问题",
+		"repair": {
+			"select": "选择 {{path}}",
+			"titleAlias": "标题别名",
+			"shortAlias": "短别名",
+			"preserved": "保留已有别名：{{aliases}}",
+			"manual": "需要手动检查",
+			"apply": "修复",
+			"ignore": "忽略 {{path}}",
+			"ignoreHint": "忽略该论文的别名检查（写入当前 Vault）",
+			"ignoreSelected": "忽略所选",
+			"ignored": "已忽略 {{count}} 篇论文笔记的别名检查。",
+			"ignoredCount": "已忽略 {{count}} 篇",
+			"restore": "恢复",
+			"restoreAll": "全部恢复",
+			"restored": "已恢复 {{count}} 篇论文笔记的别名检查。",
+			"confirmTitle": "重写论文别名？",
+			"confirmDescription": "Doctor 将把 {{count}} 篇笔记作为一个事务更新；已有别名和其他 frontmatter 内容会保留。",
+			"cancel": "取消",
+			"confirm": "应用更改",
+			"applying": "正在应用…",
+			"success": "已更新 {{count}} 篇论文笔记的别名。"
+		},
+		"wikilink": {
+			"probe": "探测",
+			"planning": "正在做轻量探测…",
+			"working": "处理中…",
+			"probeDone": "探测完成：自动建议 {{auto}} 条，可手改 {{manual}} 条（共 {{total}}）",
+			"agentHint": "并不确定？把下面的提示词交给 Agent，让它先给修改意见。",
+			"agentPromptLabel": "Agent 提示词",
+			"copyPrompt": "复制",
+			"promptCopied": "已复制提示词",
+			"openInAgent": "在 Agent 中打开",
+			"select": "选择 {{source}} 中的修复",
+			"replacement": "替换为",
+			"editHint": "编辑绿色行中的替换内容，或在下方选择目标文件。修改后会自动勾选，再点击「修复」。",
+			"chooseTarget": "选择目标文件",
+			"selectAll": "全选",
+			"deselectAll": "取消全选",
+			"noSuggestions": "没有自动建议，请在笔记中手动改链接。",
+			"confirmTitle": "应用双链修复？",
+			"confirmDescription": "Doctor 将把 {{count}} 处链接目标作为一个事务写入；只改选中的字节范围。",
+			"success": "已更新 {{count}} 个文件中的链接。"
+		}
+	},
+	"keyboard": {
+		"title": "快捷键"
+	},
+	"about": {
+		"attribution": "基于 poco-ai/Agentero · MIT 许可",
+		"title": "关于",
+		"starGithub": "Star us on GitHub",
+		"version": "版本 {{version}}",
+		"logs": {
+			"label": "运行日志",
+			"open": "打开日志文件夹",
+			"openFailed": "无法打开日志文件夹。",
+			"clear": "清理日志",
+			"clearDone": "已清理日志",
+			"clearFailed": "无法清理日志。"
+		},
+		"scratch": {
+			"label": "论文全文缓存",
+			"summary": "{{papers}} 篇 · {{size}}",
+			"clear": "清除缓存",
+			"clearDone": "缓存已清除",
+			"clearFailed": "清除论文全文缓存失败。"
+		},
+		"update": {
+			"available": "版本 {{version}} 已可用",
+			"downloading": "正在下载更新...",
+			"downloadingProgress": "正在下载更新：{{progress}}%",
+			"installing": "正在安装更新并重启...",
+			"installFailed": "无法安装更新，请重试",
+			"check": "检查更新",
+			"downloadInstall": "安装并重启",
+			"tagNew": "新版本",
+			"tagUpdating": "更新中…",
+			"tagDownloading": "更新中 {{progress}}%",
+			"tagInstalling": "安装中…",
+			"toastTitle": "Lattiora {{version}} 已可用",
+			"toastDescription": "下载已验证的更新并重启 Lattiora"
+		},
+		"cli": {
+			"label": "命令行工具",
+			"description": "无界面操作 Vault / Catalog，供脚本与外部 Agent 使用",
+			"notBundled": "当前构建未内置 CLI",
+			"versionMismatch": "CLI {{cli}} 与应用 {{app}} 不一致，请重新安装以对齐",
+			"pathMissing": "CLI 已安装，当前终端尚未更新 PATH",
+			"verifyHint": "在新终端中验证：",
+			"windowsVerifyHint": "复制下面的 CMD 命令验证：",
+			"verifyCopy": "复制验证命令",
+			"verifyCopied": "已复制验证命令",
+			"verifyCopyFailed": "无法复制命令",
+			"install": "安装",
+			"update": "更新",
+			"uninstall": "移除",
+			"openRelease": "打开发布页",
+			"brewHint": "或在 Apple Silicon Mac 上用 Homebrew 安装：",
+			"brewCopy": "复制命令",
+			"brewCopied": "已复制 Homebrew 命令",
+			"brewCopyFailed": "无法复制命令",
+			"installSuccess": "已安装 CLI 命令",
+			"downloadInstallSuccess": "已下载并安装 CLI",
+			"uninstallSuccess": "已移除 CLI 命令",
+			"installFailed": "无法安装 CLI 命令",
+			"uninstallFailed": "无法移除 CLI 命令",
+			"statusFailed": "无法读取 CLI 状态",
+			"openReleaseFailed": "无法打开发布页",
+			"syncFailed": "已安装的 CLI 未能自动同步到当前版本，请到 设置 → 关于 手动更新"
+		},
+		"finder": {
+			"label": "访达集成",
+			"description": "在访达文件夹右键菜单中添加“用 Lattiora 打开”",
+			"descriptionInstalled": "在访达中右键文件夹即可作为 Vault 打开",
+			"stale": "Lattiora 位置已变化，更新以修复菜单项",
+			"install": "安装",
+			"update": "更新",
+			"uninstall": "移除",
+			"installSuccess": "已安装访达快捷操作",
+			"uninstallSuccess": "已移除访达快捷操作",
+			"installFailed": "无法安装访达快捷操作",
+			"uninstallFailed": "无法移除访达快捷操作"
+		}
+	},
+	"sync": {
+		"title": "云同步",
+		"advanced": "高级",
+		"localVaultOnly": "云同步仅支持本地 Vault。",
+		"backend": "同步方式",
+		"backendS3": "对象存储",
+		"backendWebdav": "WebDAV",
+		"backendLocked": "切换存储后端前请先解绑。",
+		"serverUrl": "服务器地址",
+		"username": "用户名",
+		"password": "密码",
+		"endpoint": "Endpoint",
+		"region": "区域",
+		"bucket": "Bucket",
+		"prefix": "键前缀",
+		"prefixHint": "可选。多个 Vault 可共用一个 Bucket。",
+		"accessKey": "Access Key ID",
+		"secretKey": "Secret Access Key",
+		"pathStyle": "Path-style 寻址",
+		"pathStyleHint": "R2 / MinIO 保持开启；使用 Bucket 子域名时关闭。",
+		"noConditionalWrites": "该存储不支持条件（原子）写入，同步已降级为普通上传。单设备使用不受影响；多设备并发修改可能需要多一轮同步才能收敛。",
+		"saved": "同步已配置",
+		"disconnect": "解绑",
+		"syncNow": "立即同步",
+		"statusConnected": "已连接",
+		"statusDisconnected": "未连接",
+		"statusSyncing": "同步中",
+		"statusError": "连接异常",
+		"providerDocsAria": "打开 {{name}} 配置指南",
+		"lastSync": "上次同步 {{time}}",
+		"neverSynced": "尚未同步。",
+		"done": "同步完成：上传 {{up}}，下载 {{down}}",
+		"conflicts": "已在原文件旁保存 {{count}} 个冲突副本",
+		"phase": {
+			"scan": "正在扫描 Vault…",
+			"pull": "正在获取远端状态…",
+			"download": "下载中 {{current}}/{{total}}…",
+			"upload": "上传中 {{current}}/{{total}}…",
+			"finalize": "正在收尾…"
+		},
+		"connect": "连接",
+		"save": "保存",
+		"autoSync": "自动同步",
+		"interval": "同步间隔",
+		"intervalMinutes": "{{count}} 分钟",
+		"scope": "同步范围",
+		"scopeHint": "笔记、元数据与标注永远同步。未勾选的内容不会上传或下载，也不会因过滤而被删除。PDF 与 LaTeX 源码可随时从来源重新下载。",
+		"scopePdf": "PDF 文件",
+		"scopeSource": "LaTeX 源码",
+		"scopeAttachments": "支撑材料"
+	}
+}

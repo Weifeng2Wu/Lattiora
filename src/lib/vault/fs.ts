@@ -1,0 +1,171 @@
+import i18n from "@/i18n";
+import { readFile, readTextFile } from "@/lib/cloud/fs";
+import {
+	parseRemoteJoinedPath,
+	remoteCacheFile,
+	remoteList,
+	remoteMkdir,
+	remoteReadText,
+	remoteRemove,
+	remoteWriteBytes,
+} from "@/lib/vault/remote/remote-vault";
+
+export function isMarkdownPath(path: string): boolean {
+	return /\.(md|mdx|markdown)$/i.test(path);
+}
+
+export function isTextOpenable(path: string): boolean {
+	return (
+		isMarkdownPath(path) ||
+		/\.(txt|json|bib|tex|html?|css|ts|tsx|js|jsx|rs|toml|yaml|yml|excalidraw)$/i.test(
+			path,
+		)
+	);
+}
+
+export async function readVaultFile(path: string): Promise<string> {
+	const remoteRead = parseRemoteJoinedPath(path);
+	if (remoteRead) {
+		if (!remoteRead.rel) throw new Error("invalid remote path");
+		return remoteReadText(remoteRead.sessionId, remoteRead.rel);
+	}
+
+	return readTextFile(path);
+}
+
+/**
+ * Read a local or remote Vault file into an owned byte array.
+ *
+ * No defensive copy: plugin-fs `readFile` already returns a `Uint8Array`
+ * owning a fresh, exactly-sized ArrayBuffer per call. Duplicating it doubled
+ * peak memory on large PDFs; callers that need a bare `ArrayBuffer` normalize
+ * ownership themselves (see `localFileToArrayBuffer`).
+ */
+export async function readVaultBytes(path: string): Promise<Uint8Array> {
+	const remoteRead = parseRemoteJoinedPath(path);
+	if (remoteRead) {
+		if (!remoteRead.rel) throw new Error("invalid remote path");
+		const localPath = await remoteCacheFile(
+			remoteRead.sessionId,
+			remoteRead.rel,
+		);
+		return readFile(localPath);
+	}
+	return readFile(path);
+}
+
+/** Write text file (creates parent dirs when possible). */
+export async function writeVaultFile(
+	path: string,
+	content: string,
+	options?: { expectedText?: string; preserveConflict?: boolean },
+): Promise<void> {
+	{
+		const { writeLocalFile } = await import("@/lib/cloud/files");
+		return writeLocalFile(
+			path,
+			new Blob([content], { type: "text/plain" }),
+			options,
+		);
+	}
+}
+
+/** Write binary file (creates parent dirs when possible). Used for Markdown `./assets/` images. */
+export async function writeVaultBytes(
+	path: string,
+	bytes: Uint8Array,
+): Promise<void> {
+	const remote = parseRemoteJoinedPath(path);
+	if (remote) {
+		if (!remote.rel) throw new Error("invalid remote path");
+		await remoteWriteBytes(remote.sessionId, remote.rel, bytes);
+		return;
+	}
+
+	const { mkdir, writeFile } = await import("@/lib/cloud/fs");
+	const parent = path.replace(/[\\/][^\\/]+$/, "");
+	if (parent && parent !== path) {
+		try {
+			await mkdir(parent, { recursive: true });
+		} catch {
+			// Parent may already exist
+		}
+	}
+	await writeFile(path, bytes);
+}
+
+/**
+ * Split a vault-relative path into parent dir + basename.
+ * Empty `rel` (vault root) returns null.
+ */
+export function splitVaultRel(
+	rel: string,
+): { parent: string; name: string } | null {
+	const normalized = rel.replace(/\\/g, "/").replace(/^\/+|\/+$/g, "");
+	if (!normalized) return null;
+	const slash = normalized.lastIndexOf("/");
+	if (slash === -1) return { parent: "", name: normalized };
+	return {
+		parent: normalized.slice(0, slash),
+		name: normalized.slice(slash + 1),
+	};
+}
+
+/**
+ * Whether a local or remote vault path exists.
+ *
+ * Remote paths (`remote:<sessionId>/…`) must not use `@/lib/cloud/fs`
+ * `exists` — those are pseudo-handles outside the local FS scope and would
+ * fail (or throw), blocking create on remote vaults (issue #152).
+ */
+export async function vaultPathExists(path: string): Promise<boolean> {
+	const remote = parseRemoteJoinedPath(path);
+	if (remote) {
+		// Open session root always "exists".
+		const parts = splitVaultRel(remote.rel);
+		if (!parts) return true;
+		try {
+			const entries = await remoteList(remote.sessionId, parts.parent);
+			return entries.some((e) => e.name === parts.name);
+		} catch {
+			// Missing parent → path does not exist.
+			return false;
+		}
+	}
+
+	const { exists } = await import("@/lib/cloud/fs");
+	return exists(path);
+}
+
+/** Create a directory (and parents) under the vault. */
+export async function createVaultDirectory(path: string): Promise<void> {
+	const remote = parseRemoteJoinedPath(path);
+	if (remote) {
+		if (!remote.rel) throw new Error("invalid remote path");
+		await remoteMkdir(remote.sessionId, remote.rel);
+		return;
+	}
+
+	const { mkdir } = await import("@/lib/cloud/fs");
+	await mkdir(path, { recursive: true });
+}
+
+/**
+ * Remove a file or directory under the vault.
+ * Directories are removed recursively (including non-empty).
+ * Remote vaults use SFTP remove (no recycle bin in MVP).
+ */
+export async function removeVaultPath(path: string): Promise<void> {
+	const trimmed = path.trim();
+	if (!trimmed || trimmed.startsWith("agentero:")) {
+		throw new Error(i18n.t("sidebar:fileTree.deleteInvalid"));
+	}
+	const remote = parseRemoteJoinedPath(trimmed);
+	if (remote) {
+		if (!remote.rel) throw new Error("invalid remote path");
+		await remoteRemove(remote.sessionId, remote.rel, true);
+		return;
+	}
+	const { remove } = await import("@/lib/cloud/fs");
+	await remove(trimmed, { recursive: true });
+}

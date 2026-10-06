@@ -1,0 +1,5517 @@
+// Typed contracts retained from the original React application.
+// Browser operations route through cloud/commands; unavailable capabilities reject.
+
+type Channel<T> = { onmessage: (message: T) => void };
+import { invoke as __TAURI_INVOKE } from "@/lib/cloud/commands";
+import * as __TAURI_EVENT from "@/lib/core/browser-events";
+
+/** Commands */
+export const commands = {
+	settingsGet: () => __TAURI_INVOKE<ApiResult<SettingsGetResult_Serialize>>("settings_get"),
+	/**
+	 *  Persist the full settings snapshot and broadcast `settings:changed`.
+	 * 
+	 *  Domain side effects are not wired here: they run as
+	 *  [`AppSettingsStore::subscribe`] listeners registered by the app assembly
+	 *  (see `app/mod.rs`), fired inside `store.set` with the redacted snapshot.
+	 */
+	settingsSet: (settings: AppSettings_Deserialize) => __TAURI_INVOKE<ApiResult<AppSettings_Serialize>>("settings_set", { settings }),
+	/**
+	 *  Detected OS system proxy (Windows "Internet Settings"). Host requests
+	 *  already fall back to it when the app proxy is off; the updater plugin and
+	 *  the settings UI query it here.
+	 */
+	networkSystemProxy: () => __TAURI_INVOKE<ApiResult<string | null>>("network_system_proxy"),
+	/**
+	 *  Return unique system font family names (sorted). Empty on mobile / failure.
+	 * 
+	 *  Scanning system fonts is slow (disk walk on Windows), so it runs in
+	 *  `run_blocking` and the result is cached for the process lifetime — the
+	 *  installed-font set does not change while the app is running.
+	 */
+	listSystemFonts: () => __TAURI_INVOKE<ApiResult<string[]>>("list_system_fonts"),
+	/**
+	 *  Probe the configured EasyScholar key by querying a stable journal.
+	 *  Returns false when no key is configured, the request fails, or the API
+	 *  rejects the key (non-200 / non-200 code).
+	 */
+	easyScholarProbe: () => __TAURI_INVOKE<ApiResult<boolean>>("easy_scholar_probe"),
+	/**
+	 *  Query EasyScholar for a publication's rank data.
+	 *  Returns the full API response so the WebView can extract `officialRank.all`
+	 *  and build namespaced tags.
+	 */
+	easyScholarGetRank: (publicationName: string) => __TAURI_INVOKE<ApiResult<Json>>("easy_scholar_get_rank", { publicationName }),
+	builtinProviderStatus: () => __TAURI_INVOKE<ApiResult<BuiltinProviderStatus>>("builtin_provider_status"),
+	layoutModelStatus: () => __TAURI_INVOKE<ApiResult<LayoutModelStatus>>("layout_model_status"),
+	layoutRemoteAnalyzePdf: (args: LayoutRemoteAnalyzePdfArgs) => __TAURI_INVOKE<ApiResult<LayoutRemoteAnalyzePdfResult>>("layout_remote_analyze_pdf", { args }),
+	layoutRemoteProbe: (args: LayoutRemoteProbeArgs) => __TAURI_INVOKE<ApiResult<LayoutRemoteProbeResult>>("layout_remote_probe", { args }),
+	agentListAgents: () => __TAURI_INVOKE<ApiResult<AgentListResponse_Serialize>>("agent_list_agents"),
+	agentListSkills: (vaultPath: string | null) => typedError<ApiResult<AgentSkill[]>, string>(__TAURI_INVOKE("agent_list_skills", { vaultPath })),
+	agentScanCatalog: () => __TAURI_INVOKE<ApiResult<CatalogScanResponse_Serialize>>("agent_scan_catalog"),
+	/**
+	 *  Scan catalog and compare installed CLI versions against silent-update
+	 *  targets (npm latest). Settings shows Upgrade only when
+	 *  `updateAvailable === true`. Network / `--version` I/O runs on a worker.
+	 */
+	agentCheckCatalogUpdates: () => typedError<ApiResult<CatalogScanResponse_Serialize>, string>(__TAURI_INVOKE("agent_check_catalog_updates")),
+	agentUpsertAgent: (request: UpsertAgentRequest_Deserialize) => __TAURI_INVOKE<ApiResult<AgentOnly_Serialize>>("agent_upsert_agent", { request }),
+	agentEnsureCatalog: (templateId: string, setDefault: boolean) => __TAURI_INVOKE<ApiResult<AgentOnly_Serialize>>("agent_ensure_catalog", { templateId, setDefault }),
+	agentRemoveAgent: (id: string) => __TAURI_INVOKE<ApiResult<Json>>("agent_remove_agent", { id }),
+	agentSetDefault: (id: string | null) => __TAURI_INVOKE<ApiResult<AgentListResponse_Serialize>>("agent_set_default", { id }),
+	agentSetEnabled: (enabled: boolean) => __TAURI_INVOKE<ApiResult<EnabledResponse>>("agent_set_enabled", { enabled }),
+	agentSetUserAgent: (userAgent: string, userAgentProviderIds: string) => __TAURI_INVOKE<ApiResult<AgentUserAgentResponse>>("agent_set_user_agent", { userAgent, userAgentProviderIds }),
+	agentProbe: (id: string) => typedError<ApiResult<ProbeResult_Serialize>, string>(__TAURI_INVOKE("agent_probe", { id })),
+	/**  Ensure catalog agent is registered, then run ACP initialize probe. */
+	agentProbeCatalog: (templateId: string) => typedError<ApiResult<ProbeResult_Serialize>, string>(__TAURI_INVOKE("agent_probe_catalog", { templateId })),
+	doctorCheckHost: () => typedError<ApiResult<HostDoctorReport_Serialize>, string>(__TAURI_INVOKE("doctor_check_host")),
+	/**
+	 *  One-click install of Node.js via the host package manager (winget / brew),
+	 *  then re-probe. Can take several minutes while the installer downloads.
+	 */
+	doctorInstallNode: () => typedError<ApiResult<NodeInstallResult_Serialize>, string>(__TAURI_INVOKE("doctor_install_node")),
+	/**
+	 *  Re-probe every registered Agent over ACP and return classified failures.
+	 *  Can take up to ~30s per slow agent (probes run with limited concurrency).
+	 */
+	doctorCheckAgents: () => typedError<ApiResult<AgentAcpDiagnostic_Serialize[]>, string>(__TAURI_INVOKE("doctor_check_agents")),
+	/**  Open the template-owned CLI login command in a confirm-to-run terminal. */
+	doctorOpenAgentLoginTerminal: (templateId: string) => __TAURI_INVOKE<ApiResult<null>>("doctor_open_agent_login_terminal", { templateId }),
+	doctorCheckNetwork: () => typedError<ApiResult<NetworkDoctorReport_Serialize>, string>(__TAURI_INVOKE("doctor_check_network")),
+	/**  Request cooperative cancellation for a currently streaming ACP session. */
+	agentCancelRun: (sessionId: string) => __TAURI_INVOKE<ApiResult<boolean>>("agent_cancel_run", { sessionId }),
+	jobParseRefsEnqueue: (args: JobEnqueueArgs) => typedError<ApiResult<JobSnapshot>, string>(__TAURI_INVOKE("job_parse_refs_enqueue", { args })),
+	jobParseBodyEnqueue: (args: JobParseBodyEnqueueArgs) => typedError<ApiResult<JobSnapshot>, string>(__TAURI_INVOKE("job_parse_body_enqueue", { args })),
+	jobLayoutAnalyzeEnqueue: (args: JobEnqueueArgs) => typedError<ApiResult<JobSnapshot>, string>(__TAURI_INVOKE("job_layout_analyze_enqueue", { args })),
+	jobDownloadAssetsEnqueue: (args: JobEnqueueArgs) => typedError<ApiResult<JobSnapshot>, string>(__TAURI_INVOKE("job_download_assets_enqueue", { args })),
+	/**
+	 *  Enqueue a renderer-orchestrated import (magic wand / local PDF / plaza /
+	 *  papers.cool). Only the vault is resolved — the paper folder does not exist
+	 *  yet — and the frontend executor drives the multi-command orchestration.
+	 */
+	jobImportEnqueue: (args: JobImportEnqueueArgs) => typedError<ApiResult<JobSnapshot>, string>(__TAURI_INVOKE("job_import_enqueue", { args })),
+	/**
+	 *  Enqueue a Zotero Connector attachment save. The Host writes the attachment
+	 *  and streams `connector:progress`; the renderer relays that stream into this
+	 *  job so the task panel row comes from the JobCenter projection.
+	 */
+	jobConnectorSyncEnqueue: (args: JobConnectorSyncEnqueueArgs) => typedError<ApiResult<JobSnapshot>, string>(__TAURI_INVOKE("job_connector_sync_enqueue", { args })),
+	/**
+	 *  Enqueue the reverse-citation scan ("papers citing my library"). The
+	 *  renderer executor drives `library_citing_scan` under the job id.
+	 */
+	jobCitingScanEnqueue: (args: JobVaultScopeEnqueueArgs) => typedError<ApiResult<JobSnapshot>, string>(__TAURI_INVOKE("job_citing_scan_enqueue", { args })),
+	/**
+	 *  Enqueue a bibliography import / export (`params.op`); dialog-driven, so the
+	 *  renderer executor owns the flow.
+	 */
+	jobLibraryIoEnqueue: (args: JobVaultScopeEnqueueArgs) => typedError<ApiResult<JobSnapshot>, string>(__TAURI_INVOKE("job_library_io_enqueue", { args })),
+	/**
+	 *  Enqueue a bulk metadata refresh; `params.papers` (`[{ path, query }]`)
+	 *  joins the dedupe fingerprint and drives the renderer executor's batch.
+	 */
+	jobMetadataRefreshEnqueue: (args: JobVaultScopeEnqueueArgs) => typedError<ApiResult<JobSnapshot>, string>(__TAURI_INVOKE("job_metadata_refresh_enqueue", { args })),
+	/**
+	 *  Enqueue the global layout-model download (XDG cache; no vault/paper
+	 *  target). Concurrent triggers dedupe into one active `ModelDownload` job
+	 *  whose Host runner streams byte progress under the job id.
+	 */
+	jobModelDownloadEnqueue: (args: JobModelDownloadEnqueueArgs) => typedError<ApiResult<JobSnapshot>, string>(__TAURI_INVOKE("job_model_download_enqueue", { args })),
+	jobPaperAssetsStatus: (args: JobPaperAssetsStatusArgs) => typedError<ApiResult<PaperAssetsStatus>, string>(__TAURI_INVOKE("job_paper_assets_status", { args })),
+	/**
+	 *  Per-paper reconcile (pipeline-orchestration §7.4 入口②): backfill a
+	 *  `ParseBody` job when the paper has a PDF but no TeX and no `PAPER.md`, and
+	 *  a `ParseRefs` job when the cite sidecar is absent. Returns the enqueued
+	 *  jobs (empty when nothing needs doing).
+	 */
+	jobReconcilePaper: (args: JobReconcilePaperArgs) => typedError<ApiResult<JobSnapshot[]>, string>(__TAURI_INVOKE("job_reconcile_paper", { args })),
+	/**
+	 *  Vault-wide reconcile (§7.3 T2): backfill `ParseBody` for every catalog paper
+	 *  that has a PDF but no TeX and no `PAPER.md`. Jobs enqueue on the idle lane;
+	 *  the per-kind cap (ParseBody = 1) throttles execution. Returns the count.
+	 */
+	jobReconcileVault: (args: JobReconcileVaultArgs) => typedError<ApiResult<number>, string>(__TAURI_INVOKE("job_reconcile_vault", { args })),
+	/**
+	 *  Startup reconcile: adopt bare `papers/` child folders (created while the
+	 *  app was closed) into the library. Fire-and-forget from the frontend's
+	 *  `vault:opened` handler; returns the adopted count.
+	 */
+	paperIngestReconcile: (args: PaperIngestReconcileArgs) => typedError<ApiResult<number>, string>(__TAURI_INVOKE("paper_ingest_reconcile", { args })),
+	/**
+	 *  Vault-relative paths of papers still missing local assets, per §8.4 CapsCache
+	 *  (replaces the frontend `collectPapersNeedingAssetDownload` tree walk). A
+	 *  paper needs a download when it has no PDF, or its body is unknown (no
+	 *  catalog `body_source`) and it has neither TeX nor `PAPER.md`.
+	 */
+	jobPapersNeedingAssets: (args: JobPapersNeedingAssetsArgs) => typedError<ApiResult<string[]>, string>(__TAURI_INVOKE("job_papers_needing_assets", { args })),
+	jobFocusPaper: (args: JobFocusPaperArgs) => typedError<ApiResult<JobSnapshot[]>, string>(__TAURI_INVOKE("job_focus_paper", { args })),
+	jobCancel: (jobId: string) => typedError<ApiResult<boolean>, string>(__TAURI_INVOKE("job_cancel", { jobId })),
+	jobReport: (args: JobReportArgs) => typedError<ApiResult<JobSnapshot>, string>(__TAURI_INVOKE("job_report", { args })),
+	jobList: (args: JobListArgs) => typedError<ApiResult<JobSnapshot[]>, string>(__TAURI_INVOKE("job_list", { args })),
+	/**  Delete generated layout/paper parse artifacts for every paper in the vault. */
+	clearParseResults: (args: ClearParseResultsArgs) => typedError<ApiResult<ClearParseResultsResult>, string>(__TAURI_INVOKE("clear_parse_results", { args })),
+	/**
+	 *  Delete generated parse artifacts and enqueue force reparse jobs for the
+	 *  affected papers. Uses the idle lane so the bulk work does not starve focus.
+	 */
+	clearAndReparse: (args: ClearParseResultsArgs) => typedError<ApiResult<ClearAndReparseResult>, string>(__TAURI_INVOKE("clear_and_reparse", { args })),
+	/**  Answer a pending ACP permission request (ask mode). `option_id = None` cancels. */
+	agentRespondPermission: (request: PermissionResponseRequest) => __TAURI_INVOKE<ApiResult<PermissionResponded>>("agent_respond_permission", { request }),
+	/**  Answer a pending ACP form elicitation (`elicitation/create`). */
+	agentRespondElicitation: (request: ElicitationResponseRequest) => __TAURI_INVOKE<ApiResult<PermissionResponded>>("agent_respond_elicitation", { request }),
+	/**  Answer a pending Grok `_x.ai/ask_user_question` extension request. */
+	agentRespondAskUser: (request: AskUserResponseRequest) => __TAURI_INVOKE<ApiResult<PermissionResponded>>("agent_respond_ask_user", { request }),
+	/**
+	 *  Resolve a vault-relative citation link to PDF coordinates.
+	 * 
+	 *  Supports fragments like `#section=2.3`, `#figure=1`, `#table=2`,
+	 *  `#algorithm=1`, `#formula=5`, `#region=figure-1`, and `#page=3`.
+	 *  Remote vaults are not supported yet.
+	 */
+	agentResolveCitation: (vaultPath: string | null, source: string) => typedError<ApiResult<CitationTarget>, string>(__TAURI_INVOKE("agent_resolve_citation", { vaultPath, source })),
+	graphGetBacklinks: (vaultPath: string, path: string) => typedError<ApiResult<BacklinksResponse_Serialize>, string>(__TAURI_INVOKE("graph_get_backlinks", { vaultPath, path })),
+	wikiResolve: (vaultPath: string, sourcePath: string, linkText: string, syntax: "wikilink" | "markdown" | null) => typedError<ApiResult<WikiResolveResponse_Serialize>, string>(__TAURI_INVOKE("wiki_resolve", { vaultPath, sourcePath, linkText, syntax })),
+	/**  Resolve and read the exact source projection for one `![[...]]` embed. */
+	wikiEmbedRead: (vaultPath: string, sourcePath: string, linkText: string) => typedError<ApiResult<WikiEmbedResponse_Serialize>, string>(__TAURI_INVOKE("wiki_embed_read", { vaultPath, sourcePath, linkText })),
+	wikiSearch: (vaultPath: string, query: string, path: string | null, kind: "file" | "heading" | "block" | null) => typedError<ApiResult<WikiSearchCandidate_Serialize[]>, string>(__TAURI_INVOKE("wiki_search", { vaultPath, query, path, kind })),
+	/**
+	 *  Explicitly rename one saved heading and rewrite every resolved inbound
+	 *  heading fragment as one rollback-capable local transaction.
+	 */
+	wikiRenameHeading: (args: WikiRenameHeadingArgs) => typedError<ApiResult<WikiRenameHeadingResult>, string>(__TAURI_INVOKE("wiki_rename_heading", { args })),
+	graphRebuild: (vaultPath: string) => typedError<ApiResult<RebuildResult>, string>(__TAURI_INVOKE("graph_rebuild", { vaultPath })),
+	/**  Internal diagnostic: remove the derived snapshot and rebuild it from Vault files. */
+	wikiCacheRebuild: (vaultPath: string) => typedError<ApiResult<RebuildResult>, string>(__TAURI_INVOKE("wiki_cache_rebuild", { vaultPath })),
+	doctorCheck: (args: DoctorCheckArgs) => __TAURI_INVOKE<ApiResult<DoctorReport_Serialize>>("doctor_check", { args }),
+	doctorApplyAliases: (args: DoctorApplyAliasesArgs) => typedError<ApiResult<AliasRepairResult>, string>(__TAURI_INVOKE("doctor_apply_aliases", { args })),
+	doctorIgnoreAliases: (args: DoctorIgnoreAliasesArgs) => __TAURI_INVOKE<ApiResult<DoctorVaultState>>("doctor_ignore_aliases", { args }),
+	doctorSetDirtyPaths: (args: DoctorSetDirtyPathsArgs) => __TAURI_INVOKE<ApiResult<null>>("doctor_set_dirty_paths", { args }),
+	doctorPlanWikilinks: (args: DoctorPlanWikilinksArgs) => __TAURI_INVOKE<ApiResult<WikilinkRepairPlan_Serialize>>("doctor_plan_wikilinks", { args }),
+	doctorApplyWikilinks: (args: DoctorApplyWikilinksArgs) => typedError<ApiResult<WikilinkRepairResult>, string>(__TAURI_INVOKE("doctor_apply_wikilinks", { args })),
+	doctorApplyVisualMarks: (args: DoctorApplyVisualMarksArgs) => typedError<ApiResult<VisualMarkRepairResult>, string>(__TAURI_INVOKE("doctor_apply_visual_marks", { args })),
+	doctorFixCatalogDuplicates: (args: DoctorFixCatalogDuplicatesArgs) => __TAURI_INVOKE<ApiResult<DuplicateRepairResult>>("doctor_fix_catalog_duplicates", { args }),
+	/**  Create / scaffold a Agentero vault at the given absolute path. */
+	vaultCreate: (path: string, locale: string | null) => __TAURI_INVOKE<ApiResult<CreateVaultResult>>("vault_create", { path, locale }),
+	/**
+	 *  Ensure scaffold, seed missing bundled content, and safely update untouched
+	 *  first-party skills.
+	 * 
+	 *  Call on vault open so app updates can ship new `.agents/skills/*` or onboarding
+	 *  content without requiring the user to re-run Create Vault. User-customized
+	 *  files are never overwritten.
+	 */
+	vaultEnsure: (path: string, locale: string | null) => __TAURI_INVOKE<ApiResult<CreateVaultResult>>("vault_ensure", { path, locale }),
+	/**
+	 *  Extend the fs-plugin scope so the renderer can read/write this vault dir.
+	 * 
+	 *  The dialog plugin grants runtime scope for a picked folder, but that grant
+	 *  is not persisted. On startup restore a vault located outside the static
+	 *  scope (`$HOME/**`, `$DOCUMENT/**`, …) would otherwise fail every fs-plugin
+	 *  call with "forbidden path" until the user re-picks it. Called whenever a
+	 *  local vault becomes active, before the file tree loads. Idempotent.
+	 */
+	vaultAllowFsScope: (path: string) => __TAURI_INVOKE<ApiResult<null>>("vault_allow_fs_scope", { path }),
+	/**
+	 *  Release Host-side resources held for a vault the app switched away from.
+	 * 
+	 *  Feature-specific cleanup remains owned by each feature; the app shell only
+	 *  orchestrates the cross-feature release sequence.
+	 */
+	vaultRelease: (path: string) => __TAURI_INVOKE<ApiResult<null>>("vault_release", { path }),
+	/**  Build the whole vault file tree in one pass (single IPC). */
+	vaultTreeBuild: (vaultPath: string) => typedError<ApiResult<VaultTreeNode_Serialize[]>, string>(__TAURI_INVOKE("vault_tree_build", { vaultPath })),
+	/**  List one directory's children (lazy expand / targeted tree refresh). */
+	vaultTreeChildren: (vaultPath: string, dirPath: string) => typedError<ApiResult<VaultTreeNode_Serialize[]>, string>(__TAURI_INVOKE("vault_tree_children", { vaultPath, dirPath })),
+	/**  Move or rename one local Vault path while updating resolved internal links. */
+	wikiMove: (args: WikiMoveArgs) => typedError<ApiResult<WikiRenameResult>, string>(__TAURI_INVOKE("wiki_move", { args })),
+	/**
+	 *  Preserve a pre-rename semantic plan for an externally observed local rename.
+	 *  This is intentionally a read-only preflight: the caller must explicitly apply
+	 *  it, or opt into the `always` policy in the renderer.
+	 */
+	wikiExternalRenamePreview: (args: WikiExternalRenamePreviewArgs) => typedError<ApiResult<WikiExternalRenamePreview>, string>(__TAURI_INVOKE("wiki_external_rename_preview", { args })),
+	/**
+	 *  Apply one previously previewed external rename repair. The Host rechecks the
+	 *  candidate's source hashes and current dirty paths before touching Markdown.
+	 */
+	wikiApplyExternalRenameRepair: (args: WikiApplyExternalRenameArgs) => typedError<ApiResult<WikiRenameResult>, string>(__TAURI_INVOKE("wiki_apply_external_rename_repair", { args })),
+	/**  Move files/folders into the vault recycle bin (undoable delete). */
+	pathTrash: (args: PathTrashArgs) => typedError<ApiResult<TrashResult>, string>(__TAURI_INVOKE("path_trash", { args })),
+	/**  List every item currently in the recycle bin (Recycle Bin view). */
+	pathListTrash: (args: TrashVaultArgs) => typedError<ApiResult<TrashEntry[]>, string>(__TAURI_INVOKE("path_list_trash", { args })),
+	/**  Restore a single recycle-bin item to its original path. */
+	pathRestoreItem: (args: TrashItemArgs) => typedError<ApiResult<PathRestoreItemResult>, string>(__TAURI_INVOKE("path_restore_item", { args })),
+	/**  Permanently delete a single recycle-bin item. */
+	pathPurgeItem: (args: TrashItemArgs) => typedError<ApiResult<null>, string>(__TAURI_INVOKE("path_purge_item", { args })),
+	/**  Empty the entire recycle bin (permanent). */
+	pathPurgeTrash: (args: TrashVaultArgs) => typedError<ApiResult<null>, string>(__TAURI_INVOKE("path_purge_trash", { args })),
+	translateText: (args: TranslateTextArgs) => __TAURI_INVOKE<ApiResult<TranslateTextResult>>("translate_text", { args }),
+	/**
+	 *  Batch resolve identifiers and write papers into vault.
+	 *  Deduplicates within the batch and against existing catalog entries.
+	 */
+	lookupImportBatch: (args: LookupImportBatchArgs) => typedError<ApiResult<LookupImportBatchResult_Serialize>, string>(__TAURI_INVOKE("lookup_import_batch", { args })),
+	skillInstall: (args: SkillInstallArgs) => __TAURI_INVOKE<ApiResult<SkillImportResult[]>>("skill_install", { args }),
+	skillDiscard: (discoveryId: string) => __TAURI_INVOKE<ApiResult<null>>("skill_discard", { discoveryId }),
+	/**
+	 *  Download PDF (+ arXiv LaTeX) for an existing paper folder that is missing local assets.
+	 *  When no TeX remains after download, also tries liteparse → PAPER.md.
+	 */
+	paperDownloadAssets: (args: PaperDownloadAssetsArgs) => typedError<ApiResult<AssetDownloadResult>, string>(__TAURI_INVOKE("paper_download_assets", { args })),
+	/**  Import local PDF file(s) into the vault as paper folders (copy + catalog + liteparse). */
+	paperImportLocalPdf: (args: ImportLocalPdfArgs) => typedError<ApiResult<ImportLocalPdfResult_Serialize>, string>(__TAURI_INVOKE("paper_import_local_pdf", { args })),
+	/**
+	 *  Parse a paper's local PDF into `PAPER.md` using liteparse.
+	 *  `task_id` is the cooperative-cancel polling id (the JobCenter job id).
+	 */
+	paperParseBody: (args: PaperParseBodyArgs) => typedError<ApiResult<PaperParseResult_Serialize>, string>(__TAURI_INVOKE("paper_parse_body", { args })),
+	/**
+	 *  Resolve an identifier (DOI/arXiv) to metadata without importing — backs
+	 *  Edit Metadata's identifier refresh. Identifier lookup first (so a DOI /
+	 *  arXiv id is not sent to title search); S2 `publicationVenue` enriches
+	 *  truncated Crossref / empty Translator venues. Title search is fallback.
+	 */
+	paperResolveIdentifier: (args: PaperResolveIdentifierArgs) => __TAURI_INVOKE<ApiResult<PaperRecord_Serialize>>("paper_resolve_identifier", { args }),
+	/**  Stage a path-less OS drop (File bytes as base64) into `~/.agentero/import-tmp/`. */
+	paperStageImportFile: (args: StageImportFileArgs) => __TAURI_INVOKE<ApiResult<StageImportFileResult>>("paper_stage_import_file", { args }),
+	/**
+	 *  Seed `{vault}/.agentero/templates/NOTES.md` with a starting template for
+	 *  the `custom` paper-note mode. Never overwrites an existing template.
+	 */
+	notesTemplateSeed: (vaultPath: string) => __TAURI_INVOKE<ApiResult<NotesTemplateSeedResult>>("notes_template_seed", { vaultPath }),
+	/**  Export catalog papers via Translator `POST /export` (Zotero JSON array → BibTeX/RIS/…). */
+	paperExport: (args: PaperExportArgs) => __TAURI_INVOKE<ApiResult<PaperExportResult>>("paper_export", { args }),
+	/**  Import BibTeX/RIS/… via Translator `POST /import`, write papers into vault + catalog. */
+	paperImport: (args: PaperImportArgs) => typedError<ApiResult<PaperImportResult>, string>(__TAURI_INVOKE("paper_import", { args })),
+	/**
+	 *  Parse (or refresh with `force`) the reference sidecar for one paper. Online
+	 *  reference lookup is always on; local bib/bbl parsing still runs.
+	 */
+	paperRefsParse: (args: PaperRefsParseArgs) => typedError<ApiResult<CiteSidecar_Serialize>, string>(__TAURI_INVOKE("paper_refs_parse", { args })),
+	/**  Read the existing reference sidecar; `None` when it has not been parsed yet. */
+	paperRefsList: (args: PaperRefsListArgs) => __TAURI_INVOKE<ApiResult<CiteSidecar_Serialize | null>>("paper_refs_list", { args }),
+	/**  Scan the whole library for new papers that cite it but are not imported yet. */
+	libraryCitingScan: (args: LibraryCitingScanArgs) => typedError<ApiResult<CitingScanResult_Serialize>, string>(__TAURI_INVOKE("library_citing_scan", { args })),
+	/**
+	 *  Append the papers.cool Kimi analysis for one paper to its NOTES.md.
+	 * 
+	 *  Resolves by Cool Papers URL / venue catalog id, then arXiv id, then title.
+	 *  A paper that cannot be resolved returns `found: false` and writes nothing.
+	 */
+	paperCoolpapersNotes: (args: CoolPapersNotesArgs) => typedError<ApiResult<CoolPapersNotes>, string>(__TAURI_INVOKE("paper_coolpapers_notes", { args })),
+	/**
+	 *  Import one papers.cool row straight from its page metadata.
+	 * 
+	 *  Bypasses the Translator: the page's `citation_*` fields cover every branch
+	 *  papers.cool aggregates and also carry the PDF URL.
+	 */
+	paperCoolpapersImport: (args: CoolPapersImportArgs) => typedError<ApiResult<PaperCommitResult>, string>(__TAURI_INVOKE("paper_coolpapers_import", { args })),
+	/**  Bundle local paper-open data for the renderer's focus path. */
+	paperOpenBundle: (args: PaperOpenBundleArgs) => typedError<ApiResult<PaperOpenBundle_Serialize>, string>(__TAURI_INVOKE("paper_open_bundle", { args })),
+	/**  Get one paper's metadata from catalog.sqlite. */
+	paperGet: (args: PaperGetArgs) => __TAURI_INVOKE<ApiResult<PaperRecord_Serialize>>("paper_get", { args }),
+	/**
+	 *  List all papers for the library table (catalog.sqlite).
+	 * 
+	 *  Returns one row per logical paper `id` so the Library never shows duplicate
+	 *  entries when the same paper was imported under multiple paths (#248).
+	 */
+	paperList: (args: PaperListArgs) => typedError<ApiResult<PaperListRow_Serialize[]>, string>(__TAURI_INVOKE("paper_list", { args })),
+	/**
+	 *  Move an item into another `papers/` folder on disk and rewrite matching
+	 *  catalog path prefixes. Never overwrites an existing target.
+	 */
+	paperMove: (args: PaperMoveArgs) => typedError<ApiResult<PaperMoveResult>, string>(__TAURI_INVOKE("paper_move", { args })),
+	/**
+	 *  Rewrite catalog `path` prefixes after an item was moved outside the app.
+	 * 
+	 *  This does **not** touch the filesystem; it only keeps `papers` rows and
+	 *  `pdf_page_counts` in sync with the new disk layout so titles/metadata are
+	 *  not lost after a Finder/CLI move.
+	 */
+	paperRepath: (args: PaperRepathArgs) => __TAURI_INVOKE<ApiResult<PaperRepathResult>>("paper_repath", { args }),
+	/**  Update catalog `is_read` after paper-reader workflow completes (or reset). */
+	paperSetIsRead: (args: PaperSetIsReadArgs) => __TAURI_INVOKE<ApiResult<PaperRecord_Serialize>>("paper_set_is_read", { args }),
+	/**
+	 *  Manually edit paper metadata (patch semantics: only provided fields change,
+	 *  empty strings clear). Marks the row `meta_source = "manual"`.
+	 */
+	paperUpdateMeta: (args: PaperUpdateMetaArgs) => __TAURI_INVOKE<ApiResult<PaperRecord_Serialize>>("paper_update_meta", { args }),
+	/**  Replace catalog tags for a paper (syncs metadata.json projection). */
+	paperSetTags: (args: PaperSetTagsArgs) => __TAURI_INVOKE<ApiResult<PaperRecord_Serialize>>("paper_set_tags", { args }),
+	/**
+	 *  Rebuild catalog rows from `papers/` metadata.json — recovers papers that are
+	 *  on disk but missing from the catalog (added externally, or a lost row).
+	 */
+	paperRescan: (args: PaperRescanArgs) => __TAURI_INVOKE<ApiResult<PaperRescanResult>>("paper_rescan", { args }),
+	/**  Cached PDF page counts keyed by vault-relative paper path. */
+	paperPageCounts: (args: PaperPageCountsArgs) => __TAURI_INVOKE<ApiResult<{ [key in string]: number }>>("paper_page_counts", { args }),
+	/**  Persist newly discovered PDF page counts (heatmap page-count cache). */
+	paperSetPageCounts: (args: PaperSetPageCountsArgs) => __TAURI_INVOKE<ApiResult<null>>("paper_set_page_counts", { args }),
+	/**
+	 *  Batch-read reading activity (`marks/*.json` sidecars) for many papers in
+	 *  one IPC round-trip — replaces the Library heatmap's per-paper
+	 *  highlights/asks/translates fan-out (an IPC storm at 500+ papers).
+	 */
+	paperReadingActivityBatch: (args: PaperReadingActivityBatchArgs) => __TAURI_INVOKE<ApiResult<{ [key in string]: ReadingActivityPoint[] }>>("paper_reading_activity_batch", { args }),
+	/**
+	 *  Full-text search over the Vault's Markdown files. See `services::search`.
+	 * 
+	 *  Async + `run_blocking`: the walk reads every Markdown file, which must not
+	 *  run on the main thread (Windows UI message pump).
+	 */
+	vaultSearch: (args: VaultSearchArgs) => __TAURI_INVOKE<ApiResult<VaultSearchResult_Serialize>>("vault_search", { args }),
+	activityRecordEvents: (args: ActivityRecordArgs) => typedError<ApiResult<number>, string>(__TAURI_INVOKE("activity_record_events", { args })),
+	usageList: (args: UsageListArgs) => __TAURI_INVOKE<ApiResult<UsageEvent_Serialize[]>>("usage_list", { args }),
+	usageSummary: (args: UsageSummaryArgs) => __TAURI_INVOKE<ApiResult<UsageKindCount[]>>("usage_summary", { args }),
+	usageClear: (args: UsageClearArgs) => __TAURI_INVOKE<ApiResult<number>>("usage_clear", { args }),
+	logsClear: () => __TAURI_INVOKE<ApiResult<number>>("logs_clear"),
+	feedsList: () => __TAURI_INVOKE<ApiResult<FeedList>>("feeds_list"),
+	feedsAdd: (args: FeedsAddArgs) => __TAURI_INVOKE<ApiResult<FeedSub>>("feeds_add", { args }),
+	feedsRemove: (args: FeedsIdArgs) => __TAURI_INVOKE<ApiResult<null>>("feeds_remove", { args }),
+	feedsRename: (args: FeedsRenameArgs) => __TAURI_INVOKE<ApiResult<FeedSub>>("feeds_rename", { args }),
+	feedsRefresh: (args: FeedsRefreshArgs) => __TAURI_INVOKE<ApiResult<FeedRefreshResult>>("feeds_refresh", { args }),
+	feedsItems: (args: FeedsItemsArgs) => __TAURI_INVOKE<ApiResult<FeedItemsPage>>("feeds_items", { args }),
+	feedsMarkImported: (args: FeedsIdArgs) => __TAURI_INVOKE<ApiResult<FeedItem>>("feeds_mark_imported", { args }),
+	plazaScratchPrepare: (args: PlazaScratchPrepareArgs) => __TAURI_INVOKE<ApiResult<PlazaScratchEntry[]>>("plaza_scratch_prepare", { args }),
+	plazaScratchStats: () => __TAURI_INVOKE<ApiResult<ScratchStats>>("plaza_scratch_stats"),
+	plazaScratchClear: () => __TAURI_INVOKE<ApiResult<ScratchClearResult>>("plaza_scratch_clear"),
+	feedsSetPinned: (args: FeedsSetPinnedArgs) => __TAURI_INVOKE<ApiResult<FeedSub>>("feeds_set_pinned", { args }),
+	feedsResolveBody: (args: FeedsIdArgs) => __TAURI_INVOKE<ApiResult<FeedItem>>("feeds_resolve_body", { args }),
+	/**
+	 *  Rank today's arXiv papers against the Vault library.
+	 * 
+	 *  Reuses the stored same-day run unless `force` is set, so the vault-open
+	 *  prewarm and repeated page opens stay free.
+	 */
+	recommendArxiv: (args: RecommendArxivArgs) => __TAURI_INVOKE<ApiResult<RecommendResult>>("recommend_arxiv", { args }),
+	/**  Stored recommendation run, if any — lets the page render before refreshing. */
+	recommendArxivLast: (args: RecommendArxivLastArgs) => __TAURI_INVOKE<ApiResult<RecommendResult | null>>("recommend_arxiv_last", { args }),
+	/**
+	 *  Liveness check for the user's configured embedding endpoint.
+	 * 
+	 *  Reads the stored embedding config; the optional args let the caller
+	 *  (typically the Agent settings pane) probe a draft that has not been
+	 *  committed yet. Returns `ERR_NO_EMBEDDING` when nothing is configured so
+	 *  the UI can route the user to the settings page.
+	 */
+	probeEmbedding: (args: ProbeEmbeddingArgs) => __TAURI_INVOKE<ApiResult<ProbeEmbeddingResult>>("probe_embedding", { args }),
+	/**
+	 *  Rebuild and install the native application menu for the given locale.
+	 *  macOS-only: other platforms have no native window menu (actions live in the
+	 *  React title bar + keyboard shortcuts), so this is a no-op there.
+	 */
+	setLocale: (locale: string) => typedError<null, string>(__TAURI_INVOKE("set_locale", { locale })),
+	bridgeStart: (args: BridgeStartArgs) => __TAURI_INVOKE<ApiResult<BridgeStatus>>("bridge_start", { args }),
+	bridgeStop: () => __TAURI_INVOKE<ApiResult<null>>("bridge_stop"),
+	bridgeStatus: () => __TAURI_INVOKE<ApiResult<BridgeStatus>>("bridge_status"),
+	bridgeOffer: () => __TAURI_INVOKE<ApiResult<BridgeOfferResult>>("bridge_offer"),
+	bridgePairRespond: (requestId: string, allowed: boolean) => __TAURI_INVOKE<ApiResult<boolean>>("bridge_pair_respond", { requestId, allowed }),
+	bridgeDevices: () => __TAURI_INVOKE<ApiResult<BridgeDevice[]>>("bridge_devices"),
+	bridgeRevokeDevice: (deviceId: string) => __TAURI_INVOKE<ApiResult<boolean>>("bridge_revoke_device", { deviceId }),
+	/**
+	 *  Silently install, update or uninstall a catalog Agent CLI (and ACP adapter
+	 *  when needed). Uninstall also removes the registry entry on success.
+	 * 
+	 *  Replaces the old terminal confirm-then-run helper. Platform scripts mirror
+	 *  CC Switch: official installer first, npm fallback; GUI apps inject the
+	 *  login-shell PATH on macOS/Linux. UI must not pass free-form shell — only known
+	 *  template ids and `install` | `update` | `uninstall`.
+	 * 
+	 *  Blocking work runs on a worker thread so the async runtime is not stalled.
+	 */
+	agentRunToolLifecycle: (templateId: string, action: string, taskId: string | null) => typedError<ApiResult<Json>, string>(__TAURI_INVOKE("agent_run_tool_lifecycle", { templateId, action, taskId })),
+	/**
+	 *  Silently uninstall only the host CLI, only the ACP adapter, or both for a
+	 *  catalog template. Like `agent_run_tool_lifecycle`, the Host scopes the work
+	 *  from PATH/state — the UI only passes a known template id and scope.
+	 */
+	agentRunPartialUninstall: (templateId: string, scope: string, taskId: string | null) => typedError<ApiResult<Json>, string>(__TAURI_INVOKE("agent_run_partial_uninstall", { templateId, scope, taskId })),
+	/**
+	 *  Request cooperative cancellation of an in-flight tool lifecycle run; the
+	 *  Host supervision loop kills the installer child process.
+	 */
+	agentLifecycleCancel: (taskId: string) => __TAURI_INVOKE<ApiResult<boolean>>("agent_lifecycle_cancel", { taskId }),
+	/**
+	 *  What a silent uninstall of this template would remove (npm commands and
+	 *  managed dirs); null when the template has no managed uninstall.
+	 */
+	agentToolUninstallInfo: (templateId: string) => __TAURI_INVOKE<ApiResult<UninstallInfo | null>>("agent_tool_uninstall_info", { templateId }),
+	agentRunOnce: (request: RunOnceRequest_Deserialize) => typedError<ApiResult<RunOnceAccepted>, string>(__TAURI_INVOKE("agent_run_once", { request })),
+	/**  List ACP sessions for an agent via `session/list`. */
+	agentListSessions: (agentId: string | null, vaultPath: string | null, cursor: string | null) => typedError<ApiResult<AcpListSessionsResult_Serialize>, string>(__TAURI_INVOKE("agent_list_sessions", { agentId, vaultPath, cursor })),
+	/**  Load an ACP session's history via `session/load`. */
+	agentLoadSession: (agentId: string | null, sessionId: string, vaultPath: string | null) => typedError<ApiResult<AcpLoadSessionResult_Serialize>, string>(__TAURI_INVOKE("agent_load_session", { agentId, sessionId, vaultPath })),
+	/**  Background ACP start when Chat opens — loads models/context without a user prompt. */
+	agentWarm: (request: WarmRequest_Deserialize) => typedError<ApiResult<WarmResult_Serialize>, string>(__TAURI_INVOKE("agent_warm", { request })),
+	remoteConnect: (args: RemoteConnectArgs) => typedError<ApiResult<RemoteSessionInfo>, string>(__TAURI_INVOKE("remote_connect", { args })),
+	/**  Host entries from `~/.ssh/config` for the connect dialog's suggestions (#339). */
+	remoteSshConfigHosts: () => typedError<ApiResult<SshConfigHost_Serialize[]>, string>(__TAURI_INVOKE("remote_ssh_config_hosts")),
+	remoteDisconnect: (args: RemoteSessionArgs) => typedError<ApiResult<null>, string>(__TAURI_INVOKE("remote_disconnect", { args })),
+	/**
+	 *  Seed bundled content and safely update untouched first-party skills in a
+	 *  remote vault without overwriting user files.
+	 */
+	remoteVaultEnsure: (args: RemoteSessionArgs) => typedError<ApiResult<CreateVaultResult>, string>(__TAURI_INVOKE("remote_vault_ensure", { args })),
+	remoteList: (args: RemotePathArgs) => typedError<ApiResult<FsDirEntry[]>, string>(__TAURI_INVOKE("remote_list", { args })),
+	remoteReadText: (args: RemotePathArgs) => typedError<ApiResult<string>, string>(__TAURI_INVOKE("remote_read_text", { args })),
+	remoteWriteText: (args: RemoteWriteTextArgs) => typedError<ApiResult<null>, string>(__TAURI_INVOKE("remote_write_text", { args })),
+	remoteMkdir: (args: RemotePathArgs) => typedError<ApiResult<null>, string>(__TAURI_INVOKE("remote_mkdir", { args })),
+	remoteRemove: (args: RemoteRemoveArgs) => typedError<ApiResult<null>, string>(__TAURI_INVOKE("remote_remove", { args })),
+	remoteWriteBytes: (args: RemoteWriteBytesArgs) => typedError<ApiResult<null>, string>(__TAURI_INVOKE("remote_write_bytes", { args })),
+	remotePaperList: (args: RemoteSessionArgs) => typedError<ApiResult<PaperRecord_Serialize[]>, string>(__TAURI_INVOKE("remote_paper_list", { args })),
+	remotePaperGet: (args: RemotePaperGetArgs) => typedError<ApiResult<PaperRecord_Serialize>, string>(__TAURI_INVOKE("remote_paper_get", { args })),
+	remotePaperRescan: (args: RemoteSessionArgs) => typedError<ApiResult<RemotePaperRescanResult>, string>(__TAURI_INVOKE("remote_paper_rescan", { args })),
+	remotePaperSetTags: (args: RemotePaperSetTagsArgs) => typedError<ApiResult<PaperRecord_Serialize>, string>(__TAURI_INVOKE("remote_paper_set_tags", { args })),
+	remotePaperSetIsRead: (args: RemotePaperSetIsReadArgs) => typedError<ApiResult<PaperRecord_Serialize>, string>(__TAURI_INVOKE("remote_paper_set_is_read", { args })),
+	remoteCacheFile: (args: RemoteCacheFileArgs) => typedError<ApiResult<RemoteCacheFileResult>, string>(__TAURI_INVOKE("remote_cache_file", { args })),
+	remoteCacheStats: (args: RemoteCacheStatsArgs) => typedError<ApiResult<BlobCacheStats>, string>(__TAURI_INVOKE("remote_cache_stats", { args })),
+	remoteCacheClear: (args: RemoteCacheClearArgs) => typedError<ApiResult<RemoteCacheClearResult>, string>(__TAURI_INVOKE("remote_cache_clear", { args })),
+	/**  Catalog-style scan of common agents on the remote host (`command -v`). */
+	remoteAgentScan: (args: RemoteAgentScanArgs) => typedError<ApiResult<RemoteAgentScanResponse_Serialize>, string>(__TAURI_INVOKE("remote_agent_scan", { args })),
+	/**  ACP initialize probe for one catalog template on the remote vault host. */
+	remoteAgentProbe: (args: RemoteAgentProbeArgs) => typedError<ApiResult<ProbeResult_Serialize>, string>(__TAURI_INVOKE("remote_agent_probe", { args })),
+	/**
+	 *  Open a local terminal that SSHes into the remote host and runs the template's
+	 *  install command after the user presses Enter (same confirm UX as local install).
+	 */
+	remoteAgentOpenInstallTerminal: (args: RemoteAgentInstallArgs) => typedError<ApiResult<Json>, string>(__TAURI_INVOKE("remote_agent_open_install_terminal", { args })),
+	/**
+	 *  Open the system default terminal at `path`.
+	 *  Directories open as themselves; files open their parent directory.
+	 */
+	pathOpenInTerminal: (path: string) => __TAURI_INVOKE<ApiResult<OpenInTerminalResult>>("path_open_in_terminal", { path }),
+	/**
+	 *  Open a fresh Agentero window without restoring the last vault (`?fresh=1`).
+	 * 
+	 *  `async` is load-bearing: sync command handlers run on the main thread inside
+	 *  the calling webview's IPC callback, and building a webview from there hangs
+	 *  on Windows — wry waits in a nested message loop for the WebView2 controller
+	 *  callback, which WebView2 only runs once the current handler returns, so
+	 *  `build()` never comes back and the new window stays blank. Async handlers run
+	 *  off the main thread, so window creation is queued onto the event loop
+	 *  instead of nested inside another handler.
+	 */
+	windowNew: () => typedError<null, string>(__TAURI_INVOKE("window_new")),
+	/**
+	 *  Open a singleton native Settings window, or focus it if already open.
+	 * 
+	 *  See [`window_new`] for why this must stay `async`.
+	 */
+	settingsWindowOpen: (section: string, vaultPath: string | null) => typedError<null, string>(__TAURI_INVOKE("settings_window_open", { section, vaultPath })),
+	/**
+	 *  Open (or focus) a singleton feature window for a right-rail view.
+	 * 
+	 *  See [`window_new`] for why this must stay `async`.
+	 */
+	featureWindowOpen: (view: string, vaultPath: string | null, activePath: string | null, paperTitle: string | null, title: string | null) => typedError<null, string>(__TAURI_INVOKE("feature_window_open", { view, vaultPath, activePath, paperTitle, title })),
+	/**
+	 *  Open (or focus) a per-path document window.
+	 * 
+	 *  See [`window_new`] for why this must stay `async`.
+	 */
+	docWindowOpen: (path: string, mode: string | null, vaultPath: string | null, title: string | null) => typedError<null, string>(__TAURI_INVOKE("doc_window_open", { path, mode, vaultPath, title })),
+	/**  Read-only preview of a Zotero data directory (item + local-PDF counts). */
+	zoteroScan: (args: ZoteroScanArgs) => __TAURI_INVOKE<ApiResult<ZoteroScan_Serialize>>("zotero_scan", { args }),
+	/**
+	 *  Migrate a Zotero library into `papers/…` + catalog; optionally copy PDFs.
+	 *  Streams `{current,total,phase}` progress to the UI via `on_progress`.
+	 */
+	zoteroMigrate: (args: ZoteroMigrateArgs, onProgress: Channel<MigrateProgress>) => __TAURI_INVOKE<ApiResult<ZoteroMigrateResult>>("zotero_migrate", { args, onProgress }),
+	/**
+	 *  One bidirectional sync pass: pull (metadata/notes/annotations) then push
+	 *  (NOTES.md → marked Zotero child notes). Streams `{current,total,phase}`.
+	 * 
+	 *  Async + `run_blocking`: the pass reads the Zotero SQLite DB and rewrites
+	 *  Vault notes, which must not run on the main thread. The progress `Channel`
+	 *  is `Send` and keeps streaming from the blocking pool.
+	 */
+	zoteroSync: (args: ZoteroSyncArgs, onProgress: Channel<SyncProgress>) => __TAURI_INVOKE<ApiResult<ZoteroSyncResult>>("zotero_sync", { args, onProgress }),
+	/**  Current sync binding + last-pass info for the settings pane. */
+	syncGetStatus: (args: SyncVaultArgs) => typedError<ApiResult<SyncStatus_Serialize>, string>(__TAURI_INVOKE("sync_get_status", { args })),
+	/**  Validate + connection-test + persist the S3 binding for a vault. */
+	syncConfigure: (args: SyncConfigureArgs) => typedError<ApiResult<SyncStatus_Serialize>, string>(__TAURI_INVOKE("sync_configure", { args })),
+	/**  Remove the binding and local sync state (remote data stays untouched). */
+	syncDisconnect: (args: SyncVaultArgs) => typedError<ApiResult<null>, string>(__TAURI_INVOKE("sync_disconnect", { args })),
+	/**  One full sync pass (manual trigger from the settings pane). */
+	syncNow: (args: SyncVaultArgs) => typedError<ApiResult<SyncOutcome>, string>(__TAURI_INVOKE("sync_now", { args })),
+	syncScopeSizes: (args: SyncVaultArgs) => typedError<ApiResult<SyncScopeSizes>, string>(__TAURI_INVOKE("sync_scope_sizes", { args })),
+	/**
+	 *  Start (or restart) watching `vault_path` for this window. Emits
+	 *  `vault:file-changed` to this window when files change on disk.
+	 */
+	fsWatchStart: (vaultPath: string) => typedError<null, string>(__TAURI_INVOKE("fs_watch_start", { vaultPath })),
+	/**  Stop watching for this window (no-op if not watching). */
+	fsWatchStop: () => typedError<null, string>(__TAURI_INVOKE("fs_watch_stop")),
+	connectorGetStatus: () => __TAURI_INVOKE<ApiResult<ConnectorStatus>>("connector_get_status"),
+	connectorSetEnabled: (args: ConnectorSetEnabledArgs) => typedError<ApiResult<ConnectorStatus>, string>(__TAURI_INVOKE("connector_set_enabled", { args })),
+	connectorSetVault: (args: ConnectorSetVaultArgs) => __TAURI_INVOKE<ApiResult<null>>("connector_set_vault", { args }),
+	/**  Remember the default save location (also exposed as selected collection). */
+	connectorSetParentDir: (args: ConnectorSetParentDirArgs) => __TAURI_INVOKE<ApiResult<null>>("connector_set_parent_dir", { args }),
+	connectorSetPort: (args: ConnectorSetPortArgs) => typedError<ApiResult<ConnectorStatus>, string>(__TAURI_INVOKE("connector_set_port", { args })),
+	mcpGetStatus: () => __TAURI_INVOKE<ApiResult<McpStatus>>("mcp_get_status"),
+	mcpSetEnabled: (args: McpSetEnabledArgs) => typedError<ApiResult<McpStatus>, string>(__TAURI_INVOKE("mcp_set_enabled", { args })),
+	mcpSetPort: (args: McpSetPortArgs) => typedError<ApiResult<McpStatus>, string>(__TAURI_INVOKE("mcp_set_port", { args })),
+	mcpSetVault: (args: McpSetVaultArgs) => __TAURI_INVOKE<ApiResult<null>>("mcp_set_vault", { args }),
+	mcpSetParentDir: (args: McpSetParentDirArgs) => __TAURI_INVOKE<ApiResult<null>>("mcp_set_parent_dir", { args }),
+	mcpTunnelStatus: () => __TAURI_INVOKE<ApiResult<McpTunnelStatus>>("mcp_tunnel_status"),
+	mcpTunnelStart: (args: McpTunnelStartArgs) => typedError<ApiResult<McpTunnelStatus>, string>(__TAURI_INVOKE("mcp_tunnel_start", { args })),
+	mcpTunnelStop: () => __TAURI_INVOKE<ApiResult<McpTunnelStatus>>("mcp_tunnel_stop"),
+	/**  Take the pending open path (startup race: frontend ready after Host queued). */
+	vaultOpenTakePending: () => __TAURI_INVOKE<ApiResult<string | null>>("vault_open_take_pending"),
+	cliInstallStatus: () => __TAURI_INVOKE<ApiResult<CliInstallStatus>>("cli_install_status"),
+	cliInstallCommand: () => __TAURI_INVOKE<ApiResult<CliInstallResult>>("cli_install_command"),
+	cliUninstallCommand: () => __TAURI_INVOKE<ApiResult<CliInstallResult>>("cli_uninstall_command"),
+	finderServiceStatus: () => __TAURI_INVOKE<ApiResult<FinderServiceStatus>>("finder_service_status"),
+	finderServiceInstall: () => __TAURI_INVOKE<ApiResult<FinderServiceStatus>>("finder_service_install"),
+	finderServiceUninstall: () => __TAURI_INVOKE<ApiResult<FinderServiceStatus>>("finder_service_uninstall"),
+	/**
+	 *  Read a system font suitable for PDF export and PDFium's local CJK fallback.
+	 * 
+	 *  Async + `run_blocking`: reading a multi-megabyte font file must not run on
+	 *  the main thread (Windows UI message pump).
+	 */
+	exportSystemCjkFont: () => __TAURI_INVOKE<ApiResult<ExportFontPayload>>("export_system_cjk_font"),
+	/**
+	 *  Ensure `host` may be served by the `agentero-web` proxy before its viewer
+	 *  frame loads.
+	 * 
+	 *  Idempotent. Non-public hosts (IP literals, intranet names) are refused, so
+	 *  the entry point itself cannot aim the proxy at link-local endpoints; the
+	 *  caller learns that through `false` and can surface it before the frame
+	 *  fails to load.
+	 */
+	webProxyAllowHost: (args: WebProxyAllowHostArgs) => typedError<ApiResult<boolean>, string>(__TAURI_INVOKE("web_proxy_allow_host", { args })),
+	/**
+	 *  Detect available LaTeX engines on the system.
+	 *  Returns the engines that can actually compile — latexmk (the orchestrator)
+	 *  and the engine binary must both exist. Engines not present on the host are
+	 *  omitted (not greyed out); without latexmk the list is empty and the compile
+	 *  button stays hidden.
+	 */
+	detectLatexEngines: () => __TAURI_INVOKE<ApiResult<LatexEngine[]>>("detect_latex_engines"),
+	/**
+	 *  Clean the regenerable LaTeX intermediates for one source (`latexmk -c`):
+	 *  drops `.aux` / `.log` / `.fls` / `.fdb_latexmk` / … while keeping the PDF.
+	 * 
+	 *  This is the escape hatch for latexmk's stuck state after a failed run:
+	 *  its fingerprint database (`*.fdb_latexmk`) records the failure, and with
+	 *  an unchanged source it then refuses to recompile — "Nothing to do …
+	 *  pdflatex gave an error in previous invocation". Clearing the
+	 *  intermediates resets that database so the next compile is a full run.
+	 */
+	cleanLatexAuxFiles: (texPath: string) => __TAURI_INVOKE<ApiResult<null>>("clean_latex_aux_files", { texPath }),
+	/**
+	 *  Lint the in-memory TeX buffer with chktex — the rule set Overleaf and VS
+	 *  Code's LaTeX Workshop run. Content goes in via stdin (`-I0`), so findings
+	 *  track the live editor buffer rather than the last autosaved snapshot, and
+	 *  chktex does not follow `\input`s (every open file lints itself). Returns an
+	 *  empty list when chktex is absent: linting degrades to the language pack's
+	 *  built-in checks instead of erroring on every keystroke.
+	 */
+	chktexLint: (texPath: string, content: string) => __TAURI_INVOKE<ApiResult<LatexLintDiagnostic[]>>("chktex_lint", { texPath, content }),
+	resolveLatexRoot: (texPath: string, vaultPath: string) => __TAURI_INVOKE<ApiResult<LatexRoot>>("resolve_latex_root", { texPath, vaultPath }),
+	jobLatexCompileEnqueue: (args: JobLatexCompileEnqueueArgs) => typedError<ApiResult<JobSnapshot>, string>(__TAURI_INVOKE("job_latex_compile_enqueue", { args })),
+};
+
+/** Events */
+export const events = {
+	agentLifecycleProgress: makeEvent<AgentLifecycleProgressEvent>("agent-lifecycle:progress"),
+	agentAskUserRequest: makeEvent<AskUserRequestEvt_Deserialize>("agent:ask-user-request"),
+	agentCollaboration: makeEvent<AgentCollaborationEvt_Deserialize>("agent:collaboration"),
+	agentCommands: makeEvent<AgentCommandsEvt_Deserialize>("agent:commands"),
+	agentCompleted: makeEvent<AgentCompletedEvent_Deserialize>("agent:completed"),
+	agentEffort: makeEvent<AgentEffortEvt_Deserialize>("agent:effort"),
+	agentElicitationRequest: makeEvent<ElicitationRequestEvt_Deserialize>("agent:elicitation-request"),
+	agentFailed: makeEvent<AgentFailedEvt>("agent:failed"),
+	agentFastMode: makeEvent<AgentFastModeEvt>("agent:fast-mode"),
+	agentModels: makeEvent<AgentModelsEvt_Deserialize>("agent:models"),
+	agentPermissionRequest: makeEvent<PermissionRequestEvt>("agent:permission-request"),
+	agentPlan: makeEvent<AgentPlanEvt>("agent:plan"),
+	agentRegistryChanged: makeEvent<AgentRegistryChangedEvent>("agent:registry-changed"),
+	agentSessionInfo: makeEvent<AgentSessionInfoEvt_Deserialize>("agent:session-info"),
+	agentStatus: makeEvent<AgentStatusEvt_Deserialize>("agent:status"),
+	agentStream: makeEvent<AgentStreamEvt>("agent:stream"),
+	agentTool: makeEvent<AgentToolEvt_Deserialize>("agent:tool"),
+	agentUsage: makeEvent<AgentUsageEvt>("agent:usage"),
+	bridgeHostStatus: makeEvent<BridgeHostStatusEvent>("bridge:host-status"),
+	bridgePairRequest: makeEvent<BridgePairRequestEvent>("bridge:pair-request"),
+	compileLog: makeEvent<CompileLogEvent>("compile:log"),
+	connectorError: makeEvent<ConnectorErrorEvent>("connector:error"),
+	connectorItemSaved: makeEvent<ConnectorItemSavedEvent>("connector:item-saved"),
+	connectorProgress: makeEvent<ConnectorProgressEvent>("connector:progress"),
+	connectorStatus: makeEvent<ConnectorStatusEvent>("connector:status"),
+	jobChanged: makeEvent<JobChangedEvent>("job:changed"),
+	jobCompleted: makeEvent<JobCompletedEvent_Deserialize>("job:completed"),
+	jobFailed: makeEvent<JobFailedEvent_Deserialize>("job:failed"),
+	jobOffer: makeEvent<JobOfferEvent>("job:offer"),
+	jobProgress: makeEvent<JobProgressEvent_Deserialize>("job:progress"),
+	layoutRemoteProgress: makeEvent<LayoutRemoteProgressEvent_Deserialize>("layout-remote:progress"),
+	mcpStatus: makeEvent<McpStatusEvent>("mcp:status"),
+	mcpTunnelStatus: makeEvent<McpTunnelStatusEvent>("mcp:tunnel-status"),
+	menuInvoked: makeEvent<MenuInvokedEvent>("menu:invoked"),
+	paperAssetsReady: makeEvent<PaperAssetsReadyEvent>("paper:assets-ready"),
+	paperImported: makeEvent<PaperImportedEvent>("paper:imported"),
+	paperRenamed: makeEvent<PaperRenamedEventPayload>("paper:renamed"),
+	settingsChanged: makeEvent<SettingsChangedEvent_Deserialize>("settings:changed"),
+	syncProgress: makeEvent<SyncProgressEvent>("sync:progress"),
+	syncState: makeEvent<SyncStateEvent_Deserialize>("sync:state"),
+	vaultFileChanged: makeEvent<VaultFileChangedEvent_Deserialize>("vault:file-changed"),
+	vaultOpenError: makeEvent<VaultOpenErrorEvent>("vault:open-error"),
+	vaultOpenRequest: makeEvent<VaultOpenRequestEvent>("vault:open-request"),
+	windowClosed: makeEvent<WindowClosedEvent_Deserialize>("window:closed"),
+};
+
+/* Types */
+export type AcpFailureCategory = "command-missing" | "not-logged-in" | "timeout" | "spawn-failed" | "protocol-failed" | "unknown";
+
+/**  A single history line reconstructed from ACP `session/load` replay. */
+export type AcpHistoryLine = AcpHistoryLine_Serialize | AcpHistoryLine_Deserialize;
+
+/**  A single history line reconstructed from ACP `session/load` replay. */
+export type AcpHistoryLine_Deserialize = {
+	id: string,
+	/**  "user" | "agent" */
+	kind: string,
+	text: string,
+	reasoning?: string | null,
+	/**  Ordered parts for agent lines (empty for user lines). */
+	parts?: AcpHistoryPart_Deserialize[],
+	sources?: string[],
+};
+
+/**  A single history line reconstructed from ACP `session/load` replay. */
+export type AcpHistoryLine_Serialize = {
+	id: string,
+	/**  "user" | "agent" */
+	kind: string,
+	text: string,
+	reasoning?: string | null,
+	/**  Ordered parts for agent lines (empty for user lines). */
+	parts?: AcpHistoryPart_Serialize[],
+	sources?: string[],
+};
+
+/**  Ordered slice of a replayed agent turn (mirrors the frontend `AgentPart`). */
+export type AcpHistoryPart = AcpHistoryPart_Serialize | AcpHistoryPart_Deserialize;
+
+/**  Ordered slice of a replayed agent turn (mirrors the frontend `AgentPart`). */
+export type AcpHistoryPart_Deserialize = ({ type: "reasoning"; text: string }) & { entries?: never; tool?: never } | ({ type: "text"; text: string }) & { entries?: never; tool?: never } | ({ type: "tool"; tool: AcpHistoryTool_Deserialize }) & { entries?: never; text?: never } | ({ type: "plan"; entries: AgentPlanEntry[] }) & { text?: never; tool?: never };
+
+/**  Ordered slice of a replayed agent turn (mirrors the frontend `AgentPart`). */
+export type AcpHistoryPart_Serialize = ({ type: "reasoning"; text: string }) & { entries?: never; tool?: never } | ({ type: "text"; text: string }) & { entries?: never; tool?: never } | ({ type: "tool"; tool: AcpHistoryTool_Serialize }) & { entries?: never; text?: never } | ({ type: "plan"; entries: AgentPlanEntry[] }) & { text?: never; tool?: never };
+
+/**  Tool call snapshot rebuilt from ACP `session/load` replay. */
+export type AcpHistoryTool = AcpHistoryTool_Serialize | AcpHistoryTool_Deserialize;
+
+/**  Tool call snapshot rebuilt from ACP `session/load` replay. */
+export type AcpHistoryTool_Deserialize = {
+	id: string,
+	title: string,
+	kind: string,
+	/**  pending | in_progress | completed | failed */
+	status: string,
+	input?: Json | null,
+	output?: Json | null,
+};
+
+/**  Tool call snapshot rebuilt from ACP `session/load` replay. */
+export type AcpHistoryTool_Serialize = {
+	id: string,
+	title: string,
+	kind: string,
+	/**  pending | in_progress | completed | failed */
+	status: string,
+	input?: Json | null,
+	output?: Json | null,
+};
+
+/**  Response for `agent_list_sessions`. */
+export type AcpListSessionsResult = AcpListSessionsResult_Serialize | AcpListSessionsResult_Deserialize;
+
+/**  Response for `agent_list_sessions`. */
+export type AcpListSessionsResult_Deserialize = {
+	sessions: AcpSessionInfo_Deserialize[],
+	nextCursor?: string | null,
+	/**  Whether the agent advertised session.list capability. */
+	supported: boolean,
+};
+
+/**  Response for `agent_list_sessions`. */
+export type AcpListSessionsResult_Serialize = {
+	sessions: AcpSessionInfo_Serialize[],
+	nextCursor?: string | null,
+	/**  Whether the agent advertised session.list capability. */
+	supported: boolean,
+};
+
+/**  Response for `agent_load_session`. */
+export type AcpLoadSessionResult = AcpLoadSessionResult_Serialize | AcpLoadSessionResult_Deserialize;
+
+/**  Response for `agent_load_session`. */
+export type AcpLoadSessionResult_Deserialize = {
+	sessionId: string,
+	title?: string | null,
+	lines: AcpHistoryLine_Deserialize[],
+};
+
+/**  Response for `agent_load_session`. */
+export type AcpLoadSessionResult_Serialize = {
+	sessionId: string,
+	title?: string | null,
+	lines: AcpHistoryLine_Serialize[],
+};
+
+/**  Session capabilities advertised by an ACP agent during initialize. */
+export type AcpSessionCapabilities = {
+	list: boolean,
+	resume: boolean,
+	load: boolean,
+	delete: boolean,
+};
+
+/**  A single session entry from ACP `session/list`. */
+export type AcpSessionInfo = AcpSessionInfo_Serialize | AcpSessionInfo_Deserialize;
+
+/**  A single session entry from ACP `session/list`. */
+export type AcpSessionInfo_Deserialize = {
+	sessionId: string,
+	cwd: string,
+	title?: string | null,
+	updatedAt?: string | null,
+};
+
+/**  A single session entry from ACP `session/list`. */
+export type AcpSessionInfo_Serialize = {
+	sessionId: string,
+	cwd: string,
+	title?: string | null,
+	updatedAt?: string | null,
+};
+
+export type ActivityRecordArgs = {
+	events: UsageRecord[],
+};
+
+export type AgentAcpDiagnostic = AgentAcpDiagnostic_Serialize | AgentAcpDiagnostic_Deserialize;
+
+export type AgentAcpDiagnostic_Deserialize = {
+	agentId: string,
+	name: string,
+	template: AgentTemplate,
+	command: string,
+	/**  Agent host CLI (`detect_command`), when distinct from the ACP entrypoint. */
+	agentCommand: string | null,
+	/**  Host CLI OAuth/login command from the built-in template. */
+	loginCommand: string | null,
+	agentPath: string | null,
+	agentVersion: string | null,
+	/**  ACP entrypoint resolved path (`command`). */
+	resolvedPath: string | null,
+	/**  ACP entrypoint `--version` output (not the ACP protocol version). */
+	acpVersion: string | null,
+	ok: boolean,
+	failureCategory: AcpFailureCategory | null,
+	error: string | null,
+	authStatus: AgentAuthStatus,
+	agentName: string | null,
+	protocolVersion: string | null,
+	probedAt: string | null,
+};
+
+export type AgentAcpDiagnostic_Serialize = {
+	agentId: string,
+	name: string,
+	template: AgentTemplate,
+	command: string,
+	/**  Agent host CLI (`detect_command`), when distinct from the ACP entrypoint. */
+	agentCommand?: string | null,
+	/**  Host CLI OAuth/login command from the built-in template. */
+	loginCommand?: string | null,
+	agentPath?: string | null,
+	agentVersion?: string | null,
+	/**  ACP entrypoint resolved path (`command`). */
+	resolvedPath?: string | null,
+	/**  ACP entrypoint `--version` output (not the ACP protocol version). */
+	acpVersion?: string | null,
+	ok: boolean,
+	failureCategory?: AcpFailureCategory | null,
+	error?: string | null,
+	authStatus: AgentAuthStatus,
+	agentName?: string | null,
+	protocolVersion?: string | null,
+	probedAt?: string | null,
+};
+
+/**  Login / auth state shown on each Agent Doctor card. */
+export type AgentAuthStatus = "authenticated" | "unauthenticated" | "not-applicable" | "unknown";
+
+/**  Collaboration mode selector (Codex `collaboration_mode`: Default / Plan). */
+export type AgentCollaborationEvent = AgentCollaborationEvent_Serialize | AgentCollaborationEvent_Deserialize;
+
+/**  Collaboration mode selector (Codex `collaboration_mode`: Default / Plan). */
+export type AgentCollaborationEvent_Deserialize = {
+	sessionId: string,
+	agentId: string,
+	configId: string,
+	currentId: string,
+	modes: AgentModeChoice_Deserialize[],
+};
+
+/**  Collaboration mode selector (Codex `collaboration_mode`: Default / Plan). */
+export type AgentCollaborationEvent_Serialize = {
+	sessionId: string,
+	agentId: string,
+	configId: string,
+	currentId: string,
+	modes: AgentModeChoice_Serialize[],
+};
+
+export type AgentCollaborationEvt = AgentCollaborationEvt_Serialize | AgentCollaborationEvt_Deserialize;
+
+export type AgentCollaborationEvt_Deserialize = AgentCollaborationEvent_Deserialize;
+
+export type AgentCollaborationEvt_Serialize = AgentCollaborationEvent_Serialize;
+
+export type AgentCommand = AgentCommand_Serialize | AgentCommand_Deserialize;
+
+export type AgentCommandInput = {
+	hint: string,
+};
+
+export type AgentCommand_Deserialize = {
+	name: string,
+	description: string,
+	input?: AgentCommandInput | null,
+};
+
+export type AgentCommand_Serialize = {
+	name: string,
+	description: string,
+	input?: AgentCommandInput | null,
+};
+
+export type AgentCommandsEvent = AgentCommandsEvent_Serialize | AgentCommandsEvent_Deserialize;
+
+export type AgentCommandsEvent_Deserialize = {
+	sessionId: string,
+	agentId: string,
+	commands: AgentCommand_Deserialize[],
+};
+
+export type AgentCommandsEvent_Serialize = {
+	sessionId: string,
+	agentId: string,
+	commands: AgentCommand_Serialize[],
+};
+
+export type AgentCommandsEvt = AgentCommandsEvt_Serialize | AgentCommandsEvt_Deserialize;
+
+export type AgentCommandsEvt_Deserialize = AgentCommandsEvent_Deserialize;
+
+export type AgentCommandsEvt_Serialize = AgentCommandsEvent_Serialize;
+
+export type AgentCompletedEvent = AgentCompletedEvent_Serialize | AgentCompletedEvent_Deserialize;
+
+export type AgentCompletedEvent_Deserialize = AgentResultPayload_Deserialize;
+
+export type AgentCompletedEvent_Serialize = AgentResultPayload_Serialize;
+
+export type AgentDescriptor = AgentDescriptor_Serialize | AgentDescriptor_Deserialize;
+
+export type AgentDescriptor_Deserialize = {
+	id: string,
+	name: string,
+	template: AgentTemplate,
+	command: string,
+	args?: string[],
+	env?: { [key in string]: string },
+	available?: boolean,
+	lastError?: string | null,
+	/**  Last ACP probe succeeded (None = never probed). */
+	lastProbeOk?: boolean | null,
+	lastProbeAgentName?: string | null,
+	lastProbeError?: string | null,
+	lastProbedAt?: string | null,
+};
+
+export type AgentDescriptor_Serialize = {
+	id: string,
+	name: string,
+	template: AgentTemplate,
+	command: string,
+	args: string[],
+	env: { [key in string]: string },
+	available: boolean,
+	lastError?: string | null,
+	/**  Last ACP probe succeeded (None = never probed). */
+	lastProbeOk?: boolean | null,
+	lastProbeAgentName?: string | null,
+	lastProbeError?: string | null,
+	lastProbedAt?: string | null,
+};
+
+export type AgentEffortChoice = AgentEffortChoice_Serialize | AgentEffortChoice_Deserialize;
+
+export type AgentEffortChoice_Deserialize = {
+	id: string,
+	name: string,
+	description?: string | null,
+};
+
+export type AgentEffortChoice_Serialize = {
+	id: string,
+	name: string,
+	description?: string | null,
+};
+
+/**  ACP reasoning-effort selector advertised for the current session. */
+export type AgentEffortEvent = AgentEffortEvent_Serialize | AgentEffortEvent_Deserialize;
+
+/**  ACP reasoning-effort selector advertised for the current session. */
+export type AgentEffortEvent_Deserialize = {
+	sessionId: string,
+	agentId: string,
+	configId: string,
+	currentId: string,
+	efforts: AgentEffortChoice_Deserialize[],
+};
+
+/**  ACP reasoning-effort selector advertised for the current session. */
+export type AgentEffortEvent_Serialize = {
+	sessionId: string,
+	agentId: string,
+	configId: string,
+	currentId: string,
+	efforts: AgentEffortChoice_Serialize[],
+};
+
+export type AgentEffortEvt = AgentEffortEvt_Serialize | AgentEffortEvt_Deserialize;
+
+export type AgentEffortEvt_Deserialize = AgentEffortEvent_Deserialize;
+
+export type AgentEffortEvt_Serialize = AgentEffortEvent_Serialize;
+
+export type AgentFailedEvent = {
+	sessionId: string,
+	error: string,
+};
+
+export type AgentFailedEvt = AgentFailedEvent;
+
+/**  ACP fast-mode toggle advertised for the current session. */
+export type AgentFastModeEvent = {
+	sessionId: string,
+	agentId: string,
+	configId: string,
+	enabled: boolean,
+};
+
+export type AgentFastModeEvt = AgentFastModeEvent;
+
+/**
+ *  Owned mirror of the private `ToolLifecycleProgress` in
+ *  `features::agent::registry::lifecycle`.
+ */
+export type AgentLifecycleProgressEvent = {
+	taskId: string,
+	phase: string,
+	downloadedBytes: number,
+	totalBytes: number | null,
+	progress: number | null,
+};
+
+export type AgentListResponse = AgentListResponse_Serialize | AgentListResponse_Deserialize;
+
+export type AgentListResponse_Deserialize = {
+	agents: AgentDescriptor_Deserialize[],
+	defaultId: string | null,
+	enabled: boolean,
+};
+
+export type AgentListResponse_Serialize = {
+	agents: AgentDescriptor_Serialize[],
+	defaultId: string | null,
+	enabled: boolean,
+};
+
+/**  One value from an ACP select-style session config option. */
+export type AgentModeChoice = AgentModeChoice_Serialize | AgentModeChoice_Deserialize;
+
+/**  One value from an ACP select-style session config option. */
+export type AgentModeChoice_Deserialize = {
+	id: string,
+	name: string,
+	description?: string | null,
+};
+
+/**  One value from an ACP select-style session config option. */
+export type AgentModeChoice_Serialize = {
+	id: string,
+	name: string,
+	description?: string | null,
+};
+
+export type AgentModelChoice = AgentModelChoice_Serialize | AgentModelChoice_Deserialize;
+
+export type AgentModelChoice_Deserialize = {
+	id: string,
+	name: string,
+	group?: string | null,
+};
+
+export type AgentModelChoice_Serialize = {
+	id: string,
+	name: string,
+	group?: string | null,
+};
+
+/**  Models advertised by the ACP agent via session config options (category: model). */
+export type AgentModelsEvent = AgentModelsEvent_Serialize | AgentModelsEvent_Deserialize;
+
+/**  Models advertised by the ACP agent via session config options (category: model). */
+export type AgentModelsEvent_Deserialize = {
+	sessionId: string,
+	agentId: string,
+	/**  ACP config option id for the model selector. */
+	configId: string,
+	currentId: string,
+	models: AgentModelChoice_Deserialize[],
+};
+
+/**  Models advertised by the ACP agent via session config options (category: model). */
+export type AgentModelsEvent_Serialize = {
+	sessionId: string,
+	agentId: string,
+	/**  ACP config option id for the model selector. */
+	configId: string,
+	currentId: string,
+	models: AgentModelChoice_Serialize[],
+};
+
+export type AgentModelsEvt = AgentModelsEvt_Serialize | AgentModelsEvt_Deserialize;
+
+export type AgentModelsEvt_Deserialize = AgentModelsEvent_Deserialize;
+
+export type AgentModelsEvt_Serialize = AgentModelsEvent_Serialize;
+
+/**  Wrapper response for commands that return a single agent. */
+export type AgentOnly = AgentOnly_Serialize | AgentOnly_Deserialize;
+
+/**  Wrapper response for commands that return a single agent. */
+export type AgentOnly_Deserialize = {
+	agent: AgentDescriptor_Deserialize,
+};
+
+/**  Wrapper response for commands that return a single agent. */
+export type AgentOnly_Serialize = {
+	agent: AgentDescriptor_Serialize,
+};
+
+export type AgentPlanEntry = {
+	content: string,
+	/**  pending | in_progress | completed */
+	status: string,
+	/**  high | medium | low */
+	priority: string,
+};
+
+export type AgentPlanEvent = {
+	sessionId: string,
+	entries: AgentPlanEntry[],
+};
+
+export type AgentPlanEvt = AgentPlanEvent;
+
+/**  Mirror of the inline `json!({})` payload in `features::agent::service`. */
+export type AgentRegistryChangedEvent = Record<string, never>;
+
+export type AgentResultPayload = AgentResultPayload_Serialize | AgentResultPayload_Deserialize;
+
+export type AgentResultPayload_Deserialize = {
+	sessionId: string,
+	messageId: string,
+	content: string,
+	/**  ACP agent thought / reasoning (from AgentThoughtChunk), if any. */
+	reasoning?: string | null,
+	sources: string[],
+	stopReason?: string | null,
+	/**
+	 *  Durable ACP provider session id for the next continue
+	 *  (`session/resume` or `session/load` depending on agent capabilities).
+	 *  Distinct from Agentero's per-run event correlation id.
+	 */
+	providerSessionId?: string | null,
+};
+
+export type AgentResultPayload_Serialize = {
+	sessionId: string,
+	messageId: string,
+	content: string,
+	/**  ACP agent thought / reasoning (from AgentThoughtChunk), if any. */
+	reasoning?: string | null,
+	sources: string[],
+	stopReason?: string | null,
+	/**
+	 *  Durable ACP provider session id for the next continue
+	 *  (`session/resume` or `session/load` depending on agent capabilities).
+	 *  Distinct from Agentero's per-run event correlation id.
+	 */
+	providerSessionId?: string | null,
+};
+
+export type AgentSessionInfoEvent = AgentSessionInfoEvent_Serialize | AgentSessionInfoEvent_Deserialize;
+
+export type AgentSessionInfoEvent_Deserialize = {
+	sessionId: string,
+	agentId: string,
+	providerSessionId?: string | null,
+	title?: string | null,
+	updatedAt?: string | null,
+};
+
+export type AgentSessionInfoEvent_Serialize = {
+	sessionId: string,
+	agentId: string,
+	providerSessionId?: string | null,
+	title?: string | null,
+	updatedAt?: string | null,
+};
+
+export type AgentSessionInfoEvt = AgentSessionInfoEvt_Serialize | AgentSessionInfoEvt_Deserialize;
+
+export type AgentSessionInfoEvt_Deserialize = AgentSessionInfoEvent_Deserialize;
+
+export type AgentSessionInfoEvt_Serialize = AgentSessionInfoEvent_Serialize;
+
+export type AgentSkill = {
+	id: string,
+	name: string,
+	description?: string,
+};
+
+/**
+ *  Phase transition of an in-flight agent turn, driving the streaming UI's
+ *  loading states (label + animation) before the first output arrives.
+ */
+export type AgentStatusEvent = AgentStatusEvent_Serialize | AgentStatusEvent_Deserialize;
+
+/**
+ *  Phase transition of an in-flight agent turn, driving the streaming UI's
+ *  loading states (label + animation) before the first output arrives.
+ */
+export type AgentStatusEvent_Deserialize = {
+	sessionId: string,
+	/**
+	 *  `starting` (spawn/connect) | `waiting-model` (prompt sent, no output
+	 *  yet) | `reconnecting` (upstream connection lost, agent retries).
+	 */
+	phase: string,
+	/**  Optional context, e.g. the reconnect attempt counter (`2/5`). */
+	detail?: string | null,
+};
+
+/**
+ *  Phase transition of an in-flight agent turn, driving the streaming UI's
+ *  loading states (label + animation) before the first output arrives.
+ */
+export type AgentStatusEvent_Serialize = {
+	sessionId: string,
+	/**
+	 *  `starting` (spawn/connect) | `waiting-model` (prompt sent, no output
+	 *  yet) | `reconnecting` (upstream connection lost, agent retries).
+	 */
+	phase: string,
+	/**  Optional context, e.g. the reconnect attempt counter (`2/5`). */
+	detail?: string | null,
+};
+
+export type AgentStatusEvt = AgentStatusEvt_Serialize | AgentStatusEvt_Deserialize;
+
+export type AgentStatusEvt_Deserialize = AgentStatusEvent_Deserialize;
+
+export type AgentStatusEvt_Serialize = AgentStatusEvent_Serialize;
+
+export type AgentStreamEvent = {
+	sessionId: string,
+	chunk: string,
+	kind: AgentStreamKind,
+};
+
+export type AgentStreamEvt = AgentStreamEvent;
+
+/**  Stream chunk kind: assistant message body vs internal thought/reasoning. */
+export type AgentStreamKind = "message" | "thought";
+
+export type AgentTemplate = "opencode" | 
+/**
+ *  OpenClaw native ACP (`openclaw acp`).
+ *  Docs: https://docs.openclaw.ai/cli/acp
+ */
+"open-claw" | 
+/**
+ *  Hermes Agent native ACP (`hermes acp`).
+ *  Docs: https://github.com/NousResearch/hermes-agent
+ */
+"hermes" | "claude-acp" | "codex-acp" | 
+/**  Google Antigravity's official ACP server (separate from the retired `agy-acp` adapter). */
+"antigravity-acp" | 
+/**
+ *  Qoder CLI native ACP (`qodercli --acp`).
+ *  Docs: https://docs.qoder.com/en/cli/acp
+ */
+"qoder-cli" | 
+/**
+ *  Grok Build native ACP (`grok agent stdio`).
+ *  Docs: https://zed.dev/acp/agent/grok-build
+ */
+"grok-build" | 
+/**
+ *  Pi coding agent via the community `pi-acp` adapter (pi has no native ACP).
+ *  Docs: https://pi.dev · https://github.com/svkozak/pi-acp
+ */
+"pi" | 
+/**
+ *  DeepSeek Harness umbrella CLI with native ACP (`dsh --profile acp`).
+ *  Docs: https://github.com/deepseek-ai/deepseek-harness
+ */
+"dsh" | 
+/**
+ *  Moonshot Kimi Code CLI with native ACP (`kimi acp`).
+ *  Docs: https://moonshotai.github.io/kimi-code/en/
+ */
+"kimi-code" | 
+/**
+ *  ZCode CLI via the community `zcode-acp-server` adapter, which bridges the
+ *  headless `zcode app-server --stdio`. Reuses the ZCode desktop app login
+ *  (`~/.zcode`); the adapter auto-discovers the app-bundled CLI.
+ *  Docs: https://github.com/william0wang/zcode-acp
+ */
+"zcode" | 
+/**
+ *  MiniMax Code CLI with native ACP (`mcode acp`).
+ *  Docs: https://agent.minimax.io/docs/cli/quick-start
+ */
+"minimax-code" | "custom";
+
+/**  ACP tool call create/update for UI (`Tool` element). */
+export type AgentToolEvent = AgentToolEvent_Serialize | AgentToolEvent_Deserialize;
+
+/**  ACP tool call create/update for UI (`Tool` element). */
+export type AgentToolEvent_Deserialize = {
+	sessionId: string,
+	toolCallId: string,
+	title?: string | null,
+	kind?: string | null,
+	/**  pending | in_progress | completed | failed */
+	status?: string | null,
+	input?: Json | null,
+	output?: Json | null,
+	/**  When true, fields are a full snapshot (ToolCall); false = patch (ToolCallUpdate). */
+	full?: boolean,
+};
+
+/**  ACP tool call create/update for UI (`Tool` element). */
+export type AgentToolEvent_Serialize = {
+	sessionId: string,
+	toolCallId: string,
+	title?: string | null,
+	kind?: string | null,
+	/**  pending | in_progress | completed | failed */
+	status?: string | null,
+	input?: Json | null,
+	output?: Json | null,
+	/**  When true, fields are a full snapshot (ToolCall); false = patch (ToolCallUpdate). */
+	full: boolean,
+};
+
+export type AgentToolEvt = AgentToolEvt_Serialize | AgentToolEvt_Deserialize;
+
+export type AgentToolEvt_Deserialize = AgentToolEvent_Deserialize;
+
+export type AgentToolEvt_Serialize = AgentToolEvent_Serialize;
+
+export type AgentUsageEvent = {
+	sessionId: string,
+	used: number,
+	size: number,
+};
+
+export type AgentUsageEvt = AgentUsageEvent;
+
+export type AgentUserAgentResponse = {
+	userAgent: string,
+	userAgentProviderIds: string,
+};
+
+export type AliasDoctorSection = AliasDoctorSection_Serialize | AliasDoctorSection_Deserialize;
+
+export type AliasDoctorSection_Deserialize = {
+	ok: boolean,
+	checkedPapers: number,
+	completePapers: number,
+	candidates: AliasRepairCandidate_Deserialize[],
+	/**  Incomplete paper NOTES paths the user chose to ignore (persisted). */
+	ignoredPaths?: string[],
+	issues: DoctorIssue_Deserialize[],
+};
+
+export type AliasDoctorSection_Serialize = {
+	ok: boolean,
+	checkedPapers: number,
+	completePapers: number,
+	candidates: AliasRepairCandidate_Serialize[],
+	/**  Incomplete paper NOTES paths the user chose to ignore (persisted). */
+	ignoredPaths: string[],
+	issues: DoctorIssue_Serialize[],
+};
+
+export type AliasRepairCandidate = AliasRepairCandidate_Serialize | AliasRepairCandidate_Deserialize;
+
+export type AliasRepairCandidate_Deserialize = {
+	path: string,
+	paperTitle: string,
+	currentAliases: string[],
+	titleAlias: string,
+	shortAlias: string,
+	expectedHash: string,
+	fixable: boolean,
+	selectedByDefault: boolean,
+	reason: string | null,
+};
+
+export type AliasRepairCandidate_Serialize = {
+	path: string,
+	paperTitle: string,
+	currentAliases: string[],
+	titleAlias: string,
+	shortAlias: string,
+	expectedHash: string,
+	fixable: boolean,
+	selectedByDefault: boolean,
+	reason?: string | null,
+};
+
+export type AliasRepairChange = {
+	path: string,
+	titleAlias: string,
+	shortAlias: string,
+	expectedHash: string,
+};
+
+export type AliasRepairResult = {
+	updatedPaths: string[],
+};
+
+export type ApiResult<T> = {
+	ok: boolean,
+	data: T | null,
+	error: ErrorBody | null,
+};
+
+export type AppSettings = AppSettings_Serialize | AppSettings_Deserialize;
+
+export type AppSettings_Deserialize = {
+	translatorBaseUrl?: string,
+	/**  EasyScholar key for journal ranking and impact-factor lookups. */
+	easyScholarKey?: string,
+	networkProxyEnabled?: boolean,
+	networkProxyUrl?: string,
+	/**  URL-prefix GitHub mirror for Skill import fallback when GitHub is unreachable. */
+	githubMirrorEnabled?: boolean,
+	/**  e.g. `https://gh.llkk.cc` — requests become `{base}/https://codeload.github.com/...`. */
+	githubMirrorBaseUrl?: string,
+	paperTreeLabelMode?: string,
+	paperTreeSortMode?: string,
+	/**
+	 *  NOTES.md shell generated on paper import:
+	 *  `standard` | `title-only` | `blank` | `custom` (vault template).
+	 */
+	paperNoteMode?: string,
+	/**
+	 *  Open a paper's NOTES.md in the reading split when a paper is opened.
+	 *  Default on; off opens only the PDF/HTML body.
+	 */
+	autoOpenPaperNotes?: boolean,
+	/**
+	 *  Auto-ingest: adopt bare folders created under `papers/` that hold at
+	 *  least one settled PDF into the library in place (catalog row + NOTES
+	 *  shell + background metadata recognition). Default on.
+	 */
+	autoIngest?: boolean,
+	/**
+	 *  When opening a new paper, close the active tab instead of adding a new one.
+	 *  Default off; useful for users who prefer a single-paper-at-a-time workflow.
+	 */
+	replaceCurrentTabOnOpenPaper?: boolean,
+	autoUpdateInternalLinks?: string,
+	libraryColumns?: LibraryColumnPref_Deserialize[],
+	connectorEnabled?: boolean,
+	connectorPort?: number,
+	/**  Loopback Streamable HTTP MCP server. Default off. */
+	mcpEnabled?: boolean,
+	mcpPort?: number,
+	/**
+	 *  OpenAI Secure MCP Tunnel id (`tunnel_` + 32 hex) for the built-in
+	 *  `tunnel-client` supervisor. Empty = never configured.
+	 */
+	mcpTunnelId?: string,
+	/**
+	 *  Runtime (Restricted) control-plane API key. Masked on read like the
+	 *  other commercial keys; the WebView never sees the plaintext.
+	 */
+	mcpTunnelApiKey?: string,
+	batchImportConcurrency?: number,
+	theme?: string,
+	uiTheme?: string,
+	locale?: string,
+	editorFontSize?: number,
+	/**  UI chrome font. Empty = app default. Built-ins: system/serif/mono, else family name. */
+	interfaceFontFamily?: string,
+	/**  Markdown body font. Empty = inherit interface/default. Same vocabulary as interface. */
+	textFontFamily?: string,
+	/**  Monospace font for code / font-mono. Empty = app default mono stack. */
+	monoFontFamily?: string,
+	/**  Deprecated single editor font preset; migrated into `text_font_family` once. */
+	editorFontFamily?: string,
+	/**  Markdown editor body line-height (unitless), typical range 1.4–2.0. */
+	editorLineHeight?: number | null,
+	uiScale?: number | null,
+	showEditorToolbar?: boolean,
+	agentPermissionMode?: string,
+	autoPaperReader?: boolean,
+	aiResponseLanguage?: string,
+	agentPersonalPrompt?: string,
+	pdfAsk?: PdfAskSettings,
+	embedding?: EmbeddingSettings,
+	translate?: TranslateSettings,
+	layout?: LayoutSettings,
+	/**  Prefill Markdown export dialog watermark checkbox (default off). */
+	exportWatermarkEnabled?: boolean,
+	/**  PostHog product analytics opt-out (applies from the next launch). */
+	telemetryEnabled?: boolean,
+	/**  Plaza discovery sources in the sidebar. Default on. */
+	plazaEnabled?: boolean,
+	/**  Plaza source ids hidden from the sidebar / Plaza home (right-click toggle). */
+	plazaHiddenSources?: string[],
+	/**  First-run setup wizard completed. Default false → auto-show on fresh installs. */
+	onboardingDone?: boolean,
+	/**  Post-vault feature tour completed or skipped. Default false → auto-start once. */
+	featureTourDone?: boolean,
+};
+
+export type AppSettings_Serialize = {
+	translatorBaseUrl: string,
+	/**  EasyScholar key for journal ranking and impact-factor lookups. */
+	easyScholarKey: string,
+	networkProxyEnabled: boolean,
+	networkProxyUrl: string,
+	/**  URL-prefix GitHub mirror for Skill import fallback when GitHub is unreachable. */
+	githubMirrorEnabled: boolean,
+	/**  e.g. `https://gh.llkk.cc` — requests become `{base}/https://codeload.github.com/...`. */
+	githubMirrorBaseUrl: string,
+	paperTreeLabelMode: string,
+	paperTreeSortMode: string,
+	/**
+	 *  NOTES.md shell generated on paper import:
+	 *  `standard` | `title-only` | `blank` | `custom` (vault template).
+	 */
+	paperNoteMode: string,
+	/**
+	 *  Open a paper's NOTES.md in the reading split when a paper is opened.
+	 *  Default on; off opens only the PDF/HTML body.
+	 */
+	autoOpenPaperNotes: boolean,
+	/**
+	 *  Auto-ingest: adopt bare folders created under `papers/` that hold at
+	 *  least one settled PDF into the library in place (catalog row + NOTES
+	 *  shell + background metadata recognition). Default on.
+	 */
+	autoIngest: boolean,
+	/**
+	 *  When opening a new paper, close the active tab instead of adding a new one.
+	 *  Default off; useful for users who prefer a single-paper-at-a-time workflow.
+	 */
+	replaceCurrentTabOnOpenPaper: boolean,
+	autoUpdateInternalLinks: string,
+	libraryColumns: LibraryColumnPref_Serialize[],
+	connectorEnabled: boolean,
+	connectorPort: number,
+	/**  Loopback Streamable HTTP MCP server. Default off. */
+	mcpEnabled: boolean,
+	mcpPort: number,
+	/**
+	 *  OpenAI Secure MCP Tunnel id (`tunnel_` + 32 hex) for the built-in
+	 *  `tunnel-client` supervisor. Empty = never configured.
+	 */
+	mcpTunnelId: string,
+	/**
+	 *  Runtime (Restricted) control-plane API key. Masked on read like the
+	 *  other commercial keys; the WebView never sees the plaintext.
+	 */
+	mcpTunnelApiKey: string,
+	batchImportConcurrency: number,
+	theme: string,
+	uiTheme: string,
+	locale: string,
+	editorFontSize: number,
+	/**  UI chrome font. Empty = app default. Built-ins: system/serif/mono, else family name. */
+	interfaceFontFamily: string,
+	/**  Markdown body font. Empty = inherit interface/default. Same vocabulary as interface. */
+	textFontFamily: string,
+	/**  Monospace font for code / font-mono. Empty = app default mono stack. */
+	monoFontFamily: string,
+	/**  Markdown editor body line-height (unitless), typical range 1.4–2.0. */
+	editorLineHeight: number | null,
+	uiScale: number | null,
+	showEditorToolbar: boolean,
+	agentPermissionMode: string,
+	autoPaperReader: boolean,
+	aiResponseLanguage: string,
+	agentPersonalPrompt: string,
+	pdfAsk: PdfAskSettings,
+	embedding: EmbeddingSettings,
+	translate: TranslateSettings,
+	layout: LayoutSettings,
+	/**  Prefill Markdown export dialog watermark checkbox (default off). */
+	exportWatermarkEnabled: boolean,
+	/**  PostHog product analytics opt-out (applies from the next launch). */
+	telemetryEnabled: boolean,
+	/**  Plaza discovery sources in the sidebar. Default on. */
+	plazaEnabled: boolean,
+	/**  Plaza source ids hidden from the sidebar / Plaza home (right-click toggle). */
+	plazaHiddenSources: string[],
+	/**  First-run setup wizard completed. Default false → auto-show on fresh installs. */
+	onboardingDone: boolean,
+	/**  Post-vault feature tour completed or skipped. Default false → auto-start once. */
+	featureTourDone: boolean,
+};
+
+export type AskUserOptionDto = AskUserOptionDto_Serialize | AskUserOptionDto_Deserialize;
+
+export type AskUserOptionDto_Deserialize = {
+	label: string,
+	description?: string | null,
+};
+
+export type AskUserOptionDto_Serialize = {
+	label: string,
+	description?: string | null,
+};
+
+/**  Frontend-friendly question (mirrors `AskUserQuestion` in chat-state). */
+export type AskUserQuestionDto = AskUserQuestionDto_Serialize | AskUserQuestionDto_Deserialize;
+
+/**  Frontend-friendly question (mirrors `AskUserQuestion` in chat-state). */
+export type AskUserQuestionDto_Deserialize = {
+	question: string,
+	options: AskUserOptionDto_Deserialize[],
+	multiSelect: boolean,
+	/**  Grok always allows free-text Other. */
+	allowOther: boolean,
+};
+
+/**  Frontend-friendly question (mirrors `AskUserQuestion` in chat-state). */
+export type AskUserQuestionDto_Serialize = {
+	question: string,
+	options: AskUserOptionDto_Serialize[],
+	multiSelect: boolean,
+	/**  Grok always allows free-text Other. */
+	allowOther: boolean,
+};
+
+/**  Event payload for `agent:ask-user-request`. */
+export type AskUserRequestEvent = AskUserRequestEvent_Serialize | AskUserRequestEvent_Deserialize;
+
+/**  Event payload for `agent:ask-user-request`. */
+export type AskUserRequestEvent_Deserialize = {
+	requestId: string,
+	sessionId: string,
+	toolCallId: string | null,
+	/**  default | plan */
+	mode: string,
+	questions: AskUserQuestionDto_Deserialize[],
+};
+
+/**  Event payload for `agent:ask-user-request`. */
+export type AskUserRequestEvent_Serialize = {
+	requestId: string,
+	sessionId: string,
+	toolCallId: string | null,
+	/**  default | plan */
+	mode: string,
+	questions: AskUserQuestionDto_Serialize[],
+};
+
+export type AskUserRequestEvt = AskUserRequestEvt_Serialize | AskUserRequestEvt_Deserialize;
+
+export type AskUserRequestEvt_Deserialize = AskUserRequestEvent_Deserialize;
+
+export type AskUserRequestEvt_Serialize = AskUserRequestEvent_Serialize;
+
+/**  Request payload for `agent_respond_ask_user`. */
+export type AskUserResponseRequest = {
+	requestId: string,
+	/**  accept | cancel */
+	action: string,
+	/**  Parallel answer strings (multi-select joined with ", "). */
+	answers?: string[] | null,
+};
+
+export type AssetDownloadProgress = AssetDownloadProgress_Serialize | AssetDownloadProgress_Deserialize;
+
+export type AssetDownloadProgress_Deserialize = {
+	taskId: string,
+	phase: string,
+	downloadedBytes: number,
+	totalBytes: number | null,
+	progress: number | null,
+	/**  Optional item counters for batch operations (e.g. import 2/5). */
+	currentCount?: number | null,
+	totalCount?: number | null,
+};
+
+export type AssetDownloadProgress_Serialize = {
+	taskId: string,
+	phase: string,
+	downloadedBytes: number,
+	totalBytes: number | null,
+	progress: number | null,
+	/**  Optional item counters for batch operations (e.g. import 2/5). */
+	currentCount?: number | null,
+	totalCount?: number | null,
+};
+
+export type AssetDownloadResult = {
+	pdf: boolean,
+	tex: boolean,
+	/**  True when `PAPER.md` was written (or already present after auto-parse). */
+	paperMd?: boolean,
+	messages: string[],
+};
+
+export type BacklinksResponse = BacklinksResponse_Serialize | BacklinksResponse_Deserialize;
+
+export type BacklinksResponse_Deserialize = {
+	path: string,
+	backlinks: ResolvedLink_Deserialize[],
+};
+
+export type BacklinksResponse_Serialize = {
+	path: string,
+	backlinks: ResolvedLink_Serialize[],
+};
+
+export type Bbox = {
+	x: number | null,
+	y: number | null,
+	w: number | null,
+	h: number | null,
+};
+
+export type BlobCacheStats = {
+	/**  Total bytes under all (or one) remote blob dirs. */
+	bytes: number,
+	files: number,
+	/**  Absolute path when scoped to one vault; empty when aggregated. */
+	root: string,
+	maxBytes: number,
+};
+
+/**  A client device that was manually approved by the desktop user. */
+export type BridgeDevice = {
+	deviceId: string,
+	name: string,
+	publicKeyB64: string,
+	pairedAt: string,
+	lastSeenAt: string | null,
+	revoked?: boolean,
+};
+
+/**  Desktop bridge host online flag (`bridge:host-status`, payload `bool`). */
+export type BridgeHostStatusEvent = boolean;
+
+/**
+ *  QR payload. It intentionally carries no bearer token: desktop confirmation
+ *  and a device signature turn a scanned offer into an approved pairing.
+ */
+export type BridgeOffer = {
+	v: number,
+	serverId: string,
+	hostPublicKeyB64: string,
+	relay: RelayOffer,
+	hostName: string,
+	pin?: boolean,
+};
+
+export type BridgeOfferResult = {
+	offer: BridgeOffer,
+	url: string,
+};
+
+export type BridgePairRequestEvent = PairingRequest;
+
+export type BridgeStartArgs = {
+	vaultPath: string,
+	hostName: string,
+	relayEndpoint?: string | null,
+};
+
+export type BridgeStatus = {
+	enabled: boolean,
+	online: boolean,
+	serverId: string | null,
+	relayEndpoint: string,
+	hostName: string | null,
+	vaultPath: string | null,
+	activeConnections: number,
+	pendingPairings: PairingRequest[],
+	lastError: string | null,
+};
+
+/**  Non-secret snapshot for Host-side consumers resolving built-in credentials. */
+export type BuiltinProviderStatus = {
+	available: boolean,
+	baseUrl: string,
+	translateModel: string,
+	embeddingModel: string,
+	ocrModel: string,
+};
+
+/**  Status for a common agent row in Settings. */
+export type CatalogAcpStatus = 
+/**  Detect binary missing. */
+"missing" | 
+/**  Binary found, ACP not probed yet. */
+"not-probed" | 
+/**  ACP initialize succeeded. */
+"ready" | 
+/**  ACP initialize failed. */
+"failed";
+
+export type CatalogDoctorSection = CatalogDoctorSection_Serialize | CatalogDoctorSection_Deserialize;
+
+export type CatalogDoctorSection_Deserialize = {
+	ok: boolean,
+	schemaVersion: number | null,
+	expectedSchemaVersion: number,
+	issues: DoctorIssue_Deserialize[],
+	duplicateReport: DuplicateReport | null,
+};
+
+export type CatalogDoctorSection_Serialize = {
+	ok: boolean,
+	schemaVersion?: number | null,
+	expectedSchemaVersion: number,
+	issues: DoctorIssue_Serialize[],
+	duplicateReport?: DuplicateReport | null,
+};
+
+export type CatalogEntry = CatalogEntry_Serialize | CatalogEntry_Deserialize;
+
+export type CatalogEntry_Deserialize = {
+	templateId: string,
+	name: string,
+	description: string,
+	command: string,
+	args: string[],
+	installHint: string,
+	/**  Shell install command for a missing ACP adapter (from the template). */
+	installCommand?: string | null,
+	/**  Host CLI OAuth/login command from the template. */
+	loginCommand?: string | null,
+	/**  Host CLI present but ACP entrypoint missing — Settings may offer ACP install. */
+	offerInstall?: boolean,
+	/**  Silent install/update via `agent_run_tool_lifecycle` is available (local). */
+	canInstall?: boolean,
+	/**  Host detect binary differs from ACP entrypoint (e.g. `claude` vs `claude-agent-acp`). */
+	adapterDistinct?: boolean,
+	/**  Primary CLI found on PATH (detect_command) — Agent layer. */
+	binaryAvailable: boolean,
+	resolvedPath?: string | null,
+	/**  ACP entrypoint command found — ACP layer (may equal host for native ACP agents). */
+	acpCommandAvailable: boolean,
+	/**
+	 *  Bundled ACP adapter tier present in app resources (offline fallback;
+	 *  a PATH-installed adapter still wins over it).
+	 */
+	acpBundled?: boolean,
+	/**  Version of the bundled adapter (from the staging manifest), when staged. */
+	acpBundledVersion?: string | null,
+	acpStatus: CatalogAcpStatus,
+	registeredId?: string | null,
+	isDefault: boolean,
+	acpAgentName?: string | null,
+	lastProbeError?: string | null,
+	lastProbedAt?: string | null,
+	/**  Normalized local host CLI version (`detect_command --version`), when known. */
+	installedVersion?: string | null,
+	/**  Target version the silent updater can reach (npm latest). */
+	latestVersion?: string | null,
+	/**
+	 *  True only when a newer silent-update target is known. Settings shows
+	 *  the Upgrade button solely when this is `Some(true)`.
+	 */
+	updateAvailable?: boolean | null,
+};
+
+export type CatalogEntry_Serialize = {
+	templateId: string,
+	name: string,
+	description: string,
+	command: string,
+	args: string[],
+	installHint: string,
+	/**  Shell install command for a missing ACP adapter (from the template). */
+	installCommand?: string | null,
+	/**  Host CLI OAuth/login command from the template. */
+	loginCommand?: string | null,
+	/**  Host CLI present but ACP entrypoint missing — Settings may offer ACP install. */
+	offerInstall: boolean,
+	/**  Silent install/update via `agent_run_tool_lifecycle` is available (local). */
+	canInstall: boolean,
+	/**  Host detect binary differs from ACP entrypoint (e.g. `claude` vs `claude-agent-acp`). */
+	adapterDistinct: boolean,
+	/**  Primary CLI found on PATH (detect_command) — Agent layer. */
+	binaryAvailable: boolean,
+	resolvedPath?: string | null,
+	/**  ACP entrypoint command found — ACP layer (may equal host for native ACP agents). */
+	acpCommandAvailable: boolean,
+	/**
+	 *  Bundled ACP adapter tier present in app resources (offline fallback;
+	 *  a PATH-installed adapter still wins over it).
+	 */
+	acpBundled: boolean,
+	/**  Version of the bundled adapter (from the staging manifest), when staged. */
+	acpBundledVersion?: string | null,
+	acpStatus: CatalogAcpStatus,
+	registeredId?: string | null,
+	isDefault: boolean,
+	acpAgentName?: string | null,
+	lastProbeError?: string | null,
+	lastProbedAt?: string | null,
+	/**  Normalized local host CLI version (`detect_command --version`), when known. */
+	installedVersion?: string | null,
+	/**  Target version the silent updater can reach (npm latest). */
+	latestVersion?: string | null,
+	/**
+	 *  True only when a newer silent-update target is known. Settings shows
+	 *  the Upgrade button solely when this is `Some(true)`.
+	 */
+	updateAvailable?: boolean | null,
+};
+
+export type CatalogScanResponse = CatalogScanResponse_Serialize | CatalogScanResponse_Deserialize;
+
+export type CatalogScanResponse_Deserialize = {
+	entries: CatalogEntry_Deserialize[],
+	customAgents: AgentDescriptor_Deserialize[],
+	defaultId: string | null,
+	enabled: boolean,
+	proxyEnabled: boolean,
+	proxyUrl: string,
+	/**  See [`AgentRegistryState::user_agent`]. */
+	userAgent?: string,
+	/**  See [`AgentRegistryState::user_agent_provider_ids`]. */
+	userAgentProviderIds?: string,
+};
+
+export type CatalogScanResponse_Serialize = {
+	entries: CatalogEntry_Serialize[],
+	customAgents: AgentDescriptor_Serialize[],
+	defaultId: string | null,
+	enabled: boolean,
+	proxyEnabled: boolean,
+	proxyUrl: string,
+	/**  See [`AgentRegistryState::user_agent`]. */
+	userAgent: string,
+	/**  See [`AgentRegistryState::user_agent_provider_ids`]. */
+	userAgentProviderIds: string,
+};
+
+export type Citation = Citation_Serialize | Citation_Deserialize;
+
+export type CitationMeta = CitationMeta_Serialize | CitationMeta_Deserialize;
+
+export type CitationMeta_Deserialize = {
+	title?: string | null,
+	authors?: string[],
+	year?: number | null,
+	venue?: string | null,
+	doi?: string | null,
+	arxivId?: string | null,
+	url?: string | null,
+};
+
+export type CitationMeta_Serialize = {
+	title?: string | null,
+	authors?: string[],
+	year?: number | null,
+	venue?: string | null,
+	doi?: string | null,
+	arxivId?: string | null,
+	url?: string | null,
+};
+
+export type CitationTarget = {
+	/**  Vault-relative paper folder path (`papers/<id>`). */
+	paperPath: string,
+	/**  Vault-relative path from the citation link. */
+	path: string,
+	/**  Raw fragment (e.g. `figure=1`). */
+	fragment: string,
+	/**  0-based page index for the PDF viewer. */
+	pageIndex: number,
+	/**  Normalized page bbox (0–1) to scroll to and highlight. */
+	bbox: Bbox,
+	/**  Human-readable title when available. */
+	title: string | null,
+	/**  Region id suitable for the PDF highlight registry. */
+	regionId: string,
+};
+
+export type Citation_Deserialize = {
+	id: string,
+	rawKey?: string | null,
+	/**  In-text marker like `"[12]"` when bibliography order is known. */
+	display?: string | null,
+	raw?: string | null,
+	metadata: CitationMeta_Deserialize,
+	localMatch?: LocalMatch | null,
+	/**  Where the metadata came from, e.g. `"bbl"`, `"bib"`, `"s2"`, `"bbl+s2"`. */
+	source: string,
+	/**  `"resolved"` (has title) or `"unresolved"` (raw text only). */
+	status: string,
+};
+
+export type Citation_Serialize = {
+	id: string,
+	rawKey?: string | null,
+	/**  In-text marker like `"[12]"` when bibliography order is known. */
+	display?: string | null,
+	raw?: string | null,
+	metadata: CitationMeta_Serialize,
+	localMatch?: LocalMatch | null,
+	/**  Where the metadata came from, e.g. `"bbl"`, `"bib"`, `"s2"`, `"bbl+s2"`. */
+	source: string,
+	/**  `"resolved"` (has title) or `"unresolved"` (raw text only). */
+	status: string,
+};
+
+export type CiteSidecar = CiteSidecar_Serialize | CiteSidecar_Deserialize;
+
+export type CiteSidecar_Deserialize = {
+	schemaVersion: number,
+	source: CiteSource,
+	citations: Citation_Deserialize[],
+	messages?: string[],
+};
+
+export type CiteSidecar_Serialize = {
+	schemaVersion: number,
+	source: CiteSource,
+	citations: Citation_Serialize[],
+	messages: string[],
+};
+
+export type CiteSource = {
+	/**  Winning pipeline, e.g. `"s2"`, `"bbl"`, `"bbl+s2"`, `"none"`. */
+	mode: string,
+	generatedAt: string,
+	/**  Input fingerprint; unchanged inputs skip re-parse (and re-fetch). */
+	fingerprint: string,
+};
+
+export type CitingCandidate = CitingCandidate_Serialize | CitingCandidate_Deserialize;
+
+export type CitingCandidate_Deserialize = {
+	s2Id: string,
+	title: string,
+	date: string,
+	arxivId?: string | null,
+	doi?: string | null,
+	/**  Ready for `lookupSubmit`: `arXiv:{id}` or a bare DOI. */
+	identifier: string,
+	/**  Vault-relative paths of my papers this candidate cites. */
+	citedByMine: string[],
+	/**  IDF-weighted overlap; the primary ranking signal. */
+	weight: number | null,
+	similarity?: number | null,
+	citationCount: number,
+	oaPdfUrl?: string | null,
+};
+
+export type CitingCandidate_Serialize = {
+	s2Id: string,
+	title: string,
+	date: string,
+	arxivId?: string | null,
+	doi?: string | null,
+	/**  Ready for `lookupSubmit`: `arXiv:{id}` or a bare DOI. */
+	identifier: string,
+	/**  Vault-relative paths of my papers this candidate cites. */
+	citedByMine: string[],
+	/**  IDF-weighted overlap; the primary ranking signal. */
+	weight: number | null,
+	similarity?: number | null,
+	citationCount: number,
+	oaPdfUrl?: string | null,
+};
+
+export type CitingScanResult = CitingScanResult_Serialize | CitingScanResult_Deserialize;
+
+export type CitingScanResult_Deserialize = {
+	generatedAt: string,
+	sinceDate: string,
+	libraryTotal: number,
+	/**  Papers eligible as seeds (in S2, cited at least once, not mega-cited). */
+	seedsTotal: number,
+	/**  Seeds that actually hit the network this run (rest came from cache). */
+	seedsFetched: number,
+	skippedMegaCited: number,
+	skippedUncited: number,
+	/**  No identifier, or the identifier is unknown to S2. */
+	skippedUnknown: number,
+	rawCiting: number,
+	afterFilters: number,
+	gatePassed: number,
+	similarityThreshold?: number | null,
+	candidates: CitingCandidate_Deserialize[],
+	cancelled: boolean,
+	messages?: string[],
+};
+
+export type CitingScanResult_Serialize = {
+	generatedAt: string,
+	sinceDate: string,
+	libraryTotal: number,
+	/**  Papers eligible as seeds (in S2, cited at least once, not mega-cited). */
+	seedsTotal: number,
+	/**  Seeds that actually hit the network this run (rest came from cache). */
+	seedsFetched: number,
+	skippedMegaCited: number,
+	skippedUncited: number,
+	/**  No identifier, or the identifier is unknown to S2. */
+	skippedUnknown: number,
+	rawCiting: number,
+	afterFilters: number,
+	gatePassed: number,
+	similarityThreshold?: number | null,
+	candidates: CitingCandidate_Serialize[],
+	cancelled: boolean,
+	messages: string[],
+};
+
+export type ClearAndReparseResult = {
+	papersScanned: number,
+	filesRemoved: number,
+	layoutEnqueued: number,
+	paperEnqueued: number,
+};
+
+export type ClearParseResultsArgs = {
+	vaultPath: string,
+	scope: ParseResultScope,
+};
+
+export type ClearParseResultsResult = {
+	papersScanned: number,
+	filesRemoved: number,
+};
+
+export type CliInstallResult = {
+	status: CliInstallStatus,
+	action: string,
+};
+
+export type CliInstallStatus = {
+	/**  App package version (from Cargo / Tauri). */
+	appVersion: string,
+	/**  Version reported by the resolved CLI binary, if present. */
+	bundledVersion: string | null,
+	/**  Absolute path to a runnable CLI (bundled, managed cache, or dev), if any. */
+	bundledPath: string | null,
+	/**  Where the binary came from: `bundled` | `managed` | `dev`. */
+	source: string | null,
+	/**  Version reported by the CLI we would / did install (alias clarity for UI). */
+	cliVersion: string | null,
+	/**  Expected GitHub Release asset URL for this app version + host triple. */
+	downloadUrl: string | null,
+	/**  Tag page for manual download / troubleshooting. */
+	releasePageUrl: string,
+	/**  Host can install (local binary available or download supported on this OS). */
+	canInstall: boolean,
+	/**  Whether a user-level shim/link we manage is installed. */
+	installed: boolean,
+	/**  Where the managed shim lives. */
+	installPath: string | null,
+	/**  Shim points at our CLI and CLI version matches the app. */
+	shimCurrent: boolean,
+	/**  Preferred install directory for new installs. */
+	preferredBinDir: string,
+	/**  Whether the preferred bin dir is currently on PATH. */
+	preferredBinOnPath: boolean,
+	/**  Whether a `brew` executable is available (PATH or standard Homebrew roots). */
+	brewAvailable: boolean,
+	/**  Command users type after install (`agentero-cli` on Windows, `agentero` elsewhere). */
+	commandName: string,
+	/**  Human-readable note (e.g. PATH hint). */
+	message: string | null,
+};
+
+export type CommitStatus = 
+/**  New paper folder + catalog row were written. */
+"created" | 
+/**  Catalog already had this paper; existing path returned, nothing touched. */
+"deduped" | 
+/**  `{parent}/{id}` already holds a paper (dir + NOTES or catalog row). */
+"skipped";
+
+/**  Mirror of the inline `json!({ "line" })` in `features::compile::compile_tex`. */
+export type CompileLogEvent = {
+	line: string,
+};
+
+/**
+ *  Mirror of the inline `json!({ "message", "sessionId" })` in
+ *  `integration::connector::state::emit_error`.
+ */
+export type ConnectorErrorEvent = {
+	message: string,
+	sessionId: string | null,
+};
+
+export type ConnectorItemSaved = {
+	path: string,
+	id: string,
+	title: string,
+	deduped: boolean,
+	sessionId: string,
+};
+
+export type ConnectorItemSavedEvent = ConnectorItemSaved;
+
+export type ConnectorProgress = {
+	key: string,
+	sessionId: string,
+	path: string,
+	title: string,
+	status: string,
+	progress: number | null,
+	detail: string | null,
+	error: string | null,
+};
+
+export type ConnectorProgressEvent = ConnectorProgress;
+
+export type ConnectorSetEnabledArgs = {
+	enabled: boolean,
+};
+
+export type ConnectorSetParentDirArgs = {
+	/**  Vault-relative parent, e.g. `papers` or `papers/nlp`. */
+	parentDir: string,
+};
+
+export type ConnectorSetPortArgs = {
+	port: number,
+};
+
+export type ConnectorSetVaultArgs = {
+	vaultPath: string | null,
+};
+
+export type ConnectorStatus = {
+	enabled: boolean,
+	listening: boolean,
+	port: number,
+	boundAddress: string | null,
+	lastError: string | null,
+	vaultPath: string | null,
+	parentDir: string,
+};
+
+export type ConnectorStatusEvent = ConnectorStatus;
+
+export type CoolPapersImportArgs = {
+	vaultPath: string,
+	/**  Vault-relative destination, e.g. `papers` or `papers/nlp`. */
+	parentDir: string,
+	/**  papers.cool branch (`arxiv` / `venue`). */
+	branch: string,
+	/**  Row id, e.g. `36962@AAAI`. */
+	id: string,
+	/**  Background task to report asset-download progress into. */
+	taskId?: string | null,
+};
+
+export type CoolPapersNotes = {
+	/**  False when the paper could not be resolved on papers.cool at all. */
+	found: boolean,
+	/**  False when the analysis was already present in NOTES.md (idempotent). */
+	appended: boolean,
+	branch: string | null,
+	paperId: string | null,
+	/**  Public page for the resolved paper. */
+	url: string | null,
+	/**  `"sourceUrl"`, `"catalogId"`, `"arxivId"`, or `"title"`. */
+	matchedBy: string | null,
+};
+
+export type CoolPapersNotesArgs = {
+	vaultPath: string,
+	/**  Vault-relative paper folder. */
+	path: string,
+	/**  Catalog id. Venue imports store the Cool Papers row id (`38818@AAAI`). */
+	catalogId?: string | null,
+	/**  Catalog `source_url`; papers.cool links resolve without a search. */
+	sourceUrl?: string | null,
+	/**  Preferred resolver for arXiv rows; used after catalog id / source url. */
+	arxivId?: string | null,
+	title?: string | null,
+};
+
+export type CreateVaultResult = {
+	path: string,
+	created: string[],
+	/**  Untouched first-party bundled skills upgraded to the current template. */
+	updated: string[],
+	/**  Relative path suggested for first open (e.g. `AGENTS.md`). */
+	openPath: string,
+};
+
+export type DepPolicy = "allSettled" | "allSucceeded";
+
+export type DoctorApplyAliasesArgs = {
+	vaultPath: string,
+	changes: AliasRepairChange[],
+	dirtyPaths?: string[],
+};
+
+export type DoctorApplyVisualMarksArgs = {
+	vaultPath: string,
+	changes: VisualMarkRepairChange[],
+	dirtyPaths?: string[],
+};
+
+export type DoctorApplyWikilinksArgs = {
+	vaultPath: string,
+	changes: WikilinkRepairChange[],
+	dirtyPaths?: string[],
+};
+
+export type DoctorCheckArgs = {
+	vaultPath: string,
+};
+
+export type DoctorFixCatalogDuplicatesArgs = {
+	vaultPath: string,
+};
+
+export type DoctorIgnoreAliasesArgs = {
+	vaultPath: string,
+	paths?: string[],
+	/**  `true` = add to ignore list; `false` = restore (remove from list). */
+	ignore: boolean,
+};
+
+export type DoctorIssue = DoctorIssue_Serialize | DoctorIssue_Deserialize;
+
+export type DoctorIssue_Deserialize = {
+	code: string,
+	message: string,
+	severity: DoctorSeverity,
+	path: string | null,
+};
+
+export type DoctorIssue_Serialize = {
+	code: string,
+	message: string,
+	severity: DoctorSeverity,
+	path?: string | null,
+};
+
+export type DoctorPlanWikilinksArgs = {
+	vaultPath: string,
+};
+
+export type DoctorReport = DoctorReport_Serialize | DoctorReport_Deserialize;
+
+export type DoctorReport_Deserialize = {
+	ok: boolean,
+	vault: DoctorSection_Deserialize,
+	catalog: CatalogDoctorSection_Deserialize,
+	wikilinks: WikiCheckResult_Deserialize,
+	aliases: AliasDoctorSection_Deserialize,
+	visualMarks?: VisualMarksDoctorSection_Deserialize,
+};
+
+export type DoctorReport_Serialize = {
+	ok: boolean,
+	vault: DoctorSection_Serialize,
+	catalog: CatalogDoctorSection_Serialize,
+	wikilinks: WikiCheckResult_Serialize,
+	aliases: AliasDoctorSection_Serialize,
+	visualMarks: VisualMarksDoctorSection_Serialize,
+};
+
+export type DoctorSection = DoctorSection_Serialize | DoctorSection_Deserialize;
+
+export type DoctorSection_Deserialize = {
+	ok: boolean,
+	issues: DoctorIssue_Deserialize[],
+};
+
+export type DoctorSection_Serialize = {
+	ok: boolean,
+	issues: DoctorIssue_Serialize[],
+};
+
+export type DoctorSetDirtyPathsArgs = {
+	vaultPath: string,
+	dirtyPaths?: string[],
+};
+
+export type DoctorSeverity = "error" | "warning";
+
+/**  Vault-local Doctor preferences (`.agentero/doctor.json`). */
+export type DoctorVaultState = {
+	/**  Relative `papers/**\/NOTES.md` paths skipped by paper-alias checks. */
+	ignoredAliasPaths?: string[],
+};
+
+/**  A set of catalog rows sharing the same `id` or `path`. */
+export type DuplicateGroup = {
+	kind: DuplicateKind,
+	key: string,
+	rows: DuplicateRow[],
+};
+
+/**  What kind of duplicate was detected. */
+export type DuplicateKind = "id" | "path";
+
+/**
+ *  Repair duplicate catalog rows.
+ * 
+ *  For each duplicate `id` group, keeps the canonical row using the same rule
+ *  as `list_all_unique_by_id` and deletes the rest. `path` duplicates are
+ *  repaired by keeping the row with the newest `updated_at`.
+ * 
+ *  Returns the number of rows removed. Deleted rows whose paper folders still
+ *  exist on disk are reported in `removed_paths` so the caller can follow up
+ *  manually.
+ */
+export type DuplicateRepairResult = {
+	removedRows: number,
+	removedPaths: string[],
+	keptPaths: string[],
+};
+
+/**  Report of duplicate rows in the catalog. */
+export type DuplicateReport = {
+	duplicateIds: DuplicateGroup[],
+	duplicatePaths: DuplicateGroup[],
+	totalDuplicateRows: number,
+};
+
+/**  One row in a duplicate group (lightweight, for diagnostics / repair). */
+export type DuplicateRow = {
+	path: string,
+	id: string,
+	title: string,
+	updatedAt: string,
+	pathExists: boolean,
+};
+
+/**  One form field derived from an elicitation schema property (for UI). */
+export type ElicitationFieldView = ElicitationFieldView_Serialize | ElicitationFieldView_Deserialize;
+
+/**  One form field derived from an elicitation schema property (for UI). */
+export type ElicitationFieldView_Deserialize = {
+	id: string,
+	title: string,
+	description: string | null,
+	required: boolean,
+	/**  select | text | boolean | number | other */
+	kind: string,
+	options: ElicitationOptionView[],
+	/**  Codex companion free-text for "Other" (same logical question). */
+	isOtherAnswer?: boolean,
+	/**  Parent question field id when `is_other_answer`. */
+	parentFieldId?: string | null,
+};
+
+/**  One form field derived from an elicitation schema property (for UI). */
+export type ElicitationFieldView_Serialize = {
+	id: string,
+	title: string,
+	description: string | null,
+	required: boolean,
+	/**  select | text | boolean | number | other */
+	kind: string,
+	options: ElicitationOptionView[],
+	/**  Codex companion free-text for "Other" (same logical question). */
+	isOtherAnswer?: boolean,
+	/**  Parent question field id when `is_other_answer`. */
+	parentFieldId?: string | null,
+};
+
+export type ElicitationOptionView = {
+	value: string,
+	title: string,
+	description: string | null,
+};
+
+/**  Payload for `agent:elicitation-request`. */
+export type ElicitationRequestEvent = ElicitationRequestEvent_Serialize | ElicitationRequestEvent_Deserialize;
+
+/**  Payload for `agent:elicitation-request`. */
+export type ElicitationRequestEvent_Deserialize = {
+	requestId: string,
+	/**  Agentero runtime session id (correlates with the active chat run). */
+	sessionId: string,
+	message: string,
+	/**  Optional ACP provider tool call id when the elicitation is scoped to a tool. */
+	toolCallId: string | null,
+	fields: ElicitationFieldView_Deserialize[],
+};
+
+/**  Payload for `agent:elicitation-request`. */
+export type ElicitationRequestEvent_Serialize = {
+	requestId: string,
+	/**  Agentero runtime session id (correlates with the active chat run). */
+	sessionId: string,
+	message: string,
+	/**  Optional ACP provider tool call id when the elicitation is scoped to a tool. */
+	toolCallId: string | null,
+	fields: ElicitationFieldView_Serialize[],
+};
+
+export type ElicitationRequestEvt = ElicitationRequestEvt_Serialize | ElicitationRequestEvt_Deserialize;
+
+export type ElicitationRequestEvt_Deserialize = ElicitationRequestEvent_Deserialize;
+
+export type ElicitationRequestEvt_Serialize = ElicitationRequestEvent_Serialize;
+
+/**  Request payload for `agent_respond_elicitation`. */
+export type ElicitationResponseRequest = {
+	requestId: string,
+	/**  accept | decline | cancel */
+	action: string,
+	/**  Field id → string value (accept only). */
+	content?: { [key in string]: string } | null,
+};
+
+/**
+ *  Embedding endpoint: the built-in provider, or a custom OpenAI-compatible
+ *  one (BYOK). Custom with all-empty fields = feature disabled.
+ */
+export type EmbeddingSettings = {
+	/**  `builtin` | `custom`; empty = unset and inferred from the fields below. */
+	source?: string,
+	baseUrl?: string,
+	apiKey?: string,
+	model?: string,
+};
+
+export type EnabledResponse = {
+	enabled: boolean,
+};
+
+export type EndpointId = "baidu" | "google" | "google-scholar" | "github" | "arxiv" | "semantic-scholar";
+
+export type ErrorBody = {
+	code: string,
+	message: string,
+};
+
+/**
+ *  Where a job's business logic executes: in a Rust runner ([`ExecHost::Host`])
+ *  or in the renderer through the `job:offer` / `job_report` protocol
+ *  ([`ExecHost::Renderer`]). See [`JobKind::exec_host`].
+ */
+export type ExecHost = "host" | "renderer";
+
+export type ExportFontPayload = {
+	path: string,
+	/**  Standard base64 of font bytes (JSON-safe; avoid megabyte number arrays). */
+	bytesBase64: string,
+};
+
+export type FeedItem = {
+	id: string,
+	subscriptionId: string,
+	subscriptionTitle: string,
+	title: string,
+	url: string | null,
+	publishedAt: string | null,
+	summaryText: string,
+	contentHtml: string | null,
+	paperUrl: string | null,
+	importedAt: string | null,
+	bodyMarkdown: string | null,
+};
+
+export type FeedItemsPage = {
+	items: FeedItem[],
+};
+
+export type FeedList = {
+	subscriptions: FeedSub[],
+};
+
+export type FeedRefreshResult = {
+	subscriptions: FeedSub[],
+	fetched: number,
+	failed: number,
+};
+
+export type FeedSub = {
+	id: string,
+	url: string,
+	title: string,
+	addedAt: string,
+	lastFetchedAt: string | null,
+	lastError: string | null,
+	itemCount: number,
+	pinned: boolean,
+	pinnedAt: string | null,
+};
+
+export type FeedsAddArgs = {
+	url: string,
+	title?: string | null,
+};
+
+export type FeedsIdArgs = {
+	id: string,
+};
+
+export type FeedsItemsArgs = {
+	subscriptionId?: string | null,
+	filter?: string | null,
+	limit?: number | null,
+	beforePublishedAt?: string | null,
+	beforeId?: string | null,
+};
+
+export type FeedsRefreshArgs = {
+	id?: string | null,
+	staleOnly?: boolean,
+};
+
+export type FeedsRenameArgs = {
+	id: string,
+	title: string,
+};
+
+export type FeedsSetPinnedArgs = {
+	id: string,
+	pinned: boolean,
+};
+
+/**  Payload for the `vault:file-changed` event (consumed by the renderer). */
+export type FileChangedPayload = FileChangedPayload_Serialize | FileChangedPayload_Deserialize;
+
+/**  Payload for the `vault:file-changed` event (consumed by the renderer). */
+export type FileChangedPayload_Deserialize = {
+	/**  Absolute paths touched by this (debounced) batch. */
+	paths: string[],
+	/**  Coarse change kind: "create" | "modify" | "remove" | "other". */
+	kind: string,
+	/**  Present only when the OS delivered one trustworthy old/new rename pair. */
+	rename?: FileRename | null,
+};
+
+/**  Payload for the `vault:file-changed` event (consumed by the renderer). */
+export type FileChangedPayload_Serialize = {
+	/**  Absolute paths touched by this (debounced) batch. */
+	paths: string[],
+	/**  Coarse change kind: "create" | "modify" | "remove" | "other". */
+	kind: string,
+	/**  Present only when the OS delivered one trustworthy old/new rename pair. */
+	rename?: FileRename | null,
+};
+
+/**
+ *  A rename pair emitted by the native watcher. `None` means the watcher did
+ *  not preserve enough information for automatic internal-link repair.
+ */
+export type FileRename = {
+	from: string,
+	to: string,
+};
+
+export type FinderServiceStatus = {
+	/**  Quick Action integration only exists on macOS. */
+	supported: boolean,
+	installed: boolean,
+	installPath: string | null,
+	/**  Bundle the Quick Action is / would be pointed at. */
+	appBundlePath: string | null,
+	/**  installed && baked-in bundle matches the current app bundle. */
+	current: boolean,
+	message: string | null,
+};
+
+/**  Capability flags so UI / business logic can degrade without guesswork. */
+export type FsCaps = {
+	atomicRename: boolean,
+	reliableWatch: boolean,
+	sqliteNative: boolean,
+	cheapRandomRead: boolean,
+	agentCwdLocal: boolean,
+	finderReveal: boolean,
+};
+
+export type FsDirEntry = {
+	name: string,
+	isDir: boolean,
+	isFile: boolean,
+	/**  Vault-relative path using `/`. */
+	path: string,
+};
+
+export type HostDoctorReport = HostDoctorReport_Serialize | HostDoctorReport_Deserialize;
+
+export type HostDoctorReport_Deserialize = {
+	node: HostToolDiagnostic_Deserialize,
+	npm: HostToolDiagnostic_Deserialize,
+	npmPrefix: string | null,
+};
+
+export type HostDoctorReport_Serialize = {
+	node: HostToolDiagnostic_Serialize,
+	npm: HostToolDiagnostic_Serialize,
+	npmPrefix?: string | null,
+};
+
+export type HostToolDiagnostic = HostToolDiagnostic_Serialize | HostToolDiagnostic_Deserialize;
+
+export type HostToolDiagnostic_Deserialize = {
+	status: HostToolStatus,
+	resolvedPath: string | null,
+	version: string | null,
+	detail: string | null,
+};
+
+export type HostToolDiagnostic_Serialize = {
+	status: HostToolStatus,
+	resolvedPath?: string | null,
+	version?: string | null,
+	detail?: string | null,
+};
+
+export type HostToolStatus = "available" | "missing" | "unusable";
+
+export type ImportLocalPdfArgs = {
+	vaultPath: string,
+	/**  Vault-relative parent, e.g. `papers` or `papers/nlp`. */
+	parentDir: string,
+	/**  Absolute paths to local PDF files (picker). Ignored when `entries` is non-empty. */
+	filePaths?: string[],
+	/**  Preferred: path + optional title/authors/year/identifiers from the confirm dialog. */
+	entries?: LocalPdfImportEntry[],
+	/**  JobCenter job id (task id) for parse-phase `job:progress` events. */
+	taskId?: string | null,
+	/**  Whether to run metadata recognition synchronously before committing the paper. */
+	recognizeSync?: boolean,
+	/**  Optional Translator service URL used for identifier resolution. */
+	translatorBaseUrl?: string | null,
+};
+
+export type ImportLocalPdfResult = ImportLocalPdfResult_Serialize | ImportLocalPdfResult_Deserialize;
+
+export type ImportLocalPdfResult_Deserialize = {
+	/**  One entry per successfully imported PDF. */
+	papers: LookupImportResult_Deserialize[],
+	/**  `"<file>: <reason>"` for each file that failed to import. */
+	errors?: string[],
+};
+
+export type ImportLocalPdfResult_Serialize = {
+	/**  One entry per successfully imported PDF. */
+	papers: LookupImportResult_Serialize[],
+	/**  `"<file>: <reason>"` for each file that failed to import. */
+	errors: string[],
+};
+
+/**
+ *  A parsed explicit Vault-local link. Markdown remains the source of truth; this
+ *  is only an in-memory, rebuildable occurrence projection.
+ */
+export type InternalLinkOccurrence = InternalLinkOccurrence_Serialize | InternalLinkOccurrence_Deserialize;
+
+/**
+ *  A parsed explicit Vault-local link. Markdown remains the source of truth; this
+ *  is only an in-memory, rebuildable occurrence projection.
+ */
+export type InternalLinkOccurrence_Deserialize = {
+	source: string,
+	targetRaw: string,
+	syntax: InternalLinkSyntax,
+	embed: boolean,
+	displayText?: string | null,
+	fragment?: LinkFragment | null,
+	sourceRange: SourceRange,
+	/**
+	 *  Byte range of the fragment text after `#`, excluding the separator,
+	 *  display alias/label, and closing syntax. Heading rename transactions use
+	 *  this range instead of reconstructing source syntax.
+	 */
+	fragmentRange?: SourceRange | null,
+	line: number,
+	context?: string | null,
+};
+
+/**
+ *  A parsed explicit Vault-local link. Markdown remains the source of truth; this
+ *  is only an in-memory, rebuildable occurrence projection.
+ */
+export type InternalLinkOccurrence_Serialize = {
+	source: string,
+	targetRaw: string,
+	syntax: InternalLinkSyntax,
+	embed: boolean,
+	displayText?: string | null,
+	fragment?: LinkFragment | null,
+	sourceRange: SourceRange,
+	/**
+	 *  Byte range of the fragment text after `#`, excluding the separator,
+	 *  display alias/label, and closing syntax. Heading rename transactions use
+	 *  this range instead of reconstructing source syntax.
+	 */
+	fragmentRange?: SourceRange | null,
+	line: number,
+	context?: string | null,
+};
+
+export type InternalLinkSyntax = "wikilink" | "markdown";
+
+export type JobChangedEvent = JobChangedPayload;
+
+export type JobChangedPayload = {
+	job: JobSnapshot,
+};
+
+export type JobCompletedEvent = JobCompletedEvent_Serialize | JobCompletedEvent_Deserialize;
+
+export type JobCompletedEvent_Deserialize = JobTerminalPayload_Deserialize;
+
+export type JobCompletedEvent_Serialize = JobTerminalPayload_Serialize;
+
+export type JobConnectorSyncEnqueueArgs = {
+	vaultPath: string,
+	/**
+	 *  Vault-relative paper folder the attachment lands in. Not validated
+	 *  against the catalog: the Connector commits the paper and starts the
+	 *  attachment save in the same request, so the row may not be visible yet.
+	 */
+	path?: string | null,
+	lane?: JobLane | null,
+	force?: boolean,
+	/**  `connector:progress` key + title; participates in the dedupe fingerprint. */
+	params?: Json | null,
+};
+
+/**
+ *  Shared enqueue args for kinds that take no extra parameters
+ *  (ParseRefs / LayoutAnalyze / DownloadAssets).
+ */
+export type JobEnqueueArgs = {
+	vaultPath: string,
+	path: string,
+	lane?: JobLane | null,
+	force?: boolean,
+};
+
+export type JobFailedEvent = JobFailedEvent_Serialize | JobFailedEvent_Deserialize;
+
+export type JobFailedEvent_Deserialize = JobTerminalPayload_Deserialize;
+
+export type JobFailedEvent_Serialize = JobTerminalPayload_Serialize;
+
+export type JobFocusPaperArgs = {
+	vaultPath: string,
+	path: string,
+};
+
+export type JobImportEnqueueArgs = {
+	vaultPath: string,
+	/**
+	 *  Vault-relative destination folder (`parentDir`); imports have no paper
+	 *  dir yet, so this is not validated against the catalog.
+	 */
+	path?: string | null,
+	lane?: JobLane | null,
+	force?: boolean,
+	/**  Mode + source identifiers; participates in the dedupe fingerprint. */
+	params?: Json | null,
+};
+
+export type JobKind = "parseRefs" | "parseBody" | "layoutAnalyze" | "layoutTranslate" | "downloadAssets" | "pageCount" | "wikiReindex" | "recognizeMetadata" | "import" | "connectorSync" | "modelDownload" | "citingScan" | "libraryIo" | "metadataRefresh" | "latexCompile";
+
+export type JobLane = "focus" | "normal" | "idle";
+
+export type JobLatexCompileEnqueueArgs = {
+	vaultPath: string,
+	/**  Absolute, or vault-relative .tex source path. */
+	texPath: string,
+	/**  Engine id from the picker (pdflatex / xelatex / lualatex). */
+	engine: string,
+	lane?: JobLane | null,
+	force?: boolean,
+};
+
+export type JobListArgs = {
+	vaultPath?: string | null,
+	path?: string | null,
+};
+
+export type JobModelDownloadEnqueueArgs = {
+	lane?: JobLane | null,
+	force?: boolean,
+};
+
+export type JobOfferEvent = JobOfferPayload;
+
+export type JobOfferPayload = {
+	jobId: string,
+	kind: JobKind,
+	vaultPath: string,
+	paperPath: string | null,
+	force: boolean,
+	params: Json | null,
+};
+
+export type JobPaperAssetsStatusArgs = {
+	vaultPath: string,
+	path: string,
+};
+
+export type JobPapersNeedingAssetsArgs = {
+	vaultPath: string,
+};
+
+export type JobParseBodyEnqueueArgs = {
+	vaultPath: string,
+	path: string,
+	lane?: JobLane | null,
+	force?: boolean,
+	taskId?: string | null,
+};
+
+export type JobProgressEvent = JobProgressEvent_Serialize | JobProgressEvent_Deserialize;
+
+export type JobProgressEvent_Deserialize = AssetDownloadProgress_Deserialize;
+
+export type JobProgressEvent_Serialize = AssetDownloadProgress_Serialize;
+
+export type JobReconcilePaperArgs = {
+	vaultPath: string,
+	path: string,
+};
+
+export type JobReconcileVaultArgs = {
+	vaultPath: string,
+};
+
+export type JobReportArgs = {
+	jobId: string,
+	progress?: number | null,
+	phase?: string | null,
+	error?: string | null,
+	state?: JobState | null,
+};
+
+export type JobSnapshot = {
+	id: string,
+	kind: JobKind,
+	lane: JobLane,
+	state: JobState,
+	vaultPath: string,
+	paperPath: string | null,
+	fingerprint: string,
+	dependsOn: string[],
+	depPolicy: DepPolicy,
+	progress: number | null,
+	phase: string | null,
+	error: string | null,
+	force: boolean,
+	params: Json | null,
+	host: ExecHost,
+};
+
+export type JobState = "queued" | "running" | "succeeded" | "failed" | "cancelled" | "skipped";
+
+/**
+ *  Owned mirror of the private `JobEventPayload` in `features::lifecycle`
+ *  (shared by `job:completed` / `job:failed`).
+ */
+export type JobTerminalPayload = JobTerminalPayload_Serialize | JobTerminalPayload_Deserialize;
+
+/**
+ *  Owned mirror of the private `JobEventPayload` in `features::lifecycle`
+ *  (shared by `job:completed` / `job:failed`).
+ */
+export type JobTerminalPayload_Deserialize = {
+	jobId: string,
+	kind: JobKind,
+	paperId?: string | null,
+	timestamp: number,
+	error?: string | null,
+};
+
+/**
+ *  Owned mirror of the private `JobEventPayload` in `features::lifecycle`
+ *  (shared by `job:completed` / `job:failed`).
+ */
+export type JobTerminalPayload_Serialize = {
+	jobId: string,
+	kind: JobKind,
+	paperId?: string | null,
+	timestamp: number,
+	error?: string | null,
+};
+
+/**
+ *  Shared args for the vault-scope renderer kinds (`CitingScan` / `LibraryIo`
+ *  / `MetadataRefresh`): the target is the vault (or an operation on it), not
+ *  a single paper, so `path` stays empty and `params` carries the payload that
+ *  feeds the dedupe fingerprint.
+ */
+export type JobVaultScopeEnqueueArgs = {
+	vaultPath: string,
+	lane?: JobLane | null,
+	force?: boolean,
+	params?: Json | null,
+};
+
+/**  TypeScript-side representation of arbitrary JSON values. */
+export type Json = 
+/**  JSON `null`. */
+"Null" | 
+/**  JSON boolean. */
+boolean | 
+/**  JSON number. */
+number | null | 
+/**  JSON string. */
+string | 
+/**  JSON array. */
+Json[] | 
+/**  JSON object. */
+{ [key in string]: Json };
+
+/**  A detected LaTeX rendering engine. */
+export type LatexEngine = {
+	id: string,
+	label: string,
+	path: string | null,
+};
+
+/**
+ *  One chktex finding, mapped to editor coordinates (1-based line/column plus
+ *  match length). `code` is chktex's warning number — suppress one inline with
+ *  a `%chktex <n>` comment on the offending line.
+ */
+export type LatexLintDiagnostic = {
+	line: number,
+	column: number,
+	length: number,
+	/**  Mapped chktex kind: "error" | "warning" | "info" (its "Message" level). */
+	severity: string,
+	code: number,
+	message: string,
+};
+
+export type LatexRoot = {
+	rootPath: string,
+	source: LatexRootSource,
+};
+
+/**
+ *  How the compile root was determined — for logs/debugging only; the compile
+ *  pipeline treats every variant identically.
+ */
+export type LatexRootSource = 
+/**  `% !TEX root = …` magic-comment chain (loop detection included). */
+"magicComment" | 
+/**  The file itself carries `\documentclass` / `\begin{document}`. */
+"selfIndicator" | 
+/**  Vault scan found a root whose input/include closure contains the file. */
+"vaultScan" | 
+/**  Nothing found — the file compiles itself. */
+"fallbackSelf";
+
+export type LayoutModelStatus = {
+	ready: boolean,
+	path: string,
+	sizeBytes: number,
+	source: string | null,
+	/**  Relative path segment for the `agentero-model` URI scheme. */
+	fileName: string,
+};
+
+export type LayoutProviderConfig = {
+	apiKey?: string,
+	baseUrl?: string,
+	model?: string,
+	/**  OCR prompt override; empty → the engine derives one from the model id. */
+	prompt?: string,
+	/**
+	 *  MinerU document language (OCR language pack); normalize() enforces the
+	 *  MinerU vocabulary and falls back to `ch`.
+	 */
+	language?: string,
+	/**  MinerU force-OCR: run OCR on every page regardless of the PDF text layer. */
+	isOcr?: boolean,
+};
+
+export type LayoutRemoteAnalyzePdfArgs = {
+	/**  Base64-encoded PDF bytes. */
+	pdfBase64: string,
+	/**  Upload file name (default `paper.pdf`). */
+	fileName?: string | null,
+	/**  Access-token override (probe flow); normally resolved from settings. */
+	apiKey?: string | null,
+	/**  Correlates `layout-remote:progress` when several API jobs run at once. */
+	requestId?: string | null,
+	/**  Remote provider id (defaults to `paddle`). */
+	provider?: string | null,
+};
+
+export type LayoutRemoteAnalyzePdfResult = {
+	pages: LayoutRemotePageResult[],
+	/**
+	 *  Per-page rendered pixel sizes reported by the service
+	 *  (`dataInfo.pages[].width/height`); empty when absent.
+	 */
+	renderedPages: ([number, number])[],
+};
+
+export type LayoutRemoteBox = {
+	clsId: number,
+	label: string,
+	score: number | null,
+	/**  `[x1, y1, x2, y2]` in rendered-image pixels (top-left origin). */
+	coordinate: [(number | null), (number | null), (number | null), (number | null)],
+};
+
+export type LayoutRemotePageResult = {
+	boxes: LayoutRemoteBox[],
+	/**
+	 *  Page size in the same units as box coordinates (paddle: rendered px,
+	 *  mineru: PDF points); null makes the frontend assume a 144 DPI render.
+	 */
+	widthPx: number | null,
+	heightPx: number | null,
+};
+
+export type LayoutRemoteProbeArgs = {
+	/**  Base64-encoded tiny probe image (JPEG). */
+	imageBase64: string,
+	apiKey?: string | null,
+	/**  Remote provider id (defaults to `paddle`). */
+	provider?: string | null,
+};
+
+export type LayoutRemoteProbeResult = {
+	jobId: string,
+};
+
+/**
+ *  Owned mirror of the private `CloudProgressPayload` in
+ *  `features::paper::analyze::layout::hosted`.
+ */
+export type LayoutRemoteProgressEvent = LayoutRemoteProgressEvent_Serialize | LayoutRemoteProgressEvent_Deserialize;
+
+/**
+ *  Owned mirror of the private `CloudProgressPayload` in
+ *  `features::paper::analyze::layout::hosted`.
+ */
+export type LayoutRemoteProgressEvent_Deserialize = {
+	phase: string,
+	extractedPages: number | null,
+	totalPages: number | null,
+	requestId?: string | null,
+};
+
+/**
+ *  Owned mirror of the private `CloudProgressPayload` in
+ *  `features::paper::analyze::layout::hosted`.
+ */
+export type LayoutRemoteProgressEvent_Serialize = {
+	phase: string,
+	extractedPages: number | null,
+	totalPages: number | null,
+	requestId?: string | null,
+};
+
+/**
+ *  PDF layout-analysis backend selection.
+ *  - `local`: on-device PP-DocLayoutV3 (ONNX in the renderer).
+ *  - `paddle`: remote PP-StructureV3 async job API (`POST {base}/api/v2/ocr/jobs`).
+ */
+export type LayoutSettings = {
+	backend?: string,
+	/**
+	 *  PAPER.md body-parse engine: `local` | `paddle` | `mineru` |
+	 *  `openaiCompatible` | `agentero` (built-in).
+	 */
+	parserBackend?: string,
+	providerConfigs?: { [key in string]: LayoutProviderConfig },
+};
+
+export type LibraryCitingScanArgs = {
+	vaultPath: string,
+	/**  Background-task id: routes progress events and carries cancellation. */
+	taskId?: string | null,
+	/**  How far back a citing paper still counts as "new" (default 183). */
+	sinceDays?: number | null,
+	/**  Maximum candidates returned (default 20). */
+	budget?: number | null,
+	/**  Ignore cached citation pages and refetch every seed. */
+	force?: boolean,
+};
+
+/**  One column in the papers Library table: array order = display order. */
+export type LibraryColumnPref = LibraryColumnPref_Serialize | LibraryColumnPref_Deserialize;
+
+/**  One column in the papers Library table: array order = display order. */
+export type LibraryColumnPref_Deserialize = {
+	key: string,
+	visible: boolean,
+	widthRem?: number | null,
+};
+
+/**  One column in the papers Library table: array order = display order. */
+export type LibraryColumnPref_Serialize = {
+	key: string,
+	visible: boolean,
+	widthRem?: number | null,
+};
+
+export type LinkFragment = { kind: "heading"; path: string[] } | { kind: "block"; id: string } | 
+/**  PDF mark/annotation id (`[[paper@id]]` / `[[paper#@id]]`). */
+{ kind: "annotation"; id: string };
+
+export type LinkResolutionStatus = "resolved" | "missing" | "ambiguous" | "invalidFragment";
+
+export type LocalMatch = {
+	/**  Vault-relative path of the matched library paper. */
+	paperPath: string,
+	/**  `"doi"` | `"arxiv"` | `"title"`. */
+	matchBy: string,
+};
+
+/**
+ *  Non-editable structured metadata carried from the confirm dialog's
+ *  identifier fetch into the catalog row.
+ */
+export type LocalPdfExtraMeta = {
+	publication?: string | null,
+	volume?: string | null,
+	issue?: string | null,
+	pages?: string | null,
+	publisher?: string | null,
+	issn?: string | null,
+	language?: string | null,
+	date?: string | null,
+	abstract?: string | null,
+};
+
+/**  Per-file overrides when importing a local PDF (metadata confirm dialog). */
+export type LocalPdfImportEntry = {
+	filePath: string,
+	title?: string | null,
+	authors?: string[] | null,
+	year?: number | null,
+	doi?: string | null,
+	arxivId?: string | null,
+	/**
+	 *  Structured fields fetched via identifier resolution in the dialog
+	 *  (publication/volume/issue/pages/abstract/…). Applied only when present.
+	 */
+	extra?: LocalPdfExtraMeta | null,
+};
+
+export type LookupImportBatchArgs = {
+	vaultPath: string,
+	parentDir: string,
+	texts: string[],
+	translatorBaseUrl?: string | null,
+	taskId?: string | null,
+	/**  Max concurrent imports; 0 or 1 means sequential. */
+	concurrency?: number | null,
+};
+
+export type LookupImportBatchResult = LookupImportBatchResult_Serialize | LookupImportBatchResult_Deserialize;
+
+export type LookupImportBatchResult_Deserialize = {
+	imported: LookupImportResult_Deserialize[],
+	skills?: SkillImportResult[],
+	skillCandidates?: SkillDiscovery[],
+	/**  Free-text inputs resolved to importable candidates awaiting user choice. */
+	searchCandidates?: PaperSearchGroup[],
+	skipped?: SkippedImport[],
+	errors?: string[],
+};
+
+export type LookupImportBatchResult_Serialize = {
+	imported: LookupImportResult_Serialize[],
+	skills: SkillImportResult[],
+	skillCandidates: SkillDiscovery[],
+	/**  Free-text inputs resolved to importable candidates awaiting user choice. */
+	searchCandidates: PaperSearchGroup[],
+	skipped: SkippedImport[],
+	errors: string[],
+};
+
+export type LookupImportResult = LookupImportResult_Serialize | LookupImportResult_Deserialize;
+
+export type LookupImportResult_Deserialize = {
+	paperDir: string,
+	path: string,
+	id: string,
+	title: string,
+	usedTranslator: boolean,
+	translatorBaseUrl: string,
+	/**  Whether local PDF was present after import download attempt. */
+	pdf?: boolean,
+	/**  Whether local TeX was present after import download attempt. */
+	tex?: boolean,
+	/**  Whether PAPER.md was written (no-TeX liteparse path). */
+	paperMd?: boolean,
+	/**  Download / parse messages (for UI warnings). */
+	assetMessages?: string[],
+	/**
+	 *  `Deduped` when the paper already existed and (for local PDFs) the PDF
+	 *  was merged into the existing entry instead of creating a duplicate.
+	 */
+	status?: CommitStatus | null,
+	/**
+	 *  Local PDF imported with placeholder metadata; a RecognizeMetadata job
+	 *  is resolving real metadata in the background (and will rename the
+	 *  folder to the canonical id). The frontend must not enqueue its own
+	 *  layout analysis — the runner owns the follow-ups.
+	 */
+	recognizePending?: boolean,
+};
+
+export type LookupImportResult_Serialize = {
+	paperDir: string,
+	path: string,
+	id: string,
+	title: string,
+	usedTranslator: boolean,
+	translatorBaseUrl: string,
+	/**  Whether local PDF was present after import download attempt. */
+	pdf: boolean,
+	/**  Whether local TeX was present after import download attempt. */
+	tex: boolean,
+	/**  Whether PAPER.md was written (no-TeX liteparse path). */
+	paperMd: boolean,
+	/**  Download / parse messages (for UI warnings). */
+	assetMessages: string[],
+	/**
+	 *  `Deduped` when the paper already existed and (for local PDFs) the PDF
+	 *  was merged into the existing entry instead of creating a duplicate.
+	 */
+	status?: CommitStatus | null,
+	/**
+	 *  Local PDF imported with placeholder metadata; a RecognizeMetadata job
+	 *  is resolving real metadata in the background (and will rename the
+	 *  folder to the canonical id). The frontend must not enqueue its own
+	 *  layout analysis — the runner owns the follow-ups.
+	 */
+	recognizePending: boolean,
+};
+
+export type McpSetEnabledArgs = {
+	enabled: boolean,
+};
+
+export type McpSetParentDirArgs = {
+	parentDir: string,
+};
+
+export type McpSetPortArgs = {
+	port: number,
+};
+
+export type McpSetVaultArgs = {
+	vaultPath: string | null,
+};
+
+export type McpStatus = {
+	enabled: boolean,
+	listening: boolean,
+	port: number,
+	url: string | null,
+	lastError: string | null,
+	vaultPath: string | null,
+};
+
+export type McpStatusEvent = McpStatus;
+
+export type McpTunnelPhase = 
+/**  `tunnel-client` is not on PATH / common install dirs. */
+"binaryMissing" | "stopped" | 
+/**  Child is up but no successful control-plane poll yet. */
+"starting" | "ready" | "error";
+
+export type McpTunnelStartArgs = {
+	mcpUrl: string,
+};
+
+export type McpTunnelStatus = {
+	phase: McpTunnelPhase,
+	/**  Child process is alive (independent of `phase == ready`). */
+	running: boolean,
+	pid: number | null,
+	/**  Loopback MCP URL handed to the tunnel as its target. */
+	mcpUrl: string | null,
+	installCommand: string,
+	lastError: string | null,
+};
+
+export type McpTunnelStatusEvent = McpTunnelStatus;
+
+/**  Mirror of the inline `json!({ "action": id })` in `app::mod` menu wiring. */
+export type MenuInvokedEvent = {
+	action: string,
+};
+
+/**  Progress event streamed to the UI while a migration runs. */
+export type MigrateProgress = {
+	current: number,
+	total: number,
+	phase: string,
+};
+
+export type NetworkDoctorReport = NetworkDoctorReport_Serialize | NetworkDoctorReport_Deserialize;
+
+export type NetworkDoctorReport_Deserialize = {
+	endpoints: NetworkEndpointDiagnostic_Deserialize[],
+	proxy: string | null,
+};
+
+export type NetworkDoctorReport_Serialize = {
+	endpoints: NetworkEndpointDiagnostic_Serialize[],
+	proxy?: string | null,
+};
+
+export type NetworkEndpointDiagnostic = NetworkEndpointDiagnostic_Serialize | NetworkEndpointDiagnostic_Deserialize;
+
+export type NetworkEndpointDiagnostic_Deserialize = {
+	id: EndpointId,
+	url: string,
+	status: NetworkStatus,
+	statusCode: number | null,
+	latencyMs: number | null,
+	detail: string | null,
+};
+
+export type NetworkEndpointDiagnostic_Serialize = {
+	id: EndpointId,
+	url: string,
+	status: NetworkStatus,
+	statusCode?: number | null,
+	latencyMs?: number | null,
+	detail?: string | null,
+};
+
+export type NetworkStatus = "reachable" | "timeout" | "unreachable";
+
+export type NodeInstallOutcome = "installed" | "failed" | "no-package-manager";
+
+export type NodeInstallResult = NodeInstallResult_Serialize | NodeInstallResult_Deserialize;
+
+export type NodeInstallResult_Deserialize = {
+	outcome: NodeInstallOutcome,
+	/**  Package manager used (winget / brew), when one was available. */
+	installer: string | null,
+	/**  Failure detail when the outcome is `failed`. */
+	error: string | null,
+	/**  Host probe re-run after the install attempt. */
+	report: HostDoctorReport_Deserialize,
+};
+
+export type NodeInstallResult_Serialize = {
+	outcome: NodeInstallOutcome,
+	/**  Package manager used (winget / brew), when one was available. */
+	installer?: string | null,
+	/**  Failure detail when the outcome is `failed`. */
+	error?: string | null,
+	/**  Host probe re-run after the install attempt. */
+	report: HostDoctorReport_Serialize,
+};
+
+export type NotesTemplateSeedResult = {
+	created: boolean,
+};
+
+export type OpenInTerminalResult = {
+	/**  Absolute directory opened as the terminal cwd. */
+	cwd: string,
+};
+
+export type PairingRequest = {
+	requestId: string,
+	deviceId: string,
+	deviceName: string,
+	verificationCode: string,
+};
+
+export type PaperAssetsReadyEvent = PaperFactPayload;
+
+/**
+ *  Local asset presence for one paper (post-`DownloadAssets` follow-ups:
+ *  paper-reader gate + activity telemetry).
+ */
+export type PaperAssetsStatus = {
+	pdf: boolean,
+	tex: boolean,
+	paperMd: boolean,
+};
+
+/**  Uniform result shape for every entry (camelCase matches the frontend). */
+export type PaperCommitResult = {
+	status: CommitStatus,
+	/**  Vault-relative paper folder. */
+	path: string,
+	id: string,
+	title: string,
+	/**  Absolute paper folder. */
+	paperDir: string,
+	pdf: boolean,
+	tex: boolean,
+	paperMd: boolean,
+	assetMessages: string[],
+	/**  True when assets are still downloading in the background (`Deferred`). */
+	assetsPending: boolean,
+};
+
+export type PaperDownloadAssetsArgs = {
+	vaultPath: string,
+	/**  Vault-relative paper folder, e.g. `papers/1706.03762`. */
+	path: string,
+	/**  JobCenter job id (task id) for byte-level `job:progress` events. */
+	taskId?: string | null,
+};
+
+export type PaperExportArgs = {
+	vaultPath: string,
+	/**  Translator export format (default `bibtex`). */
+	format?: string | null,
+	translatorBaseUrl?: string | null,
+};
+
+export type PaperExportResult = {
+	format: string,
+	content: string,
+	count: number,
+	filename: string,
+};
+
+/**
+ *  Owned mirror of the private core `PaperEventPayload` envelope
+ *  (`paper:imported` / `paper:assets-ready`).
+ */
+export type PaperFactPayload = {
+	vaultId: string,
+	paperId: string,
+	timestamp: number,
+};
+
+export type PaperGetArgs = {
+	vaultPath: string,
+	/**  Vault-relative paper folder path, e.g. `papers/1706.03762`. */
+	path?: string | null,
+	/**  Logical id (arxiv id / citekey) if path unknown. */
+	id?: string | null,
+};
+
+/**
+ *  Bibliography file (BibTeX / RIS / …) import via Translator `/import`.
+ *  Consumed by `features/zotero` (`import_catalog`) and the remote bridge.
+ */
+export type PaperImportArgs = {
+	vaultPath: string,
+	/**  Vault-relative parent, e.g. `papers`. */
+	parentDir?: string | null,
+	/**  Raw file contents (BibTeX, RIS, …). */
+	content: string,
+	translatorBaseUrl?: string | null,
+};
+
+export type PaperImportResult = {
+	imported: number,
+	skipped: number,
+	paths: string[],
+	titles: string[],
+	errors: string[],
+};
+
+export type PaperImportedEvent = PaperFactPayload;
+
+export type PaperIngestReconcileArgs = {
+	vaultPath: string,
+};
+
+/**
+ *  What identifier the paper was resolved through. Serialized all-lowercase so
+ *  the wire form matches the frontend's `PaperMetadata["type"]` union exactly.
+ */
+export type PaperKind = "arxiv" | "pdf" | "html" | "doi" | "other";
+
+export type PaperListArgs = {
+	vaultPath: string,
+};
+
+/**  One library row: the catalog record plus a local-PDF probe. */
+export type PaperListRow = PaperListRow_Serialize | PaperListRow_Deserialize;
+
+/**  One library row: the catalog record plus a local-PDF probe. */
+export type PaperListRow_Deserialize = {
+	/**  List projection only: whether `papers/<id>/` currently holds a PDF. */
+	has_pdf: boolean,
+} & PaperRecord_Deserialize;
+
+/**  One library row: the catalog record plus a local-PDF probe. */
+export type PaperListRow_Serialize = {
+	/**  List projection only: whether `papers/<id>/` currently holds a PDF. */
+	has_pdf: boolean,
+} & PaperRecord_Serialize;
+
+/**
+ *  Manual metadata patch: `None` keeps the current value; a provided value is
+ *  trimmed and an empty string clears the column (stored as NULL).
+ */
+export type PaperMetaPatch = {
+	title: string | null,
+	authors: string[] | null,
+	/**
+	 *  Publication date as text — `YYYY`, `YYYY-MM` or `YYYY-MM-DD` — so an
+	 *  empty string can clear it. `year` is derived from it.
+	 */
+	date: string | null,
+	doi: string | null,
+	arxivId: string | null,
+	publication: string | null,
+	volume: string | null,
+	issue: string | null,
+	pages: string | null,
+	publisher: string | null,
+	abstract: string | null,
+	pdfUrl: string | null,
+	htmlUrl: string | null,
+};
+
+export type PaperMoveArgs = {
+	vaultPath: string,
+	/**  Vault-relative item to move (paper folder, org folder, or file under `papers/`). */
+	fromRel: string,
+	/**  Vault-relative destination parent (`papers` or under `papers/`). */
+	destParentRel: string,
+	/**
+	 *  Dirty open Markdown/NOTES paths supplied by the renderer. The Host
+	 *  rejects a transaction that would move or rewrite one of these files.
+	 */
+	dirtyPaths?: string[],
+};
+
+export type PaperMoveResult = {
+	/**  New vault-relative path of the moved item. */
+	newRel: string,
+	/**  Link-aware transaction details for UI refresh and diagnostics. */
+	linkUpdate: WikiRenameResult,
+};
+
+export type PaperOpenBundle = PaperOpenBundle_Serialize | PaperOpenBundle_Deserialize;
+
+export type PaperOpenBundleArgs = {
+	vaultPath: string,
+	/**  Vault-relative paper folder path, e.g. `papers/1706.03762`. */
+	path: string,
+};
+
+export type PaperOpenBundle_Deserialize = {
+	paper: PaperRecord_Deserialize,
+	pathRel: string,
+	notesSeed: string | null,
+	pdfPath: string | null,
+	hasTex: boolean,
+	hasPaperMd: boolean,
+};
+
+export type PaperOpenBundle_Serialize = {
+	paper: PaperRecord_Serialize,
+	pathRel: string,
+	notesSeed?: string | null,
+	pdfPath?: string | null,
+	hasTex: boolean,
+	hasPaperMd: boolean,
+};
+
+export type PaperPageCountsArgs = {
+	vaultPath: string,
+};
+
+export type PaperParseBodyArgs = {
+	vaultPath: string,
+	/**  Vault-relative paper folder, e.g. `papers/1706.03762`. */
+	path: string,
+	/**  When true, overwrite existing `PAPER.md`. Default false. */
+	force?: boolean,
+	/**  JobCenter job id (task id); passed to the isolated parser worker for cancellation. */
+	taskId?: string | null,
+};
+
+export type PaperParseResult = PaperParseResult_Serialize | PaperParseResult_Deserialize;
+
+export type PaperParseResult_Deserialize = {
+	paperMd: boolean,
+	bodySource: string | null,
+	bodyQuality: string | null,
+	/**
+	 *  Set only when the parse genuinely failed, never for a skip. Callers
+	 *  surface it as an error instead of reporting a silent success.
+	 */
+	error: string | null,
+	messages: string[],
+};
+
+export type PaperParseResult_Serialize = {
+	paperMd: boolean,
+	bodySource?: string | null,
+	bodyQuality?: string | null,
+	/**
+	 *  Set only when the parse genuinely failed, never for a skip. Callers
+	 *  surface it as an error instead of reporting a silent success.
+	 */
+	error?: string | null,
+	messages: string[],
+};
+
+export type PaperReadingActivityBatchArgs = {
+	vaultPath: string,
+	/**  Vault-relative paper folder paths, e.g. `papers/1706.03762`. */
+	paths: string[],
+};
+
+/**
+ *  The single paper model: catalog row, `metadata.json` sidecar, IPC payload.
+ *  JSON stays snake_case to match the frontend's `PaperMetadata`.
+ */
+export type PaperRecord = PaperRecord_Serialize | PaperRecord_Deserialize;
+
+/**
+ *  The single paper model: catalog row, `metadata.json` sidecar, IPC payload.
+ *  JSON stays snake_case to match the frontend's `PaperMetadata`.
+ */
+export type PaperRecord_Deserialize = {
+	/**
+	 *  Vault-relative paper folder path (primary key).
+	 *  Defaults empty so sidecar files without `path` still parse; readers
+	 *  overwrite it with the on-disk location.
+	 */
+	path?: string,
+	id: string,
+	type: PaperKind,
+	title: string,
+	authors: string[],
+	creators: Json | null,
+	/**  Publication year, kept for citation keys / tree labels. */
+	year: number | null,
+	/**  Publication date at source precision: `YYYY`, `YYYY-MM` or `YYYY-MM-DD`. */
+	date: string | null,
+	abstract: string | null,
+	tags?: PaperTag[],
+	arxiv_id: string | null,
+	doi: string | null,
+	isbn: string | null,
+	issn: string | null,
+	pmid: string | null,
+	publication: string | null,
+	volume: string | null,
+	issue: string | null,
+	pages: string | null,
+	publisher: string | null,
+	place: string | null,
+	series: string | null,
+	language: string | null,
+	pdf_url: string | null,
+	html_url: string | null,
+	source_url: string | null,
+	body_source: string | null,
+	body_quality: string | null,
+	bibtex_key: string | null,
+	citation_count: number | null,
+	zotero_item_type: string | null,
+	meta_source: string | null,
+	extra: string | null,
+	summary: string | null,
+	status: string,
+	/**  Whether paper-reader workflow has completed for this paper. */
+	is_read?: boolean,
+	/**  Zotero itemID this paper is linked to (bidirectional sync). */
+	zotero_item_id: number | null,
+	/**  ISO 8601 watermark of the last Zotero sync touching this paper. */
+	zotero_last_synced: string | null,
+	added_at: string,
+	updated_at: string,
+};
+
+/**
+ *  The single paper model: catalog row, `metadata.json` sidecar, IPC payload.
+ *  JSON stays snake_case to match the frontend's `PaperMetadata`.
+ */
+export type PaperRecord_Serialize = {
+	/**
+	 *  Vault-relative paper folder path (primary key).
+	 *  Defaults empty so sidecar files without `path` still parse; readers
+	 *  overwrite it with the on-disk location.
+	 */
+	path: string,
+	id: string,
+	type: PaperKind,
+	title: string,
+	authors: string[],
+	creators?: Json | null,
+	/**  Publication year, kept for citation keys / tree labels. */
+	year?: number | null,
+	/**  Publication date at source precision: `YYYY`, `YYYY-MM` or `YYYY-MM-DD`. */
+	date?: string | null,
+	abstract?: string | null,
+	tags: PaperTag[],
+	arxiv_id?: string | null,
+	doi?: string | null,
+	isbn?: string | null,
+	issn?: string | null,
+	pmid?: string | null,
+	publication?: string | null,
+	volume?: string | null,
+	issue?: string | null,
+	pages?: string | null,
+	publisher?: string | null,
+	place?: string | null,
+	series?: string | null,
+	language?: string | null,
+	pdf_url?: string | null,
+	html_url?: string | null,
+	source_url?: string | null,
+	body_source?: string | null,
+	body_quality?: string | null,
+	bibtex_key?: string | null,
+	citation_count?: number | null,
+	zotero_item_type?: string | null,
+	meta_source?: string | null,
+	extra?: string | null,
+	summary?: string | null,
+	status: string,
+	/**  Whether paper-reader workflow has completed for this paper. */
+	is_read: boolean,
+	/**  Zotero itemID this paper is linked to (bidirectional sync). */
+	zotero_item_id?: number | null,
+	/**  ISO 8601 watermark of the last Zotero sync touching this paper. */
+	zotero_last_synced?: string | null,
+	added_at: string,
+	updated_at: string,
+};
+
+export type PaperRefsListArgs = {
+	vaultPath: string,
+	path: string,
+};
+
+export type PaperRefsParseArgs = {
+	vaultPath: string,
+	path: string,
+	force?: boolean,
+};
+
+/**
+ *  Owned mirror of the private flattened `paper:renamed` envelope in
+ *  `agentero_core::features::lifecycle` (vaultId + `PaperRenamedEvent` fields
+ *  + timestamp, all camelCase).
+ */
+export type PaperRenamedEventPayload = {
+	vaultId: string,
+	oldPaperId: string,
+	newPaperId: string,
+	oldPath: string,
+	newPath: string,
+	/**  `renamed` | `merged` */
+	outcome: string,
+	updatedSources: string[],
+	timestamp: number,
+};
+
+export type PaperRepathArgs = {
+	vaultPath: string,
+	/**  Vault-relative original path (paper folder, org folder, or file under `papers/`). */
+	fromRel: string,
+	/**  Vault-relative new path after the move already happened on disk. */
+	toRel: string,
+};
+
+export type PaperRepathResult = {
+	/**  Number of catalog rows whose `path` prefix was rewritten. */
+	count: number,
+};
+
+export type PaperRescanArgs = {
+	vaultPath: string,
+};
+
+export type PaperRescanResult = {
+	/**  Number of paper folders re-imported into the catalog. */
+	count: number,
+};
+
+export type PaperResolveIdentifierArgs = {
+	/**  DOI / arXiv id / URL / title text. */
+	text: string,
+	translatorBaseUrl?: string | null,
+};
+
+/**  Frontend-facing title/keyword search candidate. */
+export type PaperSearchCandidate = {
+	title: string,
+	authors: string[],
+	year: number | null,
+	venue: string | null,
+	doi: string | null,
+	arxivId: string | null,
+	citationCount: number | null,
+	url: string | null,
+	/**  Text handed back to the identifier pipeline (arXiv id preferred over DOI). */
+	identifier: string,
+	/**  Source that produced the candidate, e.g. `"s2"` or `"arxiv"`. */
+	source: string,
+};
+
+/**  A query together with its importable candidates. */
+export type PaperSearchGroup = {
+	query: string,
+	candidates: PaperSearchCandidate[],
+};
+
+export type PaperSetIsReadArgs = {
+	vaultPath: string,
+	/**  Vault-relative paper folder path. */
+	path: string,
+	isRead: boolean,
+};
+
+export type PaperSetPageCountsArgs = {
+	vaultPath: string,
+	/**  vault-relative paper path → page count. */
+	counts: { [key in string]: number },
+};
+
+export type PaperSetTagsArgs = {
+	vaultPath: string,
+	/**  Vault-relative paper folder path. */
+	path: string,
+	/**
+	 *  Full replacement list (not a patch merge).
+	 *  Each item may be a bare string or `{ name, color? }` (Apple-style color id).
+	 */
+	tags: PaperTag[],
+};
+
+/**
+ *  One catalog tag: display name + optional color id.
+ *  JSON: bare string when uncolored; `{"name","color"}` when colored.
+ */
+export type PaperTag = {
+	name: string,
+	color: string | null,
+};
+
+export type PaperUpdateMetaArgs = {
+	vaultPath: string,
+	/**  Vault-relative paper folder path. */
+	path: string,
+	patch: PaperMetaPatch,
+};
+
+/**  Which generated parse artifacts a bulk clear/reparse command touches. */
+export type ParseResultScope = "layout" | "paper" | "all";
+
+export type PathRestoreItemResult = {
+	/**  Vault-relative path the item was restored to. */
+	rel: string,
+};
+
+export type PathTrashArgs = {
+	vaultPath: string,
+	/**  Vault-relative paths to move into the recycle bin. */
+	rels: string[],
+};
+
+export type PdfAskSettings = {
+	agentId?: string,
+	modelId?: string,
+};
+
+export type PermissionOptionView = {
+	optionId: string,
+	name: string,
+	kind: string,
+};
+
+/**  Payload for the `agent:permission-request` event (ask mode). */
+export type PermissionRequestEvent = {
+	requestId: string,
+	sessionId: string,
+	title: string,
+	kind: string | null,
+	paths: string[],
+	options: PermissionOptionView[],
+};
+
+export type PermissionRequestEvt = PermissionRequestEvent;
+
+/**  Shared response for the permission / elicitation / ask-user gates. */
+export type PermissionResponded = {
+	resolved: boolean,
+};
+
+/**  Request payload for `agent_respond_permission`. */
+export type PermissionResponseRequest = {
+	requestId: string,
+	/**  Chosen option id; `None` cancels the request. */
+	optionId?: string | null,
+};
+
+/**  Per-id outcome: one failed paper never blocks the rest of the turn. */
+export type PlazaScratchEntry = {
+	arxivId: string,
+	ok: boolean,
+	markdownPath: string | null,
+	pdfPath: string | null,
+	error: string | null,
+};
+
+export type PlazaScratchPrepareArgs = {
+	arxivIds: string[],
+};
+
+export type ProbeEmbeddingArgs = {
+	/**  Override the stored base URL. Empty / missing keeps the stored value. */
+	baseUrl?: string | null,
+	/**
+	 *  Override the stored API key. Empty / missing keeps the stored value.
+	 *  The Host's `*` mask is also treated as "use the stored secret".
+	 */
+	apiKey?: string | null,
+	/**  Override the stored model. Empty / missing keeps the stored value. */
+	model?: string | null,
+};
+
+export type ProbeEmbeddingResult = {
+	/**  Dimensionality reported by the embedding endpoint for the probe input. */
+	dim: number,
+	/**  Wall-clock latency of the probe request in milliseconds. */
+	latencyMs: number,
+};
+
+export type ProbeResult = ProbeResult_Serialize | ProbeResult_Deserialize;
+
+export type ProbeResult_Deserialize = {
+	agentId: string,
+	available: boolean,
+	agentName?: string | null,
+	protocolVersion?: string | null,
+	error?: string | null,
+	sessionCapabilities?: AcpSessionCapabilities | null,
+};
+
+export type ProbeResult_Serialize = {
+	agentId: string,
+	available: boolean,
+	agentName?: string | null,
+	protocolVersion?: string | null,
+	error?: string | null,
+	sessionCapabilities?: AcpSessionCapabilities | null,
+};
+
+/**  Base64 image payload for multimodal ACP prompts (PDF region crops, etc.). */
+export type PromptImage = {
+	/**  Raw base64 (no data: URL prefix). */
+	data: string,
+	mimeType: string,
+};
+
+/**
+ *  Minimal activity point mirrored by `ReadingActivityPoint` in
+ *  `src/lib/paper/reading-heatmap/types.ts`.
+ */
+export type ReadingActivityPoint = {
+	/**  `highlight` | `ask` | `translate`. */
+	kind: string,
+	/**  1-based page. */
+	page: number,
+	/**  0–1 vertical position on the page (mid of rects). */
+	y: number | null,
+	/**  Contribution weight (≥ 1). */
+	weight: number | null,
+};
+
+export type RebuildResult = {
+	indexedFiles: number,
+	edges: number,
+	nodes: number,
+};
+
+export type RecommendArxivArgs = {
+	vaultPath: string,
+	/**  Categories to fetch; falls back to the last run, then the defaults. */
+	categories?: string[] | null,
+	topN?: number | null,
+	/**  Recompute even when today's stored run covers the same categories. */
+	force?: boolean,
+};
+
+export type RecommendArxivLastArgs = {
+	vaultPath: string,
+};
+
+export type RecommendItem = {
+	arxivId: string,
+	title: string,
+	abstract: string,
+	url: string,
+	publishedAt: string | null,
+	score: number | null,
+};
+
+export type RecommendResult = {
+	items: RecommendItem[],
+	/**  RFC3339 timestamp of the run that produced `items`. */
+	computedAt: string,
+	categories: string[],
+	corpusSize: number,
+	/**  True when `items` came from the stored same-day run. */
+	reusedCache: boolean,
+};
+
+/**  Relay connection information embedded in a pairing offer. */
+export type RelayOffer = {
+	endpoint: string,
+};
+
+export type RemoteAgentInstallArgs = {
+	sessionId: string,
+	templateId: string,
+};
+
+export type RemoteAgentProbeArgs = {
+	sessionId: string,
+	templateId: string,
+};
+
+export type RemoteAgentScanArgs = {
+	sessionId: string,
+};
+
+export type RemoteAgentScanResponse = RemoteAgentScanResponse_Serialize | RemoteAgentScanResponse_Deserialize;
+
+export type RemoteAgentScanResponse_Deserialize = {
+	sessionId: string,
+	destination: string,
+	entries: CatalogEntry_Deserialize[],
+};
+
+export type RemoteAgentScanResponse_Serialize = {
+	sessionId: string,
+	destination: string,
+	entries: CatalogEntry_Serialize[],
+};
+
+export type RemoteCacheClearArgs = {
+	/**  When set, clear that session's blobs; otherwise all remote blob caches. */
+	sessionId?: string | null,
+};
+
+export type RemoteCacheClearResult = {
+	freedBytes: number,
+};
+
+/**  Ensure a remote PDF (or other file) is cached under the session blob dir; return local path. */
+export type RemoteCacheFileArgs = {
+	sessionId: string,
+	path: string,
+};
+
+export type RemoteCacheFileResult = {
+	/**  Absolute local path to cached bytes (ephemeral). */
+	localPath: string,
+};
+
+export type RemoteCacheStatsArgs = {
+	/**  When set, stats for that session's blob dir; otherwise all remote caches. */
+	sessionId?: string | null,
+};
+
+export type RemoteConnectArgs = {
+	/**  SSH host or config alias. Use `__local_sim__` with an absolute local path for tests. */
+	host: string,
+	user?: string | null,
+	remotePath: string,
+};
+
+export type RemotePaperGetArgs = {
+	sessionId: string,
+	path?: string | null,
+	id?: string | null,
+};
+
+export type RemotePaperRescanResult = {
+	count: number,
+};
+
+export type RemotePaperSetIsReadArgs = {
+	sessionId: string,
+	path: string,
+	isRead: boolean,
+};
+
+export type RemotePaperSetTagsArgs = {
+	sessionId: string,
+	path: string,
+	tags: PaperTag[],
+};
+
+export type RemotePathArgs = {
+	sessionId: string,
+	path?: string,
+};
+
+export type RemoteRemoveArgs = {
+	sessionId: string,
+	path: string,
+	recursive?: boolean,
+};
+
+export type RemoteSessionArgs = {
+	sessionId: string,
+	locale?: string | null,
+};
+
+export type RemoteSessionInfo = {
+	sessionId: string,
+	kind: string,
+	displayName: string,
+	host: string,
+	remotePath: string,
+	caps: FsCaps,
+	/**  Pseudo vault path for frontend: `remote:<sessionId>` */
+	vaultHandle: string,
+};
+
+export type RemoteWriteBytesArgs = {
+	sessionId: string,
+	path: string,
+	data: number[],
+};
+
+export type RemoteWriteTextArgs = {
+	sessionId: string,
+	path: string,
+	content: string,
+};
+
+/**  A parsed occurrence enriched with one deterministic resolution result. */
+export type ResolvedLink = ResolvedLink_Serialize | ResolvedLink_Deserialize;
+
+/**  A parsed occurrence enriched with one deterministic resolution result. */
+export type ResolvedLink_Deserialize = {
+	occurrence: InternalLinkOccurrence_Deserialize,
+	status: LinkResolutionStatus,
+	targetPath?: string | null,
+	candidates?: string[],
+};
+
+/**  A parsed occurrence enriched with one deterministic resolution result. */
+export type ResolvedLink_Serialize = {
+	occurrence: InternalLinkOccurrence_Serialize,
+	status: LinkResolutionStatus,
+	targetPath?: string | null,
+	candidates?: string[],
+};
+
+export type RunOnceAccepted = {
+	sessionId: string,
+	messageId: string,
+	agentId: string,
+};
+
+export type RunOnceRequest = RunOnceRequest_Serialize | RunOnceRequest_Deserialize;
+
+export type RunOnceRequest_Deserialize = {
+	agentId?: string | null,
+	/**
+	 *  ACP provider session id for multi-turn continue.
+	 *  Host picks restore method from agent capabilities:
+	 *  `session/resume` if advertised, else `session/load` (e.g. Grok Build).
+	 *  Omit to create a new session via `session/new`.
+	 */
+	sessionId?: string | null,
+	prompt: string,
+	/**  Send the prompt verbatim as an ACP slash command. */
+	isAcpCommand?: boolean,
+	/**  Optional images attached to this prompt (ACP `ContentBlock::Image`). */
+	images?: PromptImage[],
+	/**  Vault root used as ACP session cwd. Falls back to process cwd when omitted. */
+	vaultPath?: string | null,
+	workflow?: string | null,
+	target?: string | null,
+	/**  Preferred model id from ACP session config (category: model). Applied after session/new. */
+	modelId?: string | null,
+	/**  Preferred Codex-style collaboration mode (`collaboration_mode`), e.g. default / plan. */
+	collaborationModeId?: string | null,
+	/**  Preferred ACP reasoning effort (category: thought_level). Applied after session/new. */
+	reasoningEffort?: string | null,
+	/**  Choose the highest recognized ACP effort when no explicit effort is supplied. */
+	preferHighestReasoningEffort?: boolean,
+	/**  Preferred ACP fast mode (category: model_config). Applied after session/new. */
+	fastMode?: boolean | null,
+	/**  Locally discovered SKILL.md identifiers selected through the composer. */
+	skillIds?: string[],
+	/**  When enabled, automatically select the first ACP permission option for this run. */
+	autoApprove?: boolean,
+	/**
+	 *  ACP permission handling: "restricted" (decline), "auto" (approve all),
+	 *  or "ask" (forward each request to the user). Defaults to "restricted".
+	 */
+	permissionMode?: string | null,
+	/**
+	 *  Language every response and generated note must use (e.g. `zh-CN`).
+	 *  Resolved from the global setting on the frontend; `None` = no directive.
+	 */
+	responseLanguage?: string | null,
+	/**
+	 *  Free-form user preference instructions (Settings → Agent).
+	 *  Injected into the Host prompt envelope; empty / omitted = off.
+	 */
+	personalPrompt?: string | null,
+	/**
+	 *  When true, do not list this session in Agent chat history
+	 *  (paper-reader and other non-composer workflows).
+	 */
+	hideFromChatHistory?: boolean,
+};
+
+export type RunOnceRequest_Serialize = {
+	agentId?: string | null,
+	/**
+	 *  ACP provider session id for multi-turn continue.
+	 *  Host picks restore method from agent capabilities:
+	 *  `session/resume` if advertised, else `session/load` (e.g. Grok Build).
+	 *  Omit to create a new session via `session/new`.
+	 */
+	sessionId?: string | null,
+	prompt: string,
+	/**  Send the prompt verbatim as an ACP slash command. */
+	isAcpCommand: boolean,
+	/**  Optional images attached to this prompt (ACP `ContentBlock::Image`). */
+	images: PromptImage[],
+	/**  Vault root used as ACP session cwd. Falls back to process cwd when omitted. */
+	vaultPath?: string | null,
+	workflow: string | null,
+	target?: string | null,
+	/**  Preferred model id from ACP session config (category: model). Applied after session/new. */
+	modelId?: string | null,
+	/**  Preferred Codex-style collaboration mode (`collaboration_mode`), e.g. default / plan. */
+	collaborationModeId?: string | null,
+	/**  Preferred ACP reasoning effort (category: thought_level). Applied after session/new. */
+	reasoningEffort?: string | null,
+	/**  Choose the highest recognized ACP effort when no explicit effort is supplied. */
+	preferHighestReasoningEffort: boolean,
+	/**  Preferred ACP fast mode (category: model_config). Applied after session/new. */
+	fastMode?: boolean | null,
+	/**  Locally discovered SKILL.md identifiers selected through the composer. */
+	skillIds: string[],
+	/**  When enabled, automatically select the first ACP permission option for this run. */
+	autoApprove: boolean,
+	/**
+	 *  ACP permission handling: "restricted" (decline), "auto" (approve all),
+	 *  or "ask" (forward each request to the user). Defaults to "restricted".
+	 */
+	permissionMode?: string | null,
+	/**
+	 *  Language every response and generated note must use (e.g. `zh-CN`).
+	 *  Resolved from the global setting on the frontend; `None` = no directive.
+	 */
+	responseLanguage?: string | null,
+	/**
+	 *  Free-form user preference instructions (Settings → Agent).
+	 *  Injected into the Host prompt envelope; empty / omitted = off.
+	 */
+	personalPrompt?: string | null,
+	/**
+	 *  When true, do not list this session in Agent chat history
+	 *  (paper-reader and other non-composer workflows).
+	 */
+	hideFromChatHistory: boolean,
+};
+
+export type ScratchClearResult = {
+	freedBytes: number,
+};
+
+export type ScratchStats = {
+	papers: number,
+	bytes: number,
+};
+
+export type SearchHit = SearchHit_Serialize | SearchHit_Deserialize;
+
+export type SearchHit_Deserialize = {
+	/**  Vault-relative md file, e.g. `papers/x/NOTES.md`. */
+	path: string,
+	/**  Vault-relative paper folder when the hit is inside `papers/…`; else omitted. */
+	paperPath: string | null,
+	title: string,
+	snippet: string,
+	/**  1-based line of the first matching line (0 when unknown). */
+	line: number,
+	score: number,
+};
+
+export type SearchHit_Serialize = {
+	/**  Vault-relative md file, e.g. `papers/x/NOTES.md`. */
+	path: string,
+	/**  Vault-relative paper folder when the hit is inside `papers/…`; else omitted. */
+	paperPath?: string | null,
+	title: string,
+	snippet: string,
+	/**  1-based line of the first matching line (0 when unknown). */
+	line: number,
+	score: number,
+};
+
+export type SettingsChangedEvent = SettingsChangedEvent_Serialize | SettingsChangedEvent_Deserialize;
+
+export type SettingsChangedEvent_Deserialize = AppSettings_Deserialize;
+
+export type SettingsChangedEvent_Serialize = AppSettings_Serialize;
+
+export type SettingsGetResult = SettingsGetResult_Serialize | SettingsGetResult_Deserialize;
+
+export type SettingsGetResult_Deserialize = {
+	settings: AppSettings_Deserialize,
+	/**  Absolute path to the settings file. */
+	path: string,
+	/**  Whether the file already existed before this read (false → first run / defaults). */
+	existed: boolean,
+};
+
+export type SettingsGetResult_Serialize = {
+	settings: AppSettings_Serialize,
+	/**  Absolute path to the settings file. */
+	path: string,
+	/**  Whether the file already existed before this read (false → first run / defaults). */
+	existed: boolean,
+};
+
+export type SkillCandidate = {
+	name: string,
+	description: string,
+	source: string,
+	relativePath: string,
+	alreadyInstalled: boolean,
+};
+
+export type SkillDiscovery = {
+	discoveryId: string,
+	source: string,
+	candidates: SkillCandidate[],
+};
+
+export type SkillImportResult = {
+	name: string,
+	description: string,
+	path: string,
+	source: string,
+	skipped: boolean,
+};
+
+export type SkillInstallArgs = {
+	vaultPath: string,
+	discoveryId: string,
+	selectedNames?: string[],
+	taskId?: string | null,
+};
+
+export type SkippedImport = {
+	raw: string,
+	kind: string,
+	value: string,
+	reason: string,
+};
+
+/**
+ *  Byte range of the target portion of an internal-link token in its source file.
+ *  It deliberately excludes aliases, fragments and Markdown labels so a rename can
+ *  replace only the target while preserving the user's surrounding text.
+ */
+export type SourceRange = {
+	start: number,
+	end: number,
+};
+
+export type SshConfigHost = SshConfigHost_Serialize | SshConfigHost_Deserialize;
+
+export type SshConfigHost_Deserialize = {
+	alias: string,
+	user: string | null,
+	hostname: string | null,
+	port: number | null,
+};
+
+export type SshConfigHost_Serialize = {
+	alias: string,
+	user?: string | null,
+	hostname?: string | null,
+	port?: number | null,
+};
+
+/**  Stage a dropped PDF (path-less WKWebView drop) into `~/.agentero/import-tmp/`. */
+export type StageImportFileArgs = {
+	/**  Original filename (used for stem + safe on-disk name). */
+	fileName: string,
+	/**  Standard base64 of PDF bytes (no `data:` prefix). */
+	contentBase64: string,
+};
+
+export type StageImportFileResult = {
+	/**  Absolute path written on disk. */
+	path: string,
+};
+
+export type SyncBackendConfig = {
+	/**  Backend discriminator; S3 fields or WebDAV fields apply accordingly. */
+	backend?: SyncBackendKind,
+	/**  S3-compatible endpoint, e.g. `https://<account>.r2.cloudflarestorage.com`. */
+	endpoint?: string,
+	region?: string,
+	bucket?: string,
+	/**  Optional key prefix inside the bucket (multiple vaults per bucket). */
+	prefix?: string,
+	accessKey?: string,
+	secretKey?: string,
+	/**
+	 *  `{endpoint}/{bucket}/key` instead of `{bucket}.{endpoint}/key`.
+	 *  Path style works with R2 / MinIO / AWS alike, so it is the default.
+	 */
+	forcePathStyle?: boolean,
+	/**  WebDAV server directory, e.g. `https://dav.jianguoyun.com/dav/agentero/`. */
+	webdavUrl?: string,
+	webdavUsername?: string,
+	/**  Masked (`*`) on the way to the WebView, like the S3 secret key. */
+	webdavPassword?: string,
+	/**
+	 *  Automatic background sync: once on scheduler start (vault open), after
+	 *  30s of vault quiet, and every `interval_minutes`.
+	 */
+	autoSync?: boolean,
+	intervalMinutes?: number,
+	/**
+	 *  Connection-test probe result: `false` for backends whose PUT rejects
+	 *  or ignores conditional headers (e.g. Aliyun OSS 400 NotImplemented,
+	 *  most WebDAV servers). Sync then degrades to plain PUTs.
+	 */
+	conditionalWrites?: boolean,
+	/**
+	 *  Which bulky paper assets (PDF / LaTeX source / attachments) take part
+	 *  in sync. Notes, sidecars and marks always sync. Default: everything.
+	 */
+	scope?: SyncScope,
+};
+
+/**
+ *  Which remote storage backend a vault syncs through. Legacy `sync.json`
+ *  entries without the field deserialize as [`SyncBackendKind::S3`].
+ */
+export type SyncBackendKind = "s3" | "webdav";
+
+export type SyncConfigureArgs = {
+	vaultPath: string,
+	config: SyncBackendConfig,
+};
+
+/**
+ *  One paper where both sides changed since the last sync; notes pull is
+ *  skipped for it and the user decides.
+ */
+export type SyncConflict = {
+	paperPath: string,
+	title: string,
+	reason: string,
+};
+
+export type SyncOutcome = {
+	version: number,
+	uploaded: number,
+	downloaded: number,
+	deletedLocal: number,
+	removedRemote: number,
+	conflictCopies: string[],
+};
+
+/**  Progress event streamed to the UI while a sync runs. */
+export type SyncProgress = {
+	current: number,
+	total: number,
+	phase: string,
+};
+
+/**
+ *  Owned mirror of the private borrowed `SyncProgressEvent` in
+ *  `integration::sync::commands`.
+ */
+export type SyncProgressEvent = {
+	vaultPath: string,
+	phase: string,
+	current: number,
+	total: number,
+};
+
+/**
+ *  Which bulky, re-derivable paper assets participate in sync. Notes,
+ *  sidecars, marks and embedded images always sync — they are small and not
+ *  recoverable from any upstream source.
+ */
+export type SyncScope = {
+	/**  Paper-root PDFs: `papers/<id>/<id>.pdf`. */
+	pdf?: boolean,
+	/**  LaTeX / e-print trees: `papers/<id>/source/`. */
+	source?: boolean,
+	/**  Supplementary material: `papers/<id>/attachments/`. */
+	attachments?: boolean,
+};
+
+/**  Local disk usage per bulky-asset category (bytes), for the sync-scope UI. */
+export type SyncScopeSizes = {
+	pdf: number,
+	source: number,
+	attachments: number,
+};
+
+/**
+ *  Owned mirror of the private borrowed `SyncStateEvent` in
+ *  `integration::sync::commands`.
+ */
+export type SyncStateEvent = SyncStateEvent_Serialize | SyncStateEvent_Deserialize;
+
+/**
+ *  Owned mirror of the private borrowed `SyncStateEvent` in
+ *  `integration::sync::commands`.
+ */
+export type SyncStateEvent_Deserialize = {
+	vaultPath: string,
+	status: string,
+	error?: string | null,
+};
+
+/**
+ *  Owned mirror of the private borrowed `SyncStateEvent` in
+ *  `integration::sync::commands`.
+ */
+export type SyncStateEvent_Serialize = {
+	vaultPath: string,
+	status: string,
+	error?: string | null,
+};
+
+export type SyncStatus = SyncStatus_Serialize | SyncStatus_Deserialize;
+
+export type SyncStatus_Deserialize = {
+	configured: boolean,
+	config: SyncBackendConfig | null,
+	running: boolean,
+	lastSyncAt: string | null,
+	lastVersion: number,
+};
+
+export type SyncStatus_Serialize = {
+	configured: boolean,
+	config?: SyncBackendConfig | null,
+	running: boolean,
+	lastSyncAt?: string | null,
+	lastVersion: number,
+};
+
+export type SyncVaultArgs = {
+	vaultPath: string,
+};
+
+export type TranslateProviderConfig = {
+	apiKey?: string,
+	baseUrl?: string,
+	region?: string,
+	model?: string,
+};
+
+export type TranslateSettings = {
+	provider?: string,
+	targetLang?: string,
+	sourceLang?: string,
+	providerConfigs?: { [key in string]: TranslateProviderConfig },
+	autoTranslateSelection?: boolean,
+	dualPaneTranslate?: boolean,
+	agentId?: string,
+	modelId?: string,
+	/**
+	 *  Custom translate prompt replacing the built-in instructions for the
+	 *  Agent and OpenAI-compatible providers (free MT and the built-in ignore
+	 *  it). Empty = built-in. Max 8000 chars.
+	 */
+	customPrompt?: string,
+};
+
+export type TranslateTextArgs = {
+	text: string,
+	sourceLang?: string,
+	targetLang: string,
+	/**  Provider id: free MT, commercial BYOK, or `agent`. */
+	provider?: string,
+	/**  Commercial BYOK API key. */
+	apiKey?: string | null,
+	/**  Commercial BYOK base URL / endpoint override. */
+	baseUrl?: string | null,
+	/**  Azure subscription region. */
+	region?: string | null,
+	/**  OpenAI-compatible model id. */
+	model?: string | null,
+	/**
+	 *  Custom translate instruction (settings `translate.customPrompt`); empty →
+	 *  built-in academic prompt. Injected by the Host command; replaces the
+	 *  system+rules block on the OpenAI-compatible path only.
+	 */
+	customPrompt?: string | null,
+	/**
+	 *  Optional request timeout in milliseconds (clamped 1s–30s). Default 30s.
+	 *  Settings probe uses a shorter value for snappy parallel checks.
+	 */
+	timeoutMs?: number | null,
+};
+
+export type TranslateTextResult = {
+	text: string,
+	provider: string,
+};
+
+/**  One item in the recycle bin (flattened across batches) for the UI list. */
+export type TrashEntry = {
+	/**  Stable id: "{batchId}::{stored}". */
+	id: string,
+	batchId: string,
+	stored: string,
+	/**  Original vault-relative path. */
+	rel: string,
+	/**  Basename for display. */
+	name: string,
+	deletedAt: string,
+	isDir: boolean,
+};
+
+export type TrashItemArgs = {
+	vaultPath: string,
+	batchId: string,
+	/**  Basename of the stored copy inside the batch (from `path_list_trash`). */
+	stored: string,
+};
+
+/**  Result of a trash operation returned to the UI. */
+export type TrashResult = {
+	/**  Batch id used to undo (restore) the whole delete. */
+	batchId: string,
+	/**  Number of items actually moved into the recycle bin. */
+	count: number,
+	/**  Vault-relative paths actually moved (subset of the requested rels). */
+	rels: string[],
+};
+
+export type TrashVaultArgs = {
+	vaultPath: string,
+};
+
+/**
+ *  What a silent uninstall would remove for a catalog template.
+ * 
+ *  `agent` covers the host CLI / main binary; `acp` covers the ACP adapter.
+ *  `None` means the template has no managed uninstall (e.g. hermes installs
+ *  via an official script we cannot reverse).
+ */
+export type UninstallInfo = {
+	agent: UninstallScopeInfo,
+	acp: UninstallScopeInfo,
+};
+
+/**  Per-scope uninstall payload (host CLI vs ACP adapter). */
+export type UninstallScopeInfo = {
+	npmCommands: string[],
+	dirs: string[],
+};
+
+export type UpsertAgentRequest = UpsertAgentRequest_Serialize | UpsertAgentRequest_Deserialize;
+
+export type UpsertAgentRequest_Deserialize = {
+	id?: string | null,
+	name: string,
+	template?: AgentTemplate | null,
+	command: string,
+	args?: string[],
+	env?: { [key in string]: string },
+	setDefault?: boolean,
+};
+
+export type UpsertAgentRequest_Serialize = {
+	id?: string | null,
+	name: string,
+	template: AgentTemplate | null,
+	command: string,
+	args: string[],
+	env: { [key in string]: string },
+	setDefault: boolean,
+};
+
+export type UsageClearArgs = {
+	vault?: string | null,
+};
+
+export type UsageEvent = UsageEvent_Serialize | UsageEvent_Deserialize;
+
+export type UsageEvent_Deserialize = {
+	id: number,
+	ts: string,
+	vault: string | null,
+	kind: string,
+	path: string | null,
+	paperPath: string | null,
+	mode: string | null,
+	facet: string | null,
+	status: string | null,
+	durMs: number | null,
+	qty: number | null,
+	extra: Json | null,
+};
+
+export type UsageEvent_Serialize = {
+	id: number,
+	ts: string,
+	vault: string | null,
+	kind: string,
+	path: string | null,
+	paperPath?: string | null,
+	mode: string | null,
+	facet?: string | null,
+	status?: string | null,
+	durMs: number | null,
+	qty?: number | null,
+	extra: Json | null,
+};
+
+export type UsageKindCount = {
+	kind: string,
+	count: number,
+	durMs: number,
+};
+
+export type UsageListArgs = {
+	vault?: string | null,
+	kind?: string | null,
+	path?: string | null,
+	since?: string | null,
+	limit?: number | null,
+};
+
+export type UsageRecord = {
+	ts?: string | null,
+	vault?: string | null,
+	kind: string,
+	path?: string | null,
+	mode?: string | null,
+	durMs?: number | null,
+	extra?: Json | null,
+};
+
+export type UsageSummaryArgs = {
+	vault?: string | null,
+	since?: string | null,
+};
+
+export type VaultFileChangedEvent = VaultFileChangedEvent_Serialize | VaultFileChangedEvent_Deserialize;
+
+export type VaultFileChangedEvent_Deserialize = FileChangedPayload_Deserialize;
+
+export type VaultFileChangedEvent_Serialize = FileChangedPayload_Serialize;
+
+/**  Mirror of the inline `json!({ "message": ... })` in `app::open_request`. */
+export type VaultOpenErrorEvent = {
+	message: string,
+};
+
+export type VaultOpenPayload = {
+	path: string,
+};
+
+export type VaultOpenRequestEvent = VaultOpenPayload;
+
+export type VaultSearchArgs = {
+	vaultPath: string,
+	query: string,
+	limit?: number | null,
+};
+
+export type VaultSearchResult = VaultSearchResult_Serialize | VaultSearchResult_Deserialize;
+
+export type VaultSearchResult_Deserialize = {
+	hits: SearchHit_Deserialize[],
+	/**  True when more hits existed than `limit`. */
+	truncated: boolean,
+};
+
+export type VaultSearchResult_Serialize = {
+	hits: SearchHit_Serialize[],
+	/**  True when more hits existed than `limit`. */
+	truncated: boolean,
+};
+
+export type VaultTreeNode = VaultTreeNode_Serialize | VaultTreeNode_Deserialize;
+
+export type VaultTreeNode_Deserialize = {
+	name: string,
+	/**  Absolute path (doubles as the renderer node id). */
+	path: string,
+	kind: string,
+	children: VaultTreeNode_Deserialize[] | null,
+	childrenPending: boolean | null,
+	/**
+	 *  Paper `source/` shells only: whether TeX exists on disk (children are
+	 *  lazy, so the renderer cannot infer this from the tree itself).
+	 */
+	hasTex: boolean | null,
+};
+
+export type VaultTreeNode_Serialize = {
+	name: string,
+	/**  Absolute path (doubles as the renderer node id). */
+	path: string,
+	kind: string,
+	children?: VaultTreeNode_Serialize[] | null,
+	childrenPending?: boolean | null,
+	/**
+	 *  Paper `source/` shells only: whether TeX exists on disk (children are
+	 *  lazy, so the renderer cannot infer this from the tree itself).
+	 */
+	hasTex?: boolean | null,
+};
+
+export type VisualMarkCandidate = {
+	/**  Vault-relative path e.g. `papers/foo/marks/abc.json` */
+	path: string,
+	markId: string,
+	reason: string,
+	fixable: boolean,
+	selectedByDefault: boolean,
+};
+
+export type VisualMarkRepairChange = {
+	path: string,
+};
+
+export type VisualMarkRepairResult = {
+	updatedPaths: string[],
+};
+
+export type VisualMarksDoctorSection = VisualMarksDoctorSection_Serialize | VisualMarksDoctorSection_Deserialize;
+
+export type VisualMarksDoctorSection_Deserialize = {
+	ok: boolean,
+	checkedFiles: number,
+	candidates: VisualMarkCandidate[],
+	issues: DoctorIssue_Deserialize[],
+};
+
+export type VisualMarksDoctorSection_Serialize = {
+	ok: boolean,
+	checkedFiles: number,
+	candidates: VisualMarkCandidate[],
+	issues: DoctorIssue_Serialize[],
+};
+
+/**  Background ACP warm-up (no user prompt) so Chat can show models/context early. */
+export type WarmRequest = WarmRequest_Serialize | WarmRequest_Deserialize;
+
+/**  Background ACP warm-up (no user prompt) so Chat can show models/context early. */
+export type WarmRequest_Deserialize = {
+	agentId?: string | null,
+	vaultPath?: string | null,
+	modelId?: string | null,
+	/**  Preferred collaboration mode (`collaboration_mode`: default / plan). */
+	collaborationModeId?: string | null,
+};
+
+/**  Background ACP warm-up (no user prompt) so Chat can show models/context early. */
+export type WarmRequest_Serialize = {
+	agentId?: string | null,
+	vaultPath?: string | null,
+	modelId?: string | null,
+	/**  Preferred collaboration mode (`collaboration_mode`: default / plan). */
+	collaborationModeId?: string | null,
+};
+
+export type WarmResult = WarmResult_Serialize | WarmResult_Deserialize;
+
+export type WarmResult_Deserialize = {
+	agentId: string,
+	ok: boolean,
+	models?: AgentModelsEvent_Deserialize | null,
+	usageUsed?: number | null,
+	usageSize?: number | null,
+	error?: string | null,
+};
+
+export type WarmResult_Serialize = {
+	agentId: string,
+	ok: boolean,
+	models?: AgentModelsEvent_Serialize | null,
+	usageUsed?: number | null,
+	usageSize?: number | null,
+	error?: string | null,
+};
+
+export type WebProxyAllowHostArgs = {
+	/**  Public DNS host the viewer is about to load through the proxy. */
+	host: string,
+};
+
+export type WikiApplyExternalRenameArgs = {
+	vaultPath: string,
+	candidateId: string,
+	/**  Rechecked immediately before any Vault write. */
+	dirtyPaths?: string[],
+};
+
+export type WikiCheckCounts = {
+	resolved: number,
+	missing: number,
+	ambiguous: number,
+	invalidFragment: number,
+};
+
+export type WikiCheckIssue = WikiCheckIssue_Serialize | WikiCheckIssue_Deserialize;
+
+export type WikiCheckIssue_Deserialize = {
+	status: LinkResolutionStatus,
+	source: string,
+	line: number,
+	targetRaw: string,
+	syntax: InternalLinkSyntax,
+	embed: boolean,
+	targetPath?: string | null,
+	candidates?: string[],
+	context?: string | null,
+};
+
+export type WikiCheckIssue_Serialize = {
+	status: LinkResolutionStatus,
+	source: string,
+	line: number,
+	targetRaw: string,
+	syntax: InternalLinkSyntax,
+	embed: boolean,
+	targetPath?: string | null,
+	candidates?: string[],
+	context?: string | null,
+};
+
+/**
+ *  Read-only semantic validation of explicit Vault-local links.
+ * 
+ *  `scope` is a normalized Vault-relative Markdown file or directory. `None`
+ *  means the complete Vault. Only non-resolved occurrences appear in `issues`;
+ *  `counts` still includes resolved links for an auditable total.
+ */
+export type WikiCheckResult = WikiCheckResult_Serialize | WikiCheckResult_Deserialize;
+
+/**
+ *  Read-only semantic validation of explicit Vault-local links.
+ * 
+ *  `scope` is a normalized Vault-relative Markdown file or directory. `None`
+ *  means the complete Vault. Only non-resolved occurrences appear in `issues`;
+ *  `counts` still includes resolved links for an auditable total.
+ */
+export type WikiCheckResult_Deserialize = {
+	scope?: string | null,
+	checkedFiles: number,
+	counts: WikiCheckCounts,
+	issues: WikiCheckIssue_Deserialize[],
+};
+
+/**
+ *  Read-only semantic validation of explicit Vault-local links.
+ * 
+ *  `scope` is a normalized Vault-relative Markdown file or directory. `None`
+ *  means the complete Vault. Only non-resolved occurrences appear in `issues`;
+ *  `counts` still includes resolved links for an auditable total.
+ */
+export type WikiCheckResult_Serialize = {
+	scope?: string | null,
+	checkedFiles: number,
+	counts: WikiCheckCounts,
+	issues: WikiCheckIssue_Serialize[],
+};
+
+export type WikiEmbedContentKind = "markdown" | "image" | "pdf" | 
+/**  PDF highlight / visual-trace reference; content filled by frontend marks IO. */
+"annotation" | "unsupported";
+
+/**
+ *  Read-only source projection for one resolved `![[...]]` reference.
+ * 
+ *  `link` always carries the canonical resolution status. Content is present
+ *  only when that status is resolved and the target kind is supported.
+ */
+export type WikiEmbedResponse = WikiEmbedResponse_Serialize | WikiEmbedResponse_Deserialize;
+
+/**
+ *  Read-only source projection for one resolved `![[...]]` reference.
+ * 
+ *  `link` always carries the canonical resolution status. Content is present
+ *  only when that status is resolved and the target kind is supported.
+ */
+export type WikiEmbedResponse_Deserialize = {
+	link: ResolvedLink_Deserialize,
+	contentKind?: WikiEmbedContentKind | null,
+	content?: string | null,
+};
+
+/**
+ *  Read-only source projection for one resolved `![[...]]` reference.
+ * 
+ *  `link` always carries the canonical resolution status. Content is present
+ *  only when that status is resolved and the target kind is supported.
+ */
+export type WikiEmbedResponse_Serialize = {
+	link: ResolvedLink_Serialize,
+	contentKind?: WikiEmbedContentKind | null,
+	content?: string | null,
+};
+
+/**
+ *  A verified external filesystem rename that is safe to present for explicit
+ *  approval. The opaque ID keeps the pre-rename semantic snapshot in the Host
+ *  until the renderer either applies or discards the repair.
+ */
+export type WikiExternalRenamePreview = {
+	candidateId: string,
+	from: string,
+	to: string,
+	affectedSources: string[],
+	skipped: WikiRenameSkipped[],
+};
+
+export type WikiExternalRenamePreviewArgs = {
+	vaultPath: string,
+	/**  Verified watcher pair: the former Vault-relative path and its final path. */
+	fromRel: string,
+	toRel: string,
+	/**  Dirty open Markdown/NOTES paths supplied by the renderer. */
+	dirtyPaths?: string[],
+};
+
+export type WikiMoveArgs = {
+	vaultPath: string,
+	/**  Vault-relative file or directory path to rename/move. */
+	fromRel: string,
+	/**  Vault-relative final path, including the new basename. */
+	toRel: string,
+	/**  Dirty open Markdown/NOTES paths supplied by the renderer. */
+	dirtyPaths?: string[],
+};
+
+export type WikiRenameHeadingArgs = {
+	vaultPath: string,
+	path: string,
+	headingPath: string[],
+	headingLine: number,
+	expectedContent: string,
+	newText: string,
+	dirtyPaths?: string[],
+};
+
+/**  Observable outcome of a successful explicit heading rename. */
+export type WikiRenameHeadingResult = {
+	path: string,
+	oldPath: string[],
+	newPath: string[],
+	updatedSources: string[],
+	rollback: WikiRenameRollback,
+};
+
+/**  Observable outcome of a successful link-aware file or directory move. */
+export type WikiRenameResult = {
+	movedPath: string,
+	updatedSources: string[],
+	skipped: WikiRenameSkipped[],
+	rollback: WikiRenameRollback,
+};
+
+/**  How far a failed transaction was restored. */
+export type WikiRenameRollback = "not-needed" | "completed" | "manual-recovery-required";
+
+/**  A source skipped by the rename planner because it was not safe to rewrite. */
+export type WikiRenameSkipped = {
+	path: string,
+	reason: string,
+};
+
+export type WikiResolveResponse = WikiResolveResponse_Serialize | WikiResolveResponse_Deserialize;
+
+export type WikiResolveResponse_Deserialize = {
+	link: ResolvedLink_Deserialize,
+};
+
+export type WikiResolveResponse_Serialize = {
+	link: ResolvedLink_Serialize,
+};
+
+export type WikiSearchCandidate = WikiSearchCandidate_Serialize | WikiSearchCandidate_Deserialize;
+
+export type WikiSearchCandidateKind = "file" | "heading" | "block";
+
+export type WikiSearchCandidate_Deserialize = {
+	kind: WikiSearchCandidateKind,
+	path: string,
+	insertText: string,
+	label: string,
+	detail?: string | null,
+	/**
+	 *  A human-facing alias selected by the user. The editor writes this as a
+	 *  display alias while preserving `insert_text` as the canonical target.
+	 */
+	alias?: string | null,
+	fragment?: LinkFragment | null,
+};
+
+export type WikiSearchCandidate_Serialize = {
+	kind: WikiSearchCandidateKind,
+	path: string,
+	insertText: string,
+	label: string,
+	detail?: string | null,
+	/**
+	 *  A human-facing alias selected by the user. The editor writes this as a
+	 *  display alias while preserving `insert_text` as the canonical target.
+	 */
+	alias?: string | null,
+	fragment?: LinkFragment | null,
+};
+
+export type WikilinkEditKind = "target" | "fragment";
+
+export type WikilinkRepairChange = {
+	source: string,
+	rangeStart: number,
+	rangeEnd: number,
+	expected: string,
+	replacement: string,
+	expectedHash: string,
+};
+
+export type WikilinkRepairLayer = "deterministic" | 
+/**  Probe located the edit span but has no safe auto fix — user can type one. */
+"manual";
+
+export type WikilinkRepairPlan = WikilinkRepairPlan_Serialize | WikilinkRepairPlan_Deserialize;
+
+export type WikilinkRepairPlan_Deserialize = {
+	suggestions: WikilinkRepairSuggestion_Deserialize[],
+	residuals: WikilinkRepairResidual_Deserialize[],
+};
+
+export type WikilinkRepairPlan_Serialize = {
+	suggestions: WikilinkRepairSuggestion_Serialize[],
+	residuals: WikilinkRepairResidual_Serialize[],
+};
+
+export type WikilinkRepairResidual = WikilinkRepairResidual_Serialize | WikilinkRepairResidual_Deserialize;
+
+export type WikilinkRepairResidual_Deserialize = {
+	id: string,
+	source: string,
+	line: number,
+	status: LinkResolutionStatus,
+	syntax: InternalLinkSyntax,
+	embed: boolean,
+	targetRaw: string,
+	editKind: WikilinkEditKind,
+	rangeStart: number,
+	rangeEnd: number,
+	expected: string,
+	expectedHash: string,
+	linePrefix?: string,
+	lineSuffix?: string,
+	candidates?: string[],
+	context: string | null,
+	targetPath: string | null,
+	/**  Compact document index for agent prompts (path + aliases + headings). */
+	vaultHints?: string[],
+};
+
+export type WikilinkRepairResidual_Serialize = {
+	id: string,
+	source: string,
+	line: number,
+	status: LinkResolutionStatus,
+	syntax: InternalLinkSyntax,
+	embed: boolean,
+	targetRaw: string,
+	editKind: WikilinkEditKind,
+	rangeStart: number,
+	rangeEnd: number,
+	expected: string,
+	expectedHash: string,
+	linePrefix: string,
+	lineSuffix: string,
+	candidates?: string[],
+	context?: string | null,
+	targetPath?: string | null,
+	/**  Compact document index for agent prompts (path + aliases + headings). */
+	vaultHints?: string[],
+};
+
+export type WikilinkRepairResult = {
+	updatedPaths: string[],
+};
+
+export type WikilinkRepairSuggestion = WikilinkRepairSuggestion_Serialize | WikilinkRepairSuggestion_Deserialize;
+
+export type WikilinkRepairSuggestion_Deserialize = {
+	id: string,
+	source: string,
+	line: number,
+	status: LinkResolutionStatus,
+	syntax: InternalLinkSyntax,
+	embed: boolean,
+	targetRaw: string,
+	suggestedReplacement: string,
+	editKind: WikilinkEditKind,
+	rangeStart: number,
+	rangeEnd: number,
+	expected: string,
+	expectedHash: string,
+	/**  Text on the same source line before the edit span (for git-style display). */
+	linePrefix?: string,
+	/**  Text on the same source line after the edit span. */
+	lineSuffix?: string,
+	layer: WikilinkRepairLayer,
+	reason: string,
+	selectedByDefault: boolean,
+	candidates?: string[],
+	context: string | null,
+};
+
+export type WikilinkRepairSuggestion_Serialize = {
+	id: string,
+	source: string,
+	line: number,
+	status: LinkResolutionStatus,
+	syntax: InternalLinkSyntax,
+	embed: boolean,
+	targetRaw: string,
+	suggestedReplacement: string,
+	editKind: WikilinkEditKind,
+	rangeStart: number,
+	rangeEnd: number,
+	expected: string,
+	expectedHash: string,
+	/**  Text on the same source line before the edit span (for git-style display). */
+	linePrefix: string,
+	/**  Text on the same source line after the edit span. */
+	lineSuffix: string,
+	layer: WikilinkRepairLayer,
+	reason: string,
+	selectedByDefault: boolean,
+	candidates?: string[],
+	context?: string | null,
+};
+
+/**
+ *  Owned mirror of the private borrowed `WindowClosedPayload` in
+ *  `app::window::commands`.
+ */
+export type WindowClosedEvent = WindowClosedEvent_Serialize | WindowClosedEvent_Deserialize;
+
+/**
+ *  Owned mirror of the private borrowed `WindowClosedPayload` in
+ *  `app::window::commands`.
+ */
+export type WindowClosedEvent_Deserialize = {
+	kind: string,
+	view?: string | null,
+};
+
+/**
+ *  Owned mirror of the private borrowed `WindowClosedPayload` in
+ *  `app::window::commands`.
+ */
+export type WindowClosedEvent_Serialize = {
+	kind: string,
+	view?: string | null,
+};
+
+/**  A Zotero collection surfaced in the scan preview (for the folder picker). */
+export type ZoteroCollectionInfo = {
+	/**  Zotero collectionID, or 0 for the pseudo "unfiled" bucket. */
+	id: number,
+	/**  Full folder path label (empty for unfiled). */
+	path: string,
+	itemCount: number,
+};
+
+/**  One migratable item surfaced in the scan (for the per-paper picker). */
+export type ZoteroItemInfo = {
+	/**  Zotero itemID (stable within a library); used by `include_items`. */
+	id: number,
+	title: string,
+	/**  Zotero item type (journalArticle, webpage, …) for the picker badge. */
+	itemType: string,
+	year: number | null,
+	hasPdf: boolean,
+	notes: number,
+	/**  collectionIDs this item belongs to (for client-side collection filtering). */
+	collections: number[],
+};
+
+export type ZoteroMigrateArgs = {
+	vaultPath: string,
+	zoteroDir: string,
+	/**  Vault-relative parent, e.g. `papers` (default) or `papers/zotero`. */
+	parentDir?: string | null,
+	/**  Copy each item's local PDF into the paper folder. */
+	copyPdfs?: boolean,
+	/**  Recreate Zotero collections as nested subfolders under `parent_dir`. */
+	preserveCollections?: boolean,
+	/**  If set, only import items in these collection IDs (0 = unfiled). None = all. */
+	includeCollections?: number[] | null,
+	/**  If set, only import these Zotero itemIDs (per-paper selection). None = all. */
+	includeItems?: number[] | null,
+	/**
+	 *  When set (a Zotero collectionID), placement prefers the item's own
+	 *  collection inside this collection's subtree over a deeper path in
+	 *  another branch — so importing a selected folder puts its papers where
+	 *  the user expects even when they also live in other collections.
+	 */
+	preferCollection?: number | null,
+	/**  Migrate each item's Zotero notes (HTML → Markdown) into NOTES.md. */
+	migrateNotes?: boolean,
+	/**  Migrate each item's PDF annotations (highlights/comments) into NOTES.md. */
+	migrateAnnotations?: boolean,
+};
+
+export type ZoteroMigrateResult = {
+	imported: number,
+	skipped: number,
+	copiedPdfs: number,
+	/**  Zotero notes backfilled into existing papers' NOTES.md (already-present papers). */
+	notesAdded: number,
+	/**  Already-imported papers moved into their collection folder on re-migration. */
+	relocated: number,
+	/**
+	 *  Duplicate Zotero items merged into an already-imported paper (one
+	 *  vault copy per real paper; notes/annotations backfilled into it).
+	 */
+	mergedDuplicates: number,
+	/**  Orphan catalog rows removed before import (paper folder gone from disk). */
+	pruned: number,
+	paths: string[],
+	errors: string[],
+};
+
+export type ZoteroScan = ZoteroScan_Serialize | ZoteroScan_Deserialize;
+
+export type ZoteroScanArgs = {
+	/**  Absolute path to the Zotero data directory (contains zotero.sqlite + storage/). */
+	zoteroDir: string,
+};
+
+export type ZoteroScan_Deserialize = {
+	valid: boolean,
+	itemCount: number,
+	withPdfCount: number,
+	noteCount: number,
+	collections: ZoteroCollectionInfo[],
+	items: ZoteroItemInfo[],
+	warning: string | null,
+};
+
+export type ZoteroScan_Serialize = {
+	valid: boolean,
+	itemCount: number,
+	withPdfCount: number,
+	noteCount: number,
+	collections: ZoteroCollectionInfo[],
+	items: ZoteroItemInfo[],
+	warning?: string | null,
+};
+
+export type ZoteroSyncArgs = {
+	vaultPath: string,
+	zoteroDir: string,
+	pullMetadata?: boolean,
+	pullNotes?: boolean,
+	pullAnnotations?: boolean,
+	pushNotes?: boolean,
+	/**
+	 *  Ignore watermarks and re-push every linked paper's NOTES.md (used to
+	 *  converge libraries damaged by earlier versions).
+	 */
+	forcePush?: boolean,
+};
+
+export type ZoteroSyncResult = {
+	linked: number,
+	unlinked: number,
+	metadataFilled: number,
+	notesPulled: number,
+	annotationsPulled: number,
+	notesPushed: number,
+	linkageBackfilled: number,
+	conflicts: SyncConflict[],
+	errors: string[],
+};
+
+/* Tauri Specta runtime */
+async function typedError<T, E>(result: Promise<T>): Promise<{ status: "ok"; data: T } | { status: "error"; error: E }> {
+    try {
+        return { status: "ok", data: await result };
+    } catch (e) {
+        if (e instanceof Error) throw e;
+        return { status: "error", error: e as any };
+    }
+}
+
+type EventEmit<T> = [T] extends [null] ? () => Promise<void> : (payload: T) => Promise<void>;
+
+function makeEvent<T>(name: string, serialize?: (payload: T) => unknown, deserialize?: (payload: any) => T) {
+    const mapEvent = (cb: __TAURI_EVENT.EventCallback<T>) => (event: __TAURI_EVENT.Event<any>) => cb({ ...event, payload: deserialize ? deserialize(event.payload) : event.payload });
+    const mapPayload = (payload: T) => serialize ? serialize(payload) : payload;
+
+    const base = {
+        listen: (cb: __TAURI_EVENT.EventCallback<T>) => __TAURI_EVENT.listen(name, mapEvent(cb)),
+        once: (cb: __TAURI_EVENT.EventCallback<T>) => __TAURI_EVENT.once(name, mapEvent(cb)),
+        emit: ((payload: T) => __TAURI_EVENT.emit(name, mapPayload(payload)) as unknown) as EventEmit<T>
+    };
+
+    return base;
+}
+

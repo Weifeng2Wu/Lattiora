@@ -1,0 +1,194 @@
+diff --git a/dist/index.js b/dist/index.js
+index 3d0dffcc5fb002f876721fc672076bafcd15e13a..47ec88ce473b08fef0444577a26df1208117b19f 100644
+--- a/dist/index.js
++++ b/dist/index.js
+@@ -172,7 +172,7 @@ function calculateTilesForPage({
+       const yPage = yScreen / scale;
+       const hPage = hScreen / scale;
+       tiles.push({
+-        id: `p${page.index}-${scale}-x${xScreen}-y${yScreen}-w${wScreen}-h${hScreen}`,
++        id: `p${page.index}-r${rotation}-${scale}-x${xScreen}-y${yScreen}-w${wScreen}-h${hScreen}`,
+         col,
+         row,
+         pageRect: { origin: { x: xPage, y: yPage }, size: { width: wPage, height: hPage } },
+@@ -314,6 +314,9 @@ const _TilingPlugin = class _TilingPlugin extends BasePlugin {
+     if (!this.renderCapability) {
+       throw new Error("Render capability not available.");
+     }
++    const coreDoc = this.getCoreDocument(id);
++    const page = coreDoc == null ? void 0 : coreDoc.document?.pages[options.pageIndex];
++    const effectiveRotation = page ? ((page.rotation ?? 0) + (coreDoc.rotation ?? 0)) % 4 : 0;
+     this.dispatch(markTileStatus(id, options.pageIndex, options.tile.id, "rendering"));
+     const task = this.renderCapability.forDocument(id).renderPageRect({
+       pageIndex: options.pageIndex,
+@@ -321,6 +324,7 @@ const _TilingPlugin = class _TilingPlugin extends BasePlugin {
+       options: {
+         scaleFactor: options.tile.srcScale,
+         dpr: options.dpr,
++        rotation: effectiveRotation,
+         ...options.imageType || this.config.defaultImageType ? { imageType: options.imageType ?? this.config.defaultImageType } : {}
+       }
+     });
+diff --git a/dist/react/index.js b/dist/react/index.js
+index 52e594b7e89dd516c5bb67e8eee07ddb0ef7c48f..2d60753d839a3d31d51395db65b918f1e5dcd6ba 100644
+--- a/dist/react/index.js
++++ b/dist/react/index.js
+@@ -3,10 +3,10 @@ import { TilingPlugin } from "@embedpdf/plugin-tiling";
+ export * from "@embedpdf/plugin-tiling";
+ import { jsx } from "react/jsx-runtime";
+ import { useMemo, useState, useRef, useEffect } from "react";
+-import { ignore, PdfErrorCode } from "@embedpdf/models";
++import { ignore, PdfErrorCode, transformRect } from "@embedpdf/models";
+ const useTilingPlugin = () => usePlugin(TilingPlugin.id);
+ const useTilingCapability = () => useCapability(TilingPlugin.id);
+-function TileImg({ documentId, pageIndex, tile, dpr, scale }) {
++function TileImg({ documentId, pageIndex, tile, dpr, scale, rotation = 0, unrotatedContainerSize }) {
+   const { provides: tilingCapability } = useTilingCapability();
+   const scope = useMemo(
+     () => tilingCapability == null ? void 0 : tilingCapability.forDocument(documentId),
+@@ -43,6 +43,22 @@ function TileImg({ documentId, pageIndex, tile, dpr, scale }) {
+     }
+   };
+   if (!url) return null;
++  let left = tile.screenRect.origin.x * relativeScale;
++  let top = tile.screenRect.origin.y * relativeScale;
++  let width = tile.screenRect.size.width * relativeScale;
++  let height = tile.screenRect.size.height * relativeScale;
++  if (rotation !== 0 && unrotatedContainerSize) {
++    const placed = transformRect(
++      unrotatedContainerSize,
++      { origin: { x: left, y: top }, size: { width, height } },
++      rotation,
++      1
++    );
++    left = placed.origin.x;
++    top = placed.origin.y;
++    width = placed.size.width;
++    height = placed.size.height;
++  }
+   return /* @__PURE__ */ jsx(
+     "img",
+     {
+@@ -50,10 +66,10 @@ function TileImg({ documentId, pageIndex, tile, dpr, scale }) {
+       onLoad: handleImageLoad,
+       style: {
+         position: "absolute",
+-        left: tile.screenRect.origin.x * relativeScale,
+-        top: tile.screenRect.origin.y * relativeScale,
+-        width: tile.screenRect.size.width * relativeScale,
+-        height: tile.screenRect.size.height * relativeScale,
++        left,
++        top,
++        width,
++        height,
+         display: "block"
+       }
+     }
+@@ -63,12 +79,16 @@ function TilingLayer({
+   documentId,
+   pageIndex,
+   scale: scaleOverride,
++  dpr: dprOverride,
+   style,
+   ...props
+ }) {
+   const { provides: tilingProvides } = useTilingCapability();
+   const documentState = useDocumentState(documentId);
+   const [tiles, setTiles] = useState([]);
++  const [staleTiles, setStaleTiles] = useState([]);
++  const prevSetRef = useRef({ ids: "", tiles: [] });
++  const dropTimerRef = useRef(null);
+   useEffect(() => {
+     if (tilingProvides) {
+       return tilingProvides.onTileRendering((event) => {
+@@ -78,10 +98,58 @@ function TilingLayer({
+       });
+     }
+   }, [tilingProvides, documentId, pageIndex]);
++  // Zoom/refresh swaps every tile id at once; the fresh set only paints as
++  // each async raster arrives, which flashes the page. Keep the previous set
++  // mounted as stretched placeholders (TileImg rescales by scale/srcScale)
++  // until the new rasters land, with a timeout so failed renders cannot pin
++  // stale content forever.
++  useEffect(() => {
++    const ids = tiles.map((t) => t.id).join("|");
++    if (!ids) return;
++    if (prevSetRef.current.ids !== ids) {
++      setStaleTiles(prevSetRef.current.tiles);
++      prevSetRef.current = { ids, tiles };
++      if (dropTimerRef.current) clearTimeout(dropTimerRef.current);
++      dropTimerRef.current = setTimeout(() => {
++        dropTimerRef.current = null;
++        setStaleTiles([]);
++      }, 1500);
++      return;
++    }
++    if (
++      tiles.length > 0 &&
++      tiles.every((t) => t.status === "ready") &&
++      staleTiles.length > 0
++    ) {
++      if (dropTimerRef.current) {
++        clearTimeout(dropTimerRef.current);
++        dropTimerRef.current = null;
++      }
++      setStaleTiles([]);
++    }
++  }, [tiles, staleTiles.length]);
++  useEffect(() => () => {
++    if (dropTimerRef.current) clearTimeout(dropTimerRef.current);
++  }, []);
+   const actualScale = useMemo(() => {
+     if (scaleOverride !== void 0) return scaleOverride;
+     return (documentState == null ? void 0 : documentState.scale) ?? 1;
+   }, [scaleOverride, documentState == null ? void 0 : documentState.scale]);
++  const actualDpr = useMemo(() => {
++    if (dprOverride !== void 0) return dprOverride;
++    return window.devicePixelRatio;
++  }, [dprOverride]);
++  const page = documentState == null ? void 0 : documentState.document?.pages[pageIndex];
++  const effectiveRotation = page ? ((page.rotation ?? 0) + (documentState.rotation ?? 0)) % 4 : 0;
++  const unrotatedContainerSize = useMemo(() => {
++    if (!page) return void 0;
++    return {
++      width: page.size.width * actualScale,
++      height: page.size.height * actualScale
++    };
++  }, [page, actualScale]);
++  const freshIds = new Set(tiles.map((t) => t.id));
++  const placeholders = staleTiles.filter((t) => !freshIds.has(t.id));
+   return /* @__PURE__ */ jsx(
+     "div",
+     {
+@@ -89,14 +157,16 @@ function TilingLayer({
+         ...style
+       },
+       ...props,
+-      children: tiles == null ? void 0 : tiles.map((tile) => /* @__PURE__ */ jsx(
++      children: [...placeholders, ...tiles].map((tile) => /* @__PURE__ */ jsx(
+         TileImg,
+         {
+           documentId,
+           pageIndex,
+           tile,
+-          dpr: window.devicePixelRatio,
+-          scale: actualScale
++          dpr: actualDpr,
++          scale: actualScale,
++          rotation: effectiveRotation,
++          unrotatedContainerSize
+         },
+         tile.id
+       ))
+diff --git a/dist/shared-react/components/tiling-layer.d.ts b/dist/shared-react/components/tiling-layer.d.ts
+index b2172b0fd95b474eafc75ea8784baaf98f4bf594..ef84bef3843ae35a00049de8a549498ba17c77e8 100644
+--- a/dist/shared-react/components/tiling-layer.d.ts
++++ b/dist/shared-react/components/tiling-layer.d.ts
+@@ -3,6 +3,7 @@ type TilingLayoutProps = Omit<HTMLAttributes<HTMLDivElement>, 'style'> & {
+     documentId: string;
+     pageIndex: number;
+     scale?: number;
++    dpr?: number;
+     style?: CSSProperties;
+ };
+ export declare function TilingLayer({ documentId, pageIndex, scale: scaleOverride, style, ...props }: TilingLayoutProps): import("react/jsx-runtime").JSX.Element;

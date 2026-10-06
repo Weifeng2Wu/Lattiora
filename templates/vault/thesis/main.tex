@@ -1,0 +1,50 @@
+\documentclass[11pt]{article}
+
+% Minimal, compilable starter for the thesis/ folder.
+% Replace the title, authors, and sections with your own work,
+% Export this folder to an external LaTeX service to compile.
+% Cloudflare Workers does not run a native TeX compiler.
+\usepackage{amsmath,amssymb}
+\usepackage[margin=1in]{geometry}
+\usepackage{graphicx}
+\usepackage[colorlinks=true,allcolors=blue]{hyperref}
+
+\title{A Minimal Research Paper}
+\author{Your Name\thanks{Affiliation. \texttt{you@example.com}}}
+\date{\today}
+
+\begin{document}
+\maketitle
+
+\begin{abstract}
+This is a minimal \LaTeX{} starter for the \texttt{thesis/} folder. Replace the
+title, authors, and sections with your own work, then export this folder to an external \LaTeX{} service for compilation.
+\end{abstract}
+
+\section{Introduction}
+Motivate the problem and state your contributions. Cite related work with
+\verb|\cite|, for example~\cite{vaswani2017attention}.
+
+\section{Method}
+Show that math typesetting works:
+\begin{equation}
+  \mathcal{L}(\theta)
+  = \frac{1}{N} \sum_{i=1}^{N} \ell\bigl(f_{\theta}(x_i),\, y_i\bigr).
+  \label{eq:loss}
+\end{equation}
+
+\section{Experiments}
+Describe the setup, then reference Equation~\eqref{eq:loss} when reporting
+results. Add tables and figures as needed.
+
+\section{Conclusion}
+Summarize the main takeaway and future work.
+
+\begin{thebibliography}{9}
+\bibitem{vaswani2017attention}
+A.~Vaswani et al.
+\newblock Attention is all you need.
+\newblock In \emph{Advances in Neural Information Processing Systems}, 2017.
+\end{thebibliography}
+
+\end{document}

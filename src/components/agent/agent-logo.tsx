@@ -1,0 +1,291 @@
+import { Terminal } from "lucide-react";
+import type { ComponentProps, ReactNode } from "react";
+import { SiClaude, SiDeepseek, SiHermes, SiOpencode } from "react-icons/si";
+import type { AgentTemplate } from "@/lib/agent";
+import { cn } from "@/lib/core/utils";
+
+export type AgentLogoKey =
+	| "opencode"
+	| "openclaw"
+	| "claude-acp"
+	| "codex-acp"
+	| "hermes"
+	| "qodercli"
+	| "grok-build"
+	| "pi"
+	| "dsh"
+	| "kimi-code"
+	| "zcode"
+	| "minimax-code"
+	| "custom";
+
+export function agentLogoKeyForTemplate(
+	template: AgentTemplate | string | null | undefined,
+): AgentLogoKey {
+	switch (template) {
+		case "opencode":
+		case "openclaw":
+		case "claude-acp":
+		case "codex-acp":
+		case "hermes":
+		case "qodercli":
+		case "grok-build":
+		case "pi":
+		case "dsh":
+		case "kimi-code":
+		case "zcode":
+		case "minimax-code":
+			return template;
+		default:
+			return "custom";
+	}
+}
+
+export function AgentLogo({
+	template,
+	className,
+	iconClassName,
+	plain = false,
+}: {
+	template: AgentTemplate | string | null | undefined;
+	className?: string;
+	/** Override the inner icon size (default `size-3.5`). */
+	iconClassName?: string;
+	/**
+	 * Render only the brand icon without the bordered badge shell. Useful when
+	 * the logo lives inside an existing button or list item.
+	 */
+	plain?: boolean;
+}) {
+	const key = agentLogoKeyForTemplate(template);
+	const iconClass = cn("size-3.5", iconClassName);
+	const neutralIconClass = cn(iconClass, "!text-foreground");
+	const isolateSvgColorClass = "[&_svg_*]:!text-inherit";
+
+	let icon: ReactNode;
+	switch (key) {
+		case "opencode":
+			icon = <SiOpencode className={neutralIconClass} />;
+			break;
+		case "openclaw":
+			icon = (
+				<OpenClawMark
+					className={cn(iconClass, "!text-red-600 dark:!text-red-400")}
+				/>
+			);
+			break;
+		case "claude-acp":
+			icon = <SiClaude className={cn(iconClass, "!text-[#D97757]")} />;
+			break;
+		case "codex-acp":
+			icon = <OpenAiMark className={neutralIconClass} />;
+			break;
+		case "hermes":
+			icon = (
+				<SiHermes
+					className={cn(iconClass, "!text-[#8B5E3C] dark:!text-[#D3A47A]")}
+				/>
+			);
+			break;
+		case "grok-build":
+			icon = <GrokMark className={neutralIconClass} />;
+			break;
+		case "pi":
+			icon = (
+				<PiMark
+					className={cn(iconClass, "!text-violet-700 dark:!text-violet-300")}
+				/>
+			);
+			break;
+		case "dsh":
+			icon = <SiDeepseek className={cn(iconClass, "!text-[#4D6BFE]")} />;
+			break;
+		case "kimi-code":
+			icon = <KimiMark className={iconClass} />;
+			break;
+		case "zcode":
+			icon = <ZcodeMark className={iconClass} />;
+			break;
+		case "minimax-code":
+			icon = <MiniMaxMark className={iconClass} />;
+			break;
+		case "qodercli":
+			icon = <QoderMark className={neutralIconClass} />;
+			break;
+		case "custom":
+			icon = <Terminal className={cn(iconClass, "!text-muted-foreground")} />;
+			break;
+	}
+
+	if (plain) {
+		return (
+			<span
+				className={cn(
+					"inline-flex shrink-0 items-center justify-center",
+					isolateSvgColorClass,
+					className,
+				)}
+				aria-hidden
+			>
+				{icon}
+			</span>
+		);
+	}
+
+	const shellClass = cn(
+		"inline-flex size-5 shrink-0 items-center justify-center rounded-md border border-border/70 bg-background text-foreground shadow-xs",
+		isolateSvgColorClass,
+		className,
+	);
+
+	return (
+		<span className={shellClass} aria-hidden>
+			{icon}
+		</span>
+	);
+}
+
+function QoderMark(props: ComponentProps<"svg">) {
+	return (
+		<svg
+			viewBox="0 0 24 24"
+			fill="currentColor"
+			fillRule="evenodd"
+			aria-hidden
+			{...props}
+		>
+			<title>Qoder</title>
+			<path
+				d="M23.376 14.458v-4.056c0-2.304-1.003-4.154-2.748-5.075L11.612.574l-.046.086-.045.086c1.68.886 2.644 2.673 2.644 4.902v4.056a7.928 7.928 0 01-.014.454l-.005.061c-.005.081-.01.164-.018.245a4.897 4.897 0 01-.011.1l-.01.076c-.008.068-.015.135-.025.203l-.018.113-.01.058a9.99 9.99 0 01-.098.513l-.007.03a7.209 7.209 0 01-.074.294l-.024.086c-.027.099-.056.197-.087.296l-.027.085a9.592 9.592 0 01-.111.323l-.033.085-.018.046c-.032.082-.064.166-.098.248-.019.048-.04.096-.061.145l-.007.017a6 6 0 01-.084.187c-.024.056-.05.11-.077.165-.03.061-.058.122-.089.182a9.423 9.423 0 01-.176.332c-.03.056-.062.111-.094.167-.031.053-.062.108-.095.16-.033.055-.066.11-.101.164-.033.053-.065.104-.1.155-.034.055-.07.107-.111.169l-.099.144a15.193 15.193 0 01-.34.457c-.04.05-.08.102-.121.151l-.107.128-.007.008a6.987 6.987 0 01-.262.298l-.149.16-.116.12a9.562 9.562 0 01-.204.198l-.03.03-.072.069a9.05 9.05 0 01-.263.235l-.025.022-.029.026-.042.035a11.7 11.7 0 01-.22.18l-.07.055-.018.013a8.904 8.904 0 01-.194.146c-.029.02-.057.042-.086.063a7.7 7.7 0 01-.22.152l-.057.04a8.865 8.865 0 01-.293.185l-.062.037a10.424 10.424 0 01-.307.173l-.037.02-.196.103-.108.052-.012.006a6.196 6.196 0 01-.315.143c-.065.028-.13.054-.196.08l-.035.014-.086.034c-.07.026-.143.05-.215.075l-.039.014-.064.023a8.056 8.056 0 01-.323.097l-.63.173a7.285 7.285 0 01-.33.08l-.07.015c-.053.012-.104.023-.157.032l-.065.011-.085.015a2.332 2.332 0 01-.194.027l-.085.01a4.715 4.715 0 01-.16.018l-.034.003a4.861 4.861 0 01-.246.016h-.033a2.714 2.714 0 01-.155.005h-.106a3.384 3.384 0 01-.225-.007H4.86l-.15-.012-.066-.006a5.586 5.586 0 01-.187-.02l-.04-.005a5.14 5.14 0 01-.219-.035l-.054-.01a6.943 6.943 0 01-.347-.082l-.03-.008-.038-.01a5.034 5.034 0 01-.269-.086l-.063-.023a4.216 4.216 0 01-.188-.073l-.071-.031-.016-.007a4.959 4.959 0 01-.16-.074l-.026-.013a.164.164 0 00-.014-.007l-.671-.351.486.486h.016l8.995 4.742.093.048.03.014.02.01c.056.026.111.052.169.076l.016.008.073.032.195.076.022.008a.718.718 0 01.03.012l.014.004a4.693 4.693 0 00.323.1l.027.007c.073.02.147.038.22.055l.018.004.027.006.066.013.088.016c.075.014.15.026.226.038l.042.004c.064.009.128.016.193.022l.126.012.06.003.05.002.098.005c.046.002.094.002.14.003h.12c.05 0 .1-.002.161-.005h.033l.07-.004a6.17 6.17 0 00.184-.014l.033-.003a.753.753 0 00.058-.005l.108-.012.081-.01.08-.01.129-.021.082-.014.071-.012c.054-.01.107-.021.16-.033l.066-.013.059-.013c.096-.022.192-.046.287-.073l.63-.172a7.354 7.354 0 00.397-.122l.04-.015c.075-.025.149-.051.222-.078.032-.011.062-.024.093-.037l.03-.012c.067-.027.135-.054.2-.082l.128-.056.195-.09.021-.01.102-.05c.068-.034.135-.069.202-.105l.037-.02.073-.038c.08-.044.16-.092.24-.139l.026-.015a8.086 8.086 0 00.322-.2l.065-.045 1.98.902a1.748 1.748 0 002.472-1.59v-7.33l.004.004z"
+				opacity=".5"
+			/>
+			<path d="M11.617.576a3.904 3.904 0 00-.093-.047c-.016-.009-.033-.016-.05-.024a5.854 5.854 0 00-.166-.077l-.09-.04a4.094 4.094 0 00-.194-.074c-.017-.006-.035-.015-.053-.02l-.013-.005a5.18 5.18 0 00-.277-.088l-.07-.019a4.034 4.034 0 00-.219-.053c-.015-.003-.03-.008-.044-.012L10.253.1l-.057-.011a5.177 5.177 0 00-.225-.036L9.928.047a5.972 5.972 0 00-.191-.022L9.669.02a1.33 1.33 0 00-.058-.005L9.515.009a4.058 4.058 0 00-.111-.005C9.354 0 9.304 0 9.254 0h-.109c-.052 0-.106.004-.16.004L8.884.01A5.32 5.32 0 008.7.022l-.083.006h-.008c-.05.005-.1.013-.15.019l-.12.014c-.056.008-.112.018-.169.028-.037.006-.074.011-.11.018a7.054 7.054 0 00-.572.133l-.63.172c-.111.031-.22.064-.33.1-.037.011-.072.025-.108.037a12.91 12.91 0 00-.345.126c-.067.027-.133.054-.2.083l-.128.055a11.916 11.916 0 00-.318.15 7.376 7.376 0 00-.311.163c-.082.045-.16.092-.24.14a9.424 9.424 0 00-.35.218l-.016.01-.06.04a9.242 9.242 0 00-.51.37 12.54 12.54 0 00-.315.254l-.043.034-.01.007-.045.041c-.09.078-.18.158-.268.24l-.106.101c-.07.067-.139.135-.207.204l-.056.054-.063.067-.153.164-.12.133-.148.17c-.024.03-.049.057-.073.086l-.043.053a5.96 5.96 0 00-.123.155l-.118.151c-.04.053-.08.106-.118.16l-.075.101-.038.056-.107.155-.11.164a9.91 9.91 0 00-.168.265c-.012.02-.023.043-.037.063a12.43 12.43 0 00-.192.335l-.09.168c-.019.034-.04.07-.057.105-.011.022-.02.043-.032.065l-.092.188-.08.167a19.15 19.15 0 00-.083.192c-.017.038-.035.076-.05.115-.008.016-.014.034-.021.051-.035.083-.067.167-.1.253l-.051.134c-.04.11-.077.22-.113.33l-.02.057c0 .002 0 .005-.002.007l-.008.026c-.032.1-.06.2-.09.301l-.023.089c-.027.1-.052.2-.075.301l-.007.03a7.63 7.63 0 00-.057.267l-.008.048c-.015.074-.026.148-.038.223L.082 8.4c-.011.078-.02.156-.029.234-.006.051-.013.103-.017.154a6.57 6.57 0 00-.02.26c-.003.044-.007.086-.009.13-.004.128-.007.257-.007.386v4.056c0 1.478.42 2.741 1.138 3.692A4.75 4.75 0 002.73 18.67l9.015 4.753c-1.656-.874-2.728-2.685-2.73-5.051v-4.056c0-.13.004-.26.01-.39.002-.043.006-.085.01-.128.005-.088.01-.174.019-.261l.017-.155c.01-.077.018-.155.029-.234l.026-.164c.013-.074.025-.15.039-.223.02-.105.04-.21.064-.313l.008-.031c.023-.1.048-.201.075-.301l.023-.088c.028-.1.058-.202.09-.302l.008-.025.021-.063c.036-.11.073-.22.113-.33l.052-.134c.031-.085.065-.169.1-.253.022-.056.047-.111.07-.166a13.856 13.856 0 01.164-.358c.03-.063.06-.126.092-.188l.088-.172a9.22 9.22 0 01.187-.338l.096-.164c.034-.057.069-.112.104-.168l.1-.159a10.49 10.49 0 01.567-.786l.123-.155.116-.139c.05-.057.098-.115.148-.171a14.092 14.092 0 01.272-.297 9.706 9.706 0 01.432-.425c.088-.083.177-.163.268-.241l.054-.048a10.08 10.08 0 01.553-.435l.092-.068c.075-.053.15-.105.226-.156.019-.013.038-.028.06-.04a9.18 9.18 0 01.362-.227c.08-.047.16-.094.241-.139l.11-.058a7.643 7.643 0 01.521-.256l.126-.056a7.509 7.509 0 01.546-.208l.107-.037c.11-.036.22-.069.33-.1l.63-.172c.095-.026.191-.05.287-.072l.097-.02c.062-.014.125-.029.187-.04l.114-.018c.055-.01.11-.02.166-.028.04-.006.08-.01.12-.014.053-.007.105-.014.157-.019l.083-.006c.061-.005.123-.01.184-.013.034-.003.067-.003.101-.004l.16-.006h.11a3.187 3.187 0 01.261.008l.153.01.067.007c.064.006.128.013.192.022l.043.005a5.232 5.232 0 01.281.047l.141.03c.073.016.146.035.218.053l.07.019c.094.026.187.055.278.087l.067.025a4.326 4.326 0 01.449.19l.143.072L11.617.576z" />
+		</svg>
+	);
+}
+
+function OpenClawMark(props: ComponentProps<"svg">) {
+	return (
+		<svg viewBox="0 0 120 120" fill="none" aria-hidden {...props}>
+			<title>OpenClaw</title>
+			<path
+				d="M60 10C30 10 15 35 15 55c0 20 15 40 30 45v10h10v-10c0 0 5 2 10 0v10h10v-10c15-5 30-25 30-45 0-20-15-45-45-45Z"
+				fill="currentColor"
+			/>
+			<path
+				d="M20 45C5 40 0 50 5 60c5 10 15 5 20-5 3-7 0-10-5-10ZM100 45c15-5 20 5 15 15s-15 5-20-5c-3-7 0-10 5-10Z"
+				fill="currentColor"
+			/>
+			<path
+				d="M45 15Q35 5 30 8M75 15Q85 5 90 8"
+				stroke="currentColor"
+				strokeWidth="3"
+				strokeLinecap="round"
+			/>
+			<circle cx="45" cy="35" r="4.5" fill="var(--background)" />
+			<circle cx="75" cy="35" r="4.5" fill="var(--background)" />
+		</svg>
+	);
+}
+
+function OpenAiMark(props: ComponentProps<"svg">) {
+	return (
+		<svg
+			viewBox="0 0 24 24"
+			fill="currentColor"
+			fillRule="evenodd"
+			aria-hidden
+			{...props}
+		>
+			<title>OpenAI</title>
+			<path d="M21.55 10.004a5.416 5.416 0 00-.478-4.501c-1.217-2.09-3.662-3.166-6.05-2.66A5.59 5.59 0 0010.831 1C8.39.995 6.224 2.546 5.473 4.838A5.553 5.553 0 001.76 7.496a5.487 5.487 0 00.691 6.5 5.416 5.416 0 00.477 4.502c1.217 2.09 3.662 3.165 6.05 2.66A5.586 5.586 0 0013.168 23c2.443.006 4.61-1.546 5.361-3.84a5.553 5.553 0 003.715-2.66 5.488 5.488 0 00-.693-6.497v.001zm-8.381 11.558a4.199 4.199 0 01-2.675-.954c.034-.018.093-.05.132-.074l4.44-2.53a.71.71 0 00.364-.623v-6.176l1.877 1.069c.02.01.033.029.036.05v5.115c-.003 2.274-1.87 4.118-4.174 4.123zM4.192 17.78a4.059 4.059 0 01-.498-2.763c.032.02.09.055.131.078l4.44 2.53c.225.13.504.13.73 0l5.42-3.088v2.138a.068.068 0 01-.027.057L9.9 19.288c-1.999 1.136-4.552.46-5.707-1.51h-.001zM3.023 8.216A4.15 4.15 0 015.198 6.41l-.002.151v5.06a.711.711 0 00.364.624l5.42 3.087-1.876 1.07a.067.067 0 01-.063.005l-4.489-2.559c-1.995-1.14-2.679-3.658-1.53-5.63h.001zm15.417 3.54l-5.42-3.088L14.896 7.6a.067.067 0 01.063-.006l4.489 2.557c1.998 1.14 2.683 3.662 1.529 5.633a4.163 4.163 0 01-2.174 1.807V12.38a.71.71 0 00-.363-.623zm1.867-2.773a6.04 6.04 0 00-.132-.078l-4.44-2.53a.731.731 0 00-.729 0l-5.42 3.088V7.325a.068.068 0 01.027-.057L14.1 4.713c2-1.137 4.555-.46 5.707 1.513.487.833.664 1.809.499 2.757h.001zm-11.741 3.81l-1.877-1.068a.065.065 0 01-.036-.051V6.559c.001-2.277 1.873-4.122 4.181-4.12.976 0 1.92.338 2.671.954-.034.018-.092.05-.131.073l-4.44 2.53a.71.71 0 00-.365.623l-.003 6.173v.002zm1.02-2.168L12 9.25l2.414 1.375v2.75L12 14.75l-2.415-1.375v-2.75z" />
+		</svg>
+	);
+}
+
+function GrokMark(props: ComponentProps<"svg">) {
+	return (
+		<svg
+			viewBox="0 0 24 24"
+			fill="currentColor"
+			fillRule="evenodd"
+			aria-hidden
+			{...props}
+		>
+			<title>Grok</title>
+			<path d="M9.27 15.29l7.978-5.897c.391-.29.95-.177 1.137.272.98 2.369.542 5.215-1.41 7.169-1.951 1.954-4.667 2.382-7.149 1.406l-2.711 1.257c3.889 2.661 8.611 2.003 11.562-.953 2.341-2.344 3.066-5.539 2.388-8.42l.006.007c-.983-4.232.242-5.924 2.75-9.383.06-.082.12-.164.179-.248l-3.301 3.305v-.01L9.267 15.292M7.623 16.723c-2.792-2.67-2.31-6.801.071-9.184 1.761-1.763 4.647-2.483 7.166-1.425l2.705-1.25a7.808 7.808 0 00-1.829-1A8.975 8.975 0 005.984 5.83c-2.533 2.536-3.33 6.436-1.962 9.764 1.022 2.487-.653 4.246-2.34 6.022-.599.63-1.199 1.259-1.682 1.925l7.62-6.815" />
+		</svg>
+	);
+}
+
+function PiMark(props: ComponentProps<"svg">) {
+	return (
+		<svg
+			viewBox="0 0 800 800"
+			fill="currentColor"
+			fillRule="evenodd"
+			aria-hidden
+			{...props}
+		>
+			<title>Pi</title>
+			<path d="M165.29 165.29H517.36V400H400V517.36H282.65V634.72H165.29ZM282.65 282.65V400H400V282.65Z" />
+			<path d="M517.36 400H634.72V634.72H517.36Z" />
+		</svg>
+	);
+}
+
+/** Kimi logo: near-black rounded square, white geometric "k", blue dot (#1783FF). */
+function KimiMark(props: ComponentProps<"svg">) {
+	return (
+		<svg viewBox="0 0 24 24" fill="none" aria-hidden {...props}>
+			<title>Kimi Code</title>
+			<rect x="1" y="1" width="22" height="22" rx="5.5" fill="#0A0A0A" />
+			<path
+				d="M7.6 5.9V18.1M9.9 10.7L15 6.3M9.9 13.9L16.2 18.1"
+				stroke="#FFFFFF"
+				strokeWidth="2.5"
+				strokeLinecap="round"
+				strokeLinejoin="round"
+			/>
+			<circle cx="16.9" cy="5.1" r="1.7" fill="#1783FF" />
+		</svg>
+	);
+}
+
+/** ZCode logo: near-black rounded square, white italic "Z" with a split diagonal. */
+function ZcodeMark(props: ComponentProps<"svg">) {
+	return (
+		<svg viewBox="0 0 24 24" fill="none" aria-hidden {...props}>
+			<title>ZCode</title>
+			<rect x="1" y="1" width="22" height="22" rx="5.5" fill="#0A0A0A" />
+			<g fill="#FFFFFF" transform="translate(2.6 0) skewX(-12)">
+				<rect x="6" y="5.6" width="12" height="2.7" />
+				<polygon points="15.2,5.6 18,5.6 8.8,18.4 6,18.4" />
+				<rect x="6" y="15.7" width="12" height="2.7" />
+			</g>
+			<path d="M11.07 12.69L13.03 11.31" stroke="#0A0A0A" strokeWidth="1.2" />
+		</svg>
+	);
+}
+
+function MiniMaxMark(props: ComponentProps<"svg">) {
+	return (
+		<svg viewBox="0 0 24 24" fill="none" aria-hidden {...props}>
+			<title>MiniMax Code</title>
+			<rect x="1" y="1" width="22" height="22" rx="5.5" fill="#111827" />
+			<path
+				d="M5.5 17.5V7.1L10.3 12L15.1 7.1V17.5"
+				stroke="#FFFFFF"
+				strokeWidth="2.1"
+				strokeLinecap="round"
+				strokeLinejoin="round"
+			/>
+			<path
+				d="M18.5 7.1V17.5"
+				stroke="#26C6DA"
+				strokeWidth="2.1"
+				strokeLinecap="round"
+			/>
+		</svg>
+	);
+}

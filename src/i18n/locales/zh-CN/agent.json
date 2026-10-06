@@ -1,0 +1,204 @@
+{
+	"acpStatus": {
+		"ready": "ACP 就绪",
+		"failed": "ACP 失败",
+		"notLoggedIn": "未登录",
+		"notProbed": "未探测",
+		"notInstalled": "未安装"
+	},
+	"defaultName": "Agent",
+	"login": {
+		"action": "登录"
+	},
+	"permission": {
+		"title": "Agent 权限请求",
+		"deny": "拒绝",
+		"kind": {
+			"allowOnce": "本次允许",
+			"allowAlways": "始终允许",
+			"rejectOnce": "本次拒绝",
+			"rejectAlways": "始终拒绝"
+		}
+	},
+	"switchAgent": "Agent 设置",
+	"configBar": {
+		"label": "模型与会话选项"
+	},
+	"suggestions": {
+		"summarizePaper": "总结当前论文",
+		"askLibrary": "就我的文献库提问",
+		"listClaims": "列出关键论点与证据",
+		"draftRelatedWork": "撰写相关工作（Related Work）"
+	},
+	"history": {
+		"aria": "打开对话历史",
+		"label": "历史",
+		"title": "会话历史",
+		"description": "此工作台中保存的会话。",
+		"empty": "暂无会话。",
+		"restoring": "正在恢复会话……",
+		"status": {
+			"running": "运行中",
+			"completed": "已完成",
+			"cancelled": "已中止",
+			"failed": "失败"
+		}
+	},
+	"tabs": {
+		"new": "新建会话"
+	},
+	"agentMenu": {
+		"title": "内置 Lattiora Agent",
+		"empty": "没有就绪的 ACP Agent。请在设置中配置。",
+		"openSettings": "打开 Agent 设置"
+	},
+	"composer": {
+		"placeholder": "今天想做些什么？",
+		"queueLabel": "等待发送",
+		"queueRemove": "从队列移除",
+		"contextInstruction": "请在回答相关问题前读取以下知识库文件：",
+		"plazaContextInstruction": "以下是通过 @ 引用的广场条目（尚未入库）：",
+		"plazaEntryUnavailable": "条目元数据不可用（已不在广场缓存中），可请用户从广场重新引用。",
+		"plazaScratchInstruction": "全文已提供为 Vault 之外的只读临时副本，请直接读取上述文件；除非用户明确要求入库，不要下载论文或向 Vault 写入任何内容。",
+		"plazaCollectionTitle": "今日推荐（{{count}} 篇）",
+		"plazaCollectionInstruction": "以上是今日推荐论文的摘要目录。请第一步仅凭摘要完成筛选：只需筛选 / 对比即可回答时，直接给出最终报告；仅当必须深读才能回答时，在回复的第一行输出「NEED_FULLTEXT <arXiv id> …」（最多 {{max}} 篇）然后停止等待，系统会自动提供所选论文的全文；不要自行联网检索或下载这些论文。",
+		"plazaFulltextFollowup": "全文已取回（见上下文），请基于它们完成最终报告。",
+		"resizeHandle": "调整输入区高度",
+		"removeContext": "从上下文移除 {{path}}",
+		"removeSkill": "从上下文移除 ${{skill}}",
+		"removeSelection": "从上下文移除选中文本",
+		"selection": "选中文本",
+		"selectionChip": "{{title}}",
+		"selectionChipWithPage": "{{title}}:{{page}}页",
+		"selectionChipWithLine": "{{title}} {{from}}行",
+		"selectionChipWithLines": "{{title}} {{from}}-{{to}}行",
+		"removeVisualDraft": "从上下文移除视觉批注",
+		"visualAnnotation": "视觉批注",
+		"visualAnnotationPage": "第{{page}}页",
+		"visualAnnotationsTitle": "视觉批注（{{count}}）",
+		"visualAnnotationOpen": "查看裁剪图与批注",
+		"visualAnnotationOpenAria": "打开视觉批注 {{index}}：{{label}}",
+		"visualAnnotationDetailTitle": "视觉批注 {{index}}",
+		"visualAnnotationCommentLabel": "你的批注",
+		"visualAnnotationNoComment": "（无文字批注）",
+		"visualAnnotationPreviewAlt": "第 {{page}} 页裁剪区域",
+		"attachImage": "附加图片",
+		"imageFilter": "图片",
+		"attachedImage": "图片",
+		"attachedImagesTitle": "图片（{{count}}）",
+		"removeAttachedImage": "移除图片",
+		"attachedImageOpen": "查看图片",
+		"attachedImageOpenAria": "打开附加图片 {{index}}",
+		"attachedImageDetailTitle": "图片 {{index}}",
+		"attachedImagePreviewAlt": "附加图片 {{index}}",
+		"dropImageHint": "松开以附加图片",
+		"imageAcceptError": "只能附加图片文件（PNG、JPEG、WebP、GIF 等）。",
+		"imageMaxFilesError": "图片数量已达上限，请先移除后再添加。",
+		"imageMaxSizeError": "有图片超过 10 MB 大小限制。",
+		"imagePickFailed": "无法打开图片选择器。",
+		"imageOnlyPrompt": "请分析附带的图片。",
+		"currentFileRemove": "从上下文移除当前文件",
+		"mentionEnterFolder": "进入 {{name}}",
+		"mentionBack": "返回上级目录",
+		"mentionEmptyFolder": "此文件夹中没有可选项",
+		"fastToggle": "切换快速模式",
+		"collaborationTooltip": "会话模式",
+		"collaboration": {
+			"label": "模式"
+		},
+		"effort": {
+			"label": "推理强度"
+		}
+	},
+	"empty": {
+		"title": "与你的知识库对话",
+		"description": "消息将发送给你的 ACP Agent。点击上方的 Agent 名称可切换后端。",
+		"waiting": "正在等待 Agent……"
+	},
+	"thinking": "思考中……",
+	"working": "执行中……",
+	"solving": "求解中……",
+	"streaming": {
+		"thinking": "思考中",
+		"reasoning": "思考过程",
+		"plan": "规划中",
+		"starting": "启动 Agent 中…",
+		"waitingModel": "等待模型输出…",
+		"reconnecting": "上游重连中",
+		"elapsed": "{{count}}秒"
+	},
+	"copy": "复制",
+	"copied": "已复制",
+	"edit": {
+		"action": "编辑",
+		"resend": "重新发送",
+		"cancel": "取消"
+	},
+	"plan": {
+		"title": "计划",
+		"steps": "{{completed}}/{{total}} 步"
+	},
+	"tool": {
+		"defaultTitle": "工具",
+		"failed": "工具执行失败"
+	},
+	"askUserQuestion": {
+		"submit": "提交",
+		"submitted": "已提交",
+		"cancel": "取消",
+		"prev": "上一题",
+		"next": "下一题",
+		"progress": "{{current}} / {{total}}",
+		"freeTextPlaceholder": "输入你的回答",
+		"pendingInComposer": "请在下方问卷中作答",
+		"keyboardHint": "↑↓ 选项 · Space 勾选 · Enter 确认",
+		"keyboardHintMulti": "↑↓ 选项 · Space 勾选 · Enter 下一题 · ←→ 切题",
+		"collapse": "收起问卷",
+		"expand": "展开问卷"
+	},
+	"citation": {
+		"resolveFailed": "无法打开引用：{{source}}",
+		"figureNotFound": "找不到 Figure：{{source}}",
+		"sectionNotFound": "找不到章节：{{source}}",
+		"tableNotFound": "找不到表格：{{source}}",
+		"algorithmNotFound": "找不到算法：{{source}}",
+		"formulaNotFound": "找不到公式：{{source}}",
+		"pageNotFound": "找不到页码：{{source}}",
+		"regionNotFound": "找不到区域：{{source}}"
+	},
+	"models": {
+		"currentSelection": "当前选择",
+		"locateCurrent": "定位当前模型",
+		"defaultGroup": "模型",
+		"favorites": "收藏",
+		"addToFavorites": "添加到收藏",
+		"removeFromFavorites": "取消收藏",
+		"selectTooltip": "选择模型 (ACP)",
+		"customOrReportedTooltip": "搜索或输入自定义模型 id（第三方 / 中转）",
+		"loading": "加载中……",
+		"button": "模型",
+		"searchOrCustomPlaceholder": "搜索或输入模型 id……",
+		"customGroup": "自定义",
+		"useCustom": "使用 “{{id}}”",
+		"emptyNoneCustom": "暂无模型。可在上方输入模型 id 以使用第三方模型。",
+		"emptyNoMatch": "无匹配项。输入完整模型 id 可作为自定义模型使用。"
+	},
+	"messages": {
+		"cancelled": "已停止当前运行。",
+		"desktopOnly": "请打开桌面应用以运行 Agent。",
+		"noAgent": "没有可用的 Agent。请在 设置 → Agent 中配置。",
+		"sessionUnavailable": "无法恢复该 Agent 会话。若有本地回答快照会一并展示。",
+		"sessionEmpty": "该会话没有可回放的消息。"
+	},
+	"web": {
+		"singleAgent": "本工作台仅使用内置 Lattiora Agent。",
+		"writePermission": "保存前请检查拟写入的笔记。",
+		"before": "修改前",
+		"after": "修改后",
+		"keep": "保留",
+		"revert": "撤销",
+		"kept": "已保留",
+		"reverted": "已撤销",
+		"editorRefreshFailed": "笔记已保存，请重新打开以刷新编辑器。"
+	}
+}

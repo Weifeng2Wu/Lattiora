@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" role="img" aria-label="Lattiora">
+  <title>Lattiora</title>
+  <rect width="64" height="64" rx="16" fill="#123D38"/>
+  <path d="M13 17c7-1 13 1 19 5v28c-6-4-12-6-19-5Z" fill="#F6F1E5"/>
+  <path d="M51 17c-7-1-13 1-19 5v28c6-4 12-6 19-5Z" fill="#A9C9B9"/>
+  <path d="M21 26c10 0 12 12 22 12M21 35c10 0 12-12 22-12" fill="none" stroke="#123D38" stroke-width="3" stroke-linecap="round"/>
+  <path d="M32 22v28" fill="none" stroke="#D9B66F" stroke-width="3" stroke-linecap="round"/>
+</svg>

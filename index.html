@@ -1,0 +1,109 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Lattiora</title>
+    <meta name="application-name" content="Lattiora" />
+    <link rel="icon" type="image/svg+xml" href="/src/assets/lattiora-icon.svg" />
+    <style>
+      :root {
+        color-scheme: light dark;
+      }
+
+      html,
+      body,
+      #root {
+        width: 100%;
+        height: 100%;
+        margin: 0;
+      }
+
+      body {
+        background: #fafafa;
+      }
+
+      #boot-shell {
+        display: grid;
+        width: 100%;
+        height: 100%;
+        place-items: center;
+      }
+
+      #boot-spinner {
+        width: 24px;
+        height: 24px;
+        border: 2px solid #d4d4d8;
+        border-top-color: #52525b;
+        border-radius: 9999px;
+        animation: boot-spin 800ms linear infinite;
+      }
+
+      @keyframes boot-spin {
+        to {
+          transform: rotate(360deg);
+        }
+      }
+
+      @media (prefers-color-scheme: dark) {
+        body {
+          background: #09090b;
+        }
+
+        #boot-spinner {
+          border-color: #3f3f46;
+          border-top-color: #d4d4d8;
+        }
+      }
+
+      @media (prefers-reduced-motion: reduce) {
+        #boot-spinner {
+          animation: none;
+        }
+      }
+    </style>
+  </head>
+
+  <body>
+    <div id="root">
+      <div id="boot-shell" aria-hidden="true">
+        <div id="boot-spinner"></div>
+      </div>
+    </div>
+    <script>
+      // Hide the webview's default context menu (including the "Reload" entry)
+      // so right-clicking empty areas does not expose browser chrome. Custom app
+      // menus still work because they attach their own contextmenu handlers.
+      if (
+        typeof window !== "undefined" &&
+        ("__TAURI_INTERNALS__" in window || "__TAURI__" in window)
+      ) {
+        window.addEventListener(
+          "contextmenu",
+          (event) => {
+            // Keep native copy/paste menus for plain text inputs.
+            const target = event.target;
+            if (
+              target instanceof HTMLInputElement ||
+              target instanceof HTMLTextAreaElement
+            ) {
+              return;
+            }
+            // Radix ContextMenu triggers refuse to open when the event is
+            // already defaultPrevented; they preventDefault themselves, so the
+            // native menu stays hidden either way.
+            if (
+              target instanceof Element &&
+              target.closest('[data-slot="context-menu-trigger"]')
+            ) {
+              return;
+            }
+            event.preventDefault();
+          },
+          { capture: true },
+        );
+      }
+    </script>
+    <script type="module" src="/src/main.tsx"></script>
+  </body>
+</html>

@@ -1,0 +1,12 @@
+{
+	"$schema": "node_modules/wrangler/config-schema.json",
+	"name": "agentero-plaza-coolpapers",
+	"main": "cloudflare/plaza/worker.ts",
+	"compatibility_date": "2026-09-01",
+	"vars": {
+		"SITE": "coolpapers",
+		"APP_ORIGIN": "https://agentero-web.minjunkirs.workers.dev"
+	},
+	"workers_dev": true,
+	"preview_urls": false
+}

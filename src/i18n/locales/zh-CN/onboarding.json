@@ -1,0 +1,141 @@
+{
+	"title": "欢迎使用 Lattiora",
+	"subtitle": "在这里，你和 AI 助手一起读论文、记笔记。接下来几步，帮你把工作台调成顺手的样子。",
+	"recommended": "推荐",
+	"steps": {
+		"welcome": "欢迎",
+		"theme": "外观",
+		"proxy": "网络",
+		"agent": "Agent",
+		"translate": "翻译",
+		"layout": "图表公式",
+		"vault": "开始使用"
+	},
+	"welcome": {},
+	"theme": {
+		"title": "选一个喜欢的主题色",
+		"desc": "先挑个顺眼的配色，之后随时可以在设置里改。",
+		"modeSystem": "跟随系统",
+		"modeLight": "浅色",
+		"modeDark": "深色",
+		"uiThemeSelect": "选择 {{name}}"
+	},
+	"proxy": {
+		"title": "配置网络访问",
+		"desc": "如果访问学术站点、GitHub 或下载 Agent 需要代理，可以先在这里配置。",
+		"hint": "关闭时直连；开启后使用本机 HTTP/SOCKS 代理。",
+		"urlLabel": "代理地址",
+		"enabledLabel": "启用网络代理",
+		"probe": "探测"
+	},
+	"agent": {
+		"title": "选一个 AI 助手",
+		"desc": "配置统一 AI 服务用于论文总结和问答。API Key 加密保存在 Cloudflare，模型使用费由供应商单独计收。",
+		"rescan": "重新扫描",
+		"scanning": "扫描中…",
+		"none": "没有发现可用的 AI 助手。先在电脑上安装一个（如 OpenCode，或 Claude Code + ACP 适配器），再点「重新扫描」。",
+		"installAgentAria": "安装 {{name}} Agent",
+		"installAgentTitle": "安装 Agent CLI",
+		"installAdapterAria": "为 {{name}} 安装 ACP 适配器",
+		"installAdapterTitle": "安装 ACP 适配器",
+		"agentMissing": "未安装",
+		"adapterMissing": "已安装，缺 ACP 适配器",
+		"default": "默认",
+		"probe": "探测",
+		"ready": "就绪",
+		"missing": "未安装",
+		"failed": "探测失败",
+		"notProbed": "未探测",
+		"scanFailed": "扫描 Agent 失败"
+	},
+	"translate": {
+		"title": "设置翻译",
+		"desc": "选择翻译渠道，或在设置中配置自己的 API。应用不附带 API 服务或密钥。",
+		"configureOwn": "我有自己的翻译 API",
+		"configureOwnDesc": "使用自己的 DeepL 等翻译 API Key。",
+		"useDefault": "使用已配置的 AI（可稍后配置）",
+		"useDefaultDesc": "使用你配置的 AI；翻译前请先在设置中配置服务。",
+		"apiKeyPlaceholder": "API Key",
+		"endpointPlaceholder": "端点（可选）",
+		"openDocs": "打开服务商官网",
+		"test": "测试连接",
+		"probeIdle": "尚未测试",
+		"probeProbing": "测试中…",
+		"probeOk": "可用",
+		"probeFail": "请检查你的 Key 后重试"
+	},
+	"layout": {
+		"title": "自动识别图表和公式",
+		"configureOwn": "配置云端服务（推荐）",
+		"configureOwnDesc": "填入 Paddle、MinerU 或兼容 OpenAI 的 API Key，图表公式识别更精准。",
+		"useDefault": "使用设备端版面模型",
+		"useDefaultDesc": "在浏览器中运行原版版面模型，首次下载 62.5 MiB 权重后可离线使用。",
+		"openDocsLabel": "获取 API Key",
+		"test": "测试连接",
+		"probeIdle": "尚未测试",
+		"probeProbing": "测试中…",
+		"probeOk": "可用",
+		"probeFail": "请检查你的 Key 后重试"
+	},
+	"vault": {
+		"title": "工作区已就绪",
+		"desc": "现在导入文件，或完成设置后再使用“导入”。",
+		"create": "新建文献库",
+		"createDesc": "先选择一个独立的 Lattiora 文件夹。创建完成后，可再选择是否从 Zotero 导入。",
+		"zotero": "从 Zotero 导入",
+		"zoteroOfferTitle": "要从 Zotero 导入吗？",
+		"zoteroOfferDesc": "Lattiora 文献库已经创建。接下来可以选择 Zotero 数据目录作为导入来源。",
+		"zoteroNo": "不从 Zotero 导入"
+	},
+	"actions": {
+		"start": "开始配置",
+		"next": "下一步",
+		"back": "上一步",
+		"finish": "完成设置"
+	},
+	"tour": {
+		"sidebar": {
+			"title": "文献库与 Vault",
+			"desc": "侧栏包含论文库和工作区文件。文件缓存在此浏览器，并同步到你的 Cloudflare 部署，可导出为普通文件。"
+		},
+		"library": {
+			"title": "论文库",
+			"desc": "Vault 里的每篇论文都会出现在这里。可排序、按标签筛选、编辑元数据，还能一键导出 BibTeX。"
+		},
+		"coolPapers": {
+			"title": "Cool Papers",
+			"desc": "浏览 arXiv 热门与趋势论文。看到感兴趣的论文，一键在工作区中打开。"
+		},
+		"magicWand": {
+			"title": "魔棒一键入库",
+			"desc": "粘贴 DOI、arXiv ID 或链接以导入论文。{{magicWandShortcut}} 可随时打开。"
+		},
+		"readPaper": {
+			"title": "阅读并记笔记",
+			"desc": "任意论文旁的闪电按钮会打开分屏：左侧 PDF，右侧 NOTES.md，可直接高亮批注、写入笔记。"
+		},
+		"workspace": {
+			"title": "分屏精读",
+			"desc": "打开任意论文即可分屏：左侧 PDF，右侧 NOTES.md。划词可高亮、批注、翻译或提问。"
+		},
+		"fullTextTranslate": {
+			"title": "全文翻译",
+			"desc": "PDF 工具栏可一键翻译整篇论文。翻译一次后，既可以在原文上对照查看，也可以打开 side-by-side 译文面板。"
+		},
+		"fetchCoolPapersNotes": {
+			"title": "Cool Paper 笔记",
+			"desc": "编辑论文的 NOTES.md 时，点击此按钮即可从 Cool Papers 抓取公开的 Kimi 笔记，并合并到自己的笔记中。"
+		},
+		"agent": {
+			"title": "你的 Agent，随叫随到",
+			"desc": "在设置中配置统一 AI 的服务与 API Key。当前论文会加入上下文，可用于总结与问答。"
+		},
+		"titlebar": {
+			"title": "开始探索吧",
+			"desc": "{{settingsShortcut}} 打开设置，{{quickOpenShortcut}} 快速打开文件。使用导入开始整理你的论文。"
+		},
+		"next": "下一步",
+		"back": "上一步",
+		"done": "完成"
+	}
+}

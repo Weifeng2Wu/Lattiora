@@ -1,0 +1,74 @@
+{
+	"tabs": {
+		"navigation": "主导航",
+		"library": "论文库",
+		"agent": "Agent",
+		"settings": "设置",
+		"home": "首页"
+	},
+	"connect": {
+		"title": "连接电脑",
+		"paste": "粘贴配对链接",
+		"placeholder": "agentero://pair#offer=…",
+		"action": "连接",
+		"connecting": "连接中…",
+		"camera": "扫码连接",
+		"manual": "输入配对链接",
+		"cancel": "取消",
+		"cameraHint": "将相机对准电脑上的配对二维码。",
+		"cameraUnavailable": "无法使用相机，请改为粘贴配对链接。",
+		"pending": "请在电脑上确认验证码",
+		"progress": {
+			"relayConnecting": "正在连接中转服务器…",
+			"e2eeHandshake": "正在建立加密连接…",
+			"pairing": "正在请求配对…",
+			"authenticating": "正在登录桌面端…",
+			"connected": "已连接"
+		}
+	},
+	"library": {
+		"search": "搜索论文",
+		"loading": "正在加载论文…",
+		"empty": "暂无论文"
+	},
+	"reader": {
+		"title": "笔记",
+		"back": "返回论文库",
+		"pdf": "PDF",
+		"notes": "笔记",
+		"loadingPdf": "正在加载 PDF…",
+		"pdfUnavailable": "该论文没有可用的已缓存 PDF。",
+		"empty": "选择一篇论文",
+		"save": "保存笔记",
+		"saving": "保存中…"
+	},
+	"agent": {
+		"title": "Agent",
+		"placeholder": "向 Agent 提问",
+		"empty": "开始一段对话",
+		"thinking": "思考中...",
+		"starting": "启动 Agent 中…",
+		"waitingModel": "等待模型输出…",
+		"reconnecting": "上游重连中",
+		"failed": "桌面 Agent 未能完成此请求。",
+		"switchBackend": "切换 Agent 后端",
+		"defaultBackend": "默认 Agent",
+		"history": "历史会话",
+		"historyEmpty": "暂无历史会话",
+		"historyUnsupported": "当前 Agent 不支持查看历史会话。",
+		"restoring": "正在恢复会话…"
+	},
+	"settings": {
+		"menu": "打开菜单",
+		"closeMenu": "关闭菜单",
+		"connected": "已连接",
+		"offline": "离线",
+		"addDevice": "添加设备",
+		"disconnect": "断开连接",
+		"desktopView": "桌面工作区"
+	},
+	"errors": {
+		"connect": "无法连接",
+		"networkPermission": "iOS 阻止了 Lattiora 的网络访问。请在「设置 > Lattiora > 无线数据」中选择「WLAN 与蜂窝数据」，然后重试。"
+	}
+}

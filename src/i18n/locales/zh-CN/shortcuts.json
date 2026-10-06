@@ -1,0 +1,43 @@
+{
+	"groups": {
+		"app": "应用",
+		"vault": "知识库",
+		"navigation": "导航"
+	},
+	"labels": {
+		"settings": "设置…",
+		"closeSheet": "关闭对话框 / 设置",
+		"zoomIn": "放大界面",
+		"zoomOut": "缩小界面",
+		"zoomReset": "重置缩放",
+		"newWindow": "新建窗口",
+		"openVault": "打开知识库…",
+		"createVault": "创建知识库…",
+		"refreshTree": "刷新文件树",
+		"revealInFinder": "在 Finder 中显示",
+		"openInTerminal": "在终端中打开",
+		"deleteTreeItem": "删除选中项",
+		"cutTreeItem": "剪切选中项",
+		"pasteTreeItem": "粘贴剪切项",
+		"collapseTreeCurrent": "折叠选中文件夹",
+		"collapseTreeDefault": "折叠至仅 papers/",
+		"magicWand": "按标识符添加论文",
+		"quickOpen": "快速打开（论文 / 正文）",
+		"commandPalette": "命令面板",
+		"toggleSidebar": "显示 / 隐藏侧边栏",
+		"toggleChat": "加入对话 / 开关对话侧栏",
+		"quickChat": "快速对话（划词提问）",
+		"addSelectionToChat": "加入对话并聚焦输入框",
+		"focusSidebar": "聚焦侧边栏",
+		"focusEditor": "聚焦编辑器",
+		"focusNotes": "聚焦笔记",
+		"closeTab": "关闭对话框 / 标签 / 窗口",
+		"reopenTab": "重新打开已关闭标签",
+		"splitPane": "向右分栏（TeX：打开编译 PDF）",
+		"nextTab": "下一个标签",
+		"prevTab": "上一个标签",
+		"visualAnnotation": "添加视觉批注（PDF）",
+		"layoutTranslate": "全文翻译（PDF）",
+		"toggleFullscreen": "切换无边框全屏"
+	}
+}

@@ -1,0 +1,74 @@
+{
+	"tabs": {
+		"navigation": "Main navigation",
+		"library": "Library",
+		"agent": "Agent",
+		"settings": "Settings",
+		"home": "Home"
+	},
+	"connect": {
+		"title": "Connect a desktop",
+		"paste": "Paste pairing link",
+		"placeholder": "agentero://pair#offer=…",
+		"action": "Connect",
+		"connecting": "Connecting…",
+		"camera": "Scan QR code",
+		"manual": "Enter pairing link",
+		"cancel": "Cancel",
+		"cameraHint": "Point the camera at the pairing code on your computer.",
+		"cameraUnavailable": "Camera access is unavailable. Paste the pairing link instead.",
+		"pending": "Confirm the code on your desktop",
+		"progress": {
+			"relayConnecting": "Connecting to relay…",
+			"e2eeHandshake": "Securing the connection…",
+			"pairing": "Requesting pairing…",
+			"authenticating": "Signing in to the desktop…",
+			"connected": "Connected"
+		}
+	},
+	"library": {
+		"search": "Search papers",
+		"loading": "Loading papers…",
+		"empty": "No papers"
+	},
+	"reader": {
+		"title": "Notes",
+		"back": "Back to library",
+		"pdf": "PDF",
+		"notes": "Notes",
+		"loadingPdf": "Loading PDF…",
+		"pdfUnavailable": "This paper has no cached PDF available.",
+		"empty": "Choose a paper",
+		"save": "Save notes",
+		"saving": "Saving…"
+	},
+	"agent": {
+		"title": "Agent",
+		"placeholder": "Ask about your research",
+		"empty": "Start a conversation",
+		"thinking": "Thinking...",
+		"starting": "Starting agent…",
+		"waitingModel": "Waiting for model…",
+		"reconnecting": "Upstream reconnecting",
+		"failed": "The desktop Agent could not complete this request.",
+		"switchBackend": "Switch Agent backend",
+		"defaultBackend": "Default Agent",
+		"history": "Sessions",
+		"historyEmpty": "No past sessions",
+		"historyUnsupported": "This Agent does not expose past sessions.",
+		"restoring": "Restoring session…"
+	},
+	"settings": {
+		"menu": "Open menu",
+		"closeMenu": "Close menu",
+		"connected": "Connected",
+		"offline": "Offline",
+		"addDevice": "Add device",
+		"disconnect": "Disconnect",
+		"desktopView": "Desktop workspace"
+	},
+	"errors": {
+		"connect": "Could not connect",
+		"networkPermission": "iOS is blocking network access for Lattiora. Open Settings > Lattiora and allow Wireless Data (WLAN & Cellular), then try again."
+	}
+}

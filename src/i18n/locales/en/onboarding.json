@@ -1,0 +1,141 @@
+{
+	"title": "Welcome to Lattiora",
+	"subtitle": "Read papers and take notes alongside your AI assistant. A few quick steps to set up your workspace.",
+	"recommended": "Recommended",
+	"steps": {
+		"welcome": "Welcome",
+		"theme": "Appearance",
+		"proxy": "Network",
+		"agent": "Agent",
+		"translate": "Translation",
+		"layout": "Figures & formulas",
+		"vault": "Get started"
+	},
+	"welcome": {},
+	"theme": {
+		"title": "Pick your look",
+		"desc": "Choose a color scheme you like — you can change it anytime in Settings.",
+		"modeSystem": "System",
+		"modeLight": "Light",
+		"modeDark": "Dark",
+		"uiThemeSelect": "Select {{name}}"
+	},
+	"proxy": {
+		"title": "Set up network access",
+		"desc": "Use a local proxy when academic sites, GitHub, or Agent downloads need one.",
+		"hint": "Leave the switch off to connect directly, or enable it for a local HTTP/SOCKS proxy.",
+		"urlLabel": "Proxy URL",
+		"enabledLabel": "Enable network proxy",
+		"probe": "Probe"
+	},
+	"agent": {
+		"title": "Choose your AI assistant",
+		"desc": "Configure the unified AI service for paper summaries and questions. Your API key is encrypted in Cloudflare; model usage is billed by your provider.",
+		"rescan": "Rescan",
+		"scanning": "Scanning…",
+		"none": "No agents found yet. Install one on this computer (e.g. OpenCode, or Claude Code plus its ACP adapter), then click Rescan.",
+		"installAgentAria": "Install {{name}} agent",
+		"installAgentTitle": "Install agent CLI",
+		"installAdapterAria": "Install ACP adapter for {{name}}",
+		"installAdapterTitle": "Install ACP adapter",
+		"agentMissing": "Not installed",
+		"adapterMissing": "Installed, ACP adapter missing",
+		"default": "Default",
+		"probe": "Probe",
+		"ready": "Ready",
+		"missing": "Not installed",
+		"failed": "Probe failed",
+		"notProbed": "Not probed",
+		"scanFailed": "Failed to scan agents"
+	},
+	"translate": {
+		"title": "Set up translation",
+		"desc": "Choose a translation service or configure your own API in Settings. No API service or key is bundled.",
+		"configureOwn": "I have my own translation API",
+		"configureOwnDesc": "Bring your own DeepL or other translation API key.",
+		"useDefault": "Use configured AI (configure later)",
+		"useDefaultDesc": "Use your configured AI. Configure a provider in Settings before translating.",
+		"apiKeyPlaceholder": "API key",
+		"endpointPlaceholder": "Endpoint (optional)",
+		"openDocs": "Open provider website",
+		"test": "Test connection",
+		"probeIdle": "Not tested yet",
+		"probeProbing": "Testing…",
+		"probeOk": "Works",
+		"probeFail": "Check your key and try again"
+	},
+	"layout": {
+		"title": "Spot figures and formulas automatically",
+		"configureOwn": "Use a cloud service (recommended)",
+		"configureOwnDesc": "Bring your own Paddle, MinerU, or OpenAI-compatible API key for the best accuracy on figures and formulas.",
+		"useDefault": "Use on-device layout model",
+		"useDefaultDesc": "Run the original layout model in this browser. Download 62.5 MiB of weights once for offline use.",
+		"openDocsLabel": "Get an API key",
+		"test": "Test connection",
+		"probeIdle": "Not tested yet",
+		"probeProbing": "Testing…",
+		"probeOk": "Works",
+		"probeFail": "Check your key and try again"
+	},
+	"vault": {
+		"title": "Your workspace is ready",
+		"desc": "Import files now or finish setup and use Import later.",
+		"create": "Create a vault",
+		"createDesc": "Choose a separate Lattiora folder first. After it is created, you can import from Zotero.",
+		"zotero": "Import from Zotero",
+		"zoteroOfferTitle": "Import from Zotero now?",
+		"zoteroOfferDesc": "Your Lattiora vault is ready. You can now choose a Zotero data folder as the import source.",
+		"zoteroNo": "Don't import from Zotero"
+	},
+	"actions": {
+		"start": "Start setup",
+		"next": "Next",
+		"back": "Back",
+		"finish": "Finish setup"
+	},
+	"tour": {
+		"sidebar": {
+			"title": "Your library & vault",
+			"desc": "The sidebar holds your library and workspace files. Files are cached in this browser, synced to your Cloudflare deployment and exportable as ordinary files."
+		},
+		"library": {
+			"title": "Papers library",
+			"desc": "Every paper in your vault shows up here. Sort columns, filter by tags, edit metadata and export BibTeX in one place."
+		},
+		"coolPapers": {
+			"title": "Cool Papers",
+			"desc": "Browse arXiv highlights and trending papers. One click opens an interesting paper in the workspace."
+		},
+		"magicWand": {
+			"title": "One-click import",
+			"desc": "Paste a DOI, arXiv ID or link to import a paper. {{magicWandShortcut}} opens this dialog anytime."
+		},
+		"readPaper": {
+			"title": "Read & take notes",
+			"desc": "Click the lightning bolt on any paper to open it with the PDF on the left and NOTES.md on the right, ready for highlights and annotations."
+		},
+		"workspace": {
+			"title": "Split-screen reading",
+			"desc": "Open any paper to split the view: PDF on the left, NOTES.md on the right. Select text to highlight, annotate, translate or ask questions."
+		},
+		"fullTextTranslate": {
+			"title": "Full-text translation",
+			"desc": "The PDF toolbar can translate the whole paper at once. Run it once, then browse the translation inline or open it side-by-side."
+		},
+		"fetchCoolPapersNotes": {
+			"title": "Cool Paper notes",
+			"desc": "While editing a paper's NOTES.md, click this button to fetch public Kimi notes from Cool Papers and merge them into your own notes."
+		},
+		"agent": {
+			"title": "Your agent, ready to help",
+			"desc": "Configure the unified AI provider and API key in Settings. The current paper joins the context for summaries and questions."
+		},
+		"titlebar": {
+			"title": "Start exploring",
+			"desc": "{{settingsShortcut}} opens Settings and {{quickOpenShortcut}} opens files quickly. Use Import to start organizing your papers."
+		},
+		"next": "Next",
+		"back": "Back",
+		"done": "Done"
+	}
+}

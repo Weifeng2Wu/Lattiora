@@ -1,0 +1,1069 @@
+@import "tailwindcss";
+@import "tw-animate-css";
+@import "shadcn/tailwind.css";
+@import "@fontsource-variable/geist";
+@import "dockview-react/dist/styles/dockview.css";
+
+@custom-variant dark (&:is(.dark *));
+
+@keyframes library-shimmer {
+	0% {
+		background-position: 200% 0;
+	}
+	100% {
+		background-position: -200% 0;
+	}
+}
+
+/* Citation jump attention flash: hold, then fade out (~CITATION_FOCUS_FLASH_MS). */
+@keyframes citation-focus-flash {
+	0%,
+	55% {
+		opacity: 1;
+	}
+	100% {
+		opacity: 0;
+	}
+}
+
+.citation-focus-flash {
+	animation: citation-focus-flash 1.6s ease-out forwards;
+}
+
+.library-shimmer {
+	background: linear-gradient(
+		110deg,
+		var(--muted) 35%,
+		color-mix(in oklab, var(--muted) 72%, var(--muted-foreground)) 50%,
+		var(--muted) 65%
+	);
+	background-size: 200% 100%;
+	animation: library-shimmer 1.8s ease-in-out infinite;
+}
+
+@keyframes star-twinkle {
+	0%,
+	100% {
+		color: oklch(0.88 0.14 95);
+		fill: oklch(0.88 0.14 95 / 0.2);
+	}
+	50% {
+		color: oklch(0.82 0.19 95);
+		fill: oklch(0.82 0.19 95);
+	}
+}
+
+.star-twinkle {
+	animation: star-twinkle 1.6s ease-in-out infinite;
+}
+
+/*
+ * Background-tasks ProgressRing (shell floater).
+ * - Indeterminate: short arc spins while a task has no numeric %.
+ * - Success: last active task ends → ring merges to a full circle + check pop.
+ * `--task-ring-c` is set on the SVG (2πr) so the fill keyframe can merge the arc.
+ */
+@keyframes task-ring-spin {
+	to {
+		transform: rotate(360deg);
+	}
+}
+
+@keyframes task-ring-success-fill {
+	from {
+		stroke-dashoffset: calc(var(--task-ring-c, 100) * 0.72);
+	}
+	to {
+		stroke-dashoffset: 0;
+	}
+}
+
+@keyframes task-ring-success-icon {
+	0% {
+		transform: scale(0.55);
+		opacity: 0.35;
+	}
+	55% {
+		transform: scale(1.18);
+		opacity: 1;
+	}
+	100% {
+		transform: scale(1);
+		opacity: 1;
+	}
+}
+
+@keyframes task-ring-success-pulse {
+	0% {
+		box-shadow:
+			0 1px 2px 0 rgb(0 0 0 / 0.05),
+			0 0 0 0
+			color-mix(in oklab, var(--color-emerald-500, #10b981) 0%, transparent);
+	}
+	40% {
+		box-shadow:
+			0 1px 2px 0 rgb(0 0 0 / 0.05),
+			0 0 0 6px
+			color-mix(in oklab, var(--color-emerald-500, #10b981) 28%, transparent);
+	}
+	100% {
+		box-shadow:
+			0 1px 2px 0 rgb(0 0 0 / 0.05),
+			0 0 0 0
+			color-mix(in oklab, var(--color-emerald-500, #10b981) 0%, transparent);
+	}
+}
+
+.task-ring-indeterminate {
+	transform-box: view-box;
+	transform-origin: 20px 20px;
+	animation: task-ring-spin 1.1s linear infinite;
+}
+
+.task-ring-success-icon {
+	animation: task-ring-success-icon 0.55s var(--motion-ease-out) both;
+}
+
+.task-ring-success-pulse {
+	animation: task-ring-success-pulse 0.7s var(--motion-ease-out) both;
+}
+
+.task-ring-success-stroke {
+	stroke-dasharray: var(--task-ring-c, 100);
+	animation: task-ring-success-fill 0.45s var(--motion-ease-out) both;
+}
+
+/*
+ * Rail collapse/expand: use-shell-layout marks every panel in the group with
+ * data-rail-animating, then commits the final layout via collapse()/expand().
+ * Panel size is an inline flex-grow, so transitioning it animates all rails
+ * in lockstep. The attribute is removed when the transition settles (or when
+ * a separator drag cancels it), so manual resizing stays transition-free.
+ */
+[data-panel][data-rail-animating] {
+	transition: flex-grow var(--motion-duration-normal) var(--motion-ease-out);
+}
+
+/*
+ * Global reduced-motion fallback: Radix/tw-animate popovers, sonner toasts and
+ * keyframe loaders have no per-component opt-out, so collapse all motion to a
+ * near-zero duration here (state changes still apply, just without movement).
+ * Loading spinners keep spinning — a frozen spinner reads as a hang, not as
+ * progress.
+ */
+@media (prefers-reduced-motion: reduce) {
+	*,
+	*::before,
+	*::after {
+		animation-duration: 0.01ms;
+		animation-iteration-count: 1;
+		transition-duration: 0.01ms;
+		scroll-behavior: auto;
+	}
+	.animate-spin {
+		animation-duration: 1s;
+		animation-iteration-count: infinite;
+	}
+	.star-twinkle {
+		animation: none;
+		color: oklch(0.82 0.19 95);
+		fill: oklch(0.82 0.19 95);
+	}
+	/* Keep indeterminate ring spinning; freeze success flourishes. */
+	.task-ring-indeterminate {
+		animation-duration: 1.1s;
+		animation-iteration-count: infinite;
+	}
+	.task-ring-success-icon,
+	.task-ring-success-pulse,
+	.task-ring-success-stroke {
+		animation: none;
+	}
+}
+
+/* Frost translucent chrome when the OS asks for reduced transparency. */
+@media (prefers-reduced-transparency: reduce) {
+	[data-titlebar],
+	[data-pdf-chrome],
+	[data-settings-titlebar] {
+		background-color: var(--background);
+		backdrop-filter: none;
+		-webkit-backdrop-filter: none;
+	}
+	[data-settings-titlebar],
+	[data-settings-sidebar] {
+		background-color: var(--sidebar);
+	}
+	[data-library-header] {
+		background-color: var(--background);
+		backdrop-filter: none;
+		-webkit-backdrop-filter: none;
+		box-shadow: none;
+		border-bottom-width: 1px;
+	}
+}
+
+/* Settings pane enter: short opacity cross-fade (respects reduced-motion). */
+@keyframes settings-pane-in {
+	from {
+		opacity: 0;
+	}
+	to {
+		opacity: 1;
+	}
+}
+[data-settings-pane][data-active="true"] {
+	animation: settings-pane-in var(--motion-duration-fast) var(--motion-ease-out);
+}
+@media (prefers-reduced-motion: reduce) {
+	[data-settings-pane][data-active="true"] {
+		animation: none;
+	}
+}
+@media (prefers-contrast: more) {
+	[data-settings-sidebar] {
+		border-right-color: var(--sidebar-border);
+	}
+}
+
+/* Stronger structural edges when the user asks for more contrast. */
+@media (prefers-contrast: more) {
+	:root {
+		--border: oklch(0.78 0.012 260);
+		--sidebar-border: oklch(0.78 0.012 260);
+		--input: oklch(0.78 0.012 260);
+	}
+	.dark {
+		--border: oklch(0.98 0.004 260 / 28%);
+		--sidebar-border: oklch(0.98 0.004 260 / 28%);
+		--input: oklch(0.98 0.004 260 / 32%);
+	}
+}
+
+/*
+ * Runtime-overridable font stacks (Settings → Appearance → Fonts).
+ * @theme inline bakes token values into utilities, so the theme tokens must
+ * point at these variables — never hardcode family names in @theme, or
+ * interfaceFontFamily / monoFontFamily cannot take effect.
+ */
+:root {
+	/*
+	 * Default chrome = platform UI sans (SF Pro / Segoe UI + CJK). Geist stays
+	 * available via Appearance → Fonts → Geist. Keep rem root at 16×uiScale so
+	 * Windows 125% DPR does not shrink spacing tokens with the type scale.
+	 */
+	--agentero-font-sans:
+		system-ui, "Segoe UI", -apple-system, BlinkMacSystemFont, Roboto,
+		"Helvetica Neue", Arial, "PingFang SC", "Hiragino Sans GB",
+		"Microsoft YaHei UI", "Microsoft YaHei", "Noto Sans SC", sans-serif;
+	--agentero-font-heading: var(--agentero-font-sans);
+	--agentero-font-mono:
+		ui-monospace, SFMono-Regular, Menlo, Monaco, "Cascadia Mono", Consolas,
+		"Liberation Mono", "Courier New", monospace;
+
+	/*
+	 * Motion tokens — single source of truth for custom CSS + JS (see
+	 * lib/core/motion.ts). Keep RAIL_ANIMATION_MS in use-shell-layout.ts in
+	 * sync with --motion-duration-normal.
+	 *   micro  100ms — press / hover feedback (Button, tabs, rings)
+	 *   fast   150ms — overlay enter/exit, chrome color fades
+	 *   normal 200ms — layout choreography (rails, panels, task HUD)
+	 */
+	--motion-duration-micro: 100ms;
+	--motion-duration-fast: 150ms;
+	--motion-duration-normal: 200ms;
+	--motion-ease-out: cubic-bezier(0.25, 1, 0.5, 1);
+}
+
+@theme inline {
+	--font-heading: var(--agentero-font-heading);
+	--font-sans: var(--agentero-font-sans);
+	--font-mono: var(--agentero-font-mono);
+	/*
+	 * Apple UI type scale at 16px rem root (Windows-safe rem, not px).
+	 * Hierarchy is size + leading + tracking as a set (WWDC typography):
+	 *   caption 11 → slight +tracking, open leading
+	 *   callout 12 → slight +tracking
+	 *   body    13 → tracking ~0, comfortable leading
+	 *   title3  15 → −tracking, tighter leading
+	 *   title2  17 → more −tracking, tight leading
+	 * Weight stays on utilities (medium/semibold) — do not bake weight into
+	 * size tokens or every `text-base` cell becomes bold.
+	 */
+	--text-caption: 0.6875rem;
+	--text-caption--line-height: 1.35;
+	--text-caption--letter-spacing: 0.012em;
+	--text-xs: 0.75rem;
+	--text-xs--line-height: 1.35;
+	--text-xs--letter-spacing: 0.006em;
+	--text-sm: 0.8125rem;
+	--text-sm--line-height: 1.3846; /* ≈18/13 — Body, was 1.25 (too dense) */
+	--text-sm--letter-spacing: 0em;
+	--text-base: 0.9375rem;
+	--text-base--line-height: 1.25;
+	--text-base--letter-spacing: -0.012em;
+	--text-lg: 1.0625rem; /* 17 — Title 2 */
+	--text-lg--line-height: 1.2;
+	--text-lg--letter-spacing: -0.018em;
+	/* Display tracking: tighten large type; body stays near 0. */
+	--tracking-tighter: -0.04em;
+	--tracking-tight: -0.02em;
+	--tracking-normal: 0em;
+	--tracking-wide: 0.012em;
+	--tracking-wider: 0.03em;
+	--tracking-widest: 0.08em;
+	/* Emphasize with medium/semibold; avoid bold 700 in chrome. */
+	--font-weight-medium: 510;
+	--font-weight-semibold: 590;
+	--font-weight-bold: 680;
+	--color-sidebar-ring: var(--sidebar-ring);
+	--color-sidebar-border: var(--sidebar-border);
+	--color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
+	--color-sidebar-accent: var(--sidebar-accent);
+	--color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
+	--color-sidebar-primary: var(--sidebar-primary);
+	--color-sidebar-foreground: var(--sidebar-foreground);
+	--color-sidebar: var(--sidebar);
+	--color-chart-5: var(--chart-5);
+	--color-chart-4: var(--chart-4);
+	--color-chart-3: var(--chart-3);
+	--color-chart-2: var(--chart-2);
+	--color-chart-1: var(--chart-1);
+	--color-ring: var(--ring);
+	--color-input: var(--input);
+	--color-border: var(--border);
+	--color-destructive: var(--destructive);
+	--color-accent-foreground: var(--accent-foreground);
+	--color-accent: var(--accent);
+	--color-muted-foreground: var(--muted-foreground);
+	--color-muted: var(--muted);
+	--color-secondary-foreground: var(--secondary-foreground);
+	--color-secondary: var(--secondary);
+	--color-primary-foreground: var(--primary-foreground);
+	--color-primary: var(--primary);
+	--color-popover-foreground: var(--popover-foreground);
+	--color-popover: var(--popover);
+	--color-card-foreground: var(--card-foreground);
+	--color-card: var(--card);
+	--color-foreground: var(--foreground);
+	--color-background: var(--background);
+	--radius-sm: calc(var(--radius) * 0.6);
+	--radius-md: calc(var(--radius) * 0.8);
+	--radius-lg: var(--radius);
+	--radius-xl: calc(var(--radius) * 1.4);
+	--radius-2xl: calc(var(--radius) * 1.8);
+	--radius-3xl: calc(var(--radius) * 2.2);
+	--radius-4xl: calc(var(--radius) * 2.6);
+	--color-brand: var(--brand);
+	--color-highlight: var(--highlight);
+	/*
+	 * Built-in neutral ink. tweakcn themes restyle --primary / --ring; image
+	 * selection rings and PDF visual-region frames read these copies instead.
+	 */
+	--color-default-primary: var(--default-primary);
+	--color-default-ring: var(--default-ring);
+}
+
+/*
+ * Default UI theme — Apple system gray materials.
+ * Cool, low-chroma neutrals (hue ≈260) so chrome reads as gel/structure and
+ * content surfaces lift cleanly. Brand / highlight stay chromatic accents.
+ * Hierarchy: sidebar (heavier) → background (canvas) → card/popover (elevated).
+ */
+:root {
+	--background: oklch(0.995 0.002 260);
+	--foreground: oklch(0.21 0.008 260);
+	--card: oklch(1 0.001 260);
+	--card-foreground: oklch(0.21 0.008 260);
+	--popover: oklch(1 0.001 260);
+	--popover-foreground: oklch(0.21 0.008 260);
+	--primary: oklch(0.25 0.012 260);
+	--primary-foreground: oklch(0.99 0.001 260);
+	--default-primary: oklch(0.25 0.012 260);
+	--default-ring: oklch(0.62 0.02 260);
+	--secondary: oklch(0.96 0.006 260);
+	--secondary-foreground: oklch(0.25 0.012 260);
+	--muted: oklch(0.962 0.006 260);
+	--muted-foreground: oklch(0.48 0.014 260);
+	--accent: oklch(0.952 0.008 260);
+	--accent-foreground: oklch(0.25 0.012 260);
+	--destructive: oklch(0.577 0.245 27.325);
+	--border: oklch(0.905 0.008 260);
+	--input: oklch(0.905 0.008 260);
+	--ring: oklch(0.62 0.02 260);
+	--chart-1: oklch(0.87 0.01 260);
+	--chart-2: oklch(0.556 0.014 260);
+	--chart-3: oklch(0.439 0.014 260);
+	--chart-4: oklch(0.371 0.012 260);
+	--chart-5: oklch(0.269 0.01 260);
+	/* 8px base — denser macOS control corners than 10px. */
+	--radius: 0.5rem;
+	--sidebar: oklch(0.965 0.007 260);
+	--sidebar-foreground: oklch(0.21 0.008 260);
+	--sidebar-primary: oklch(0.25 0.012 260);
+	--sidebar-primary-foreground: oklch(0.99 0.001 260);
+	--sidebar-accent: oklch(0.935 0.01 260);
+	--sidebar-accent-foreground: oklch(0.25 0.012 260);
+	--sidebar-border: oklch(0.9 0.008 260);
+	--sidebar-ring: oklch(0.62 0.02 260);
+	--brand: oklch(0.623 0.214 259.815);
+	--highlight: oklch(0.852 0.199 91.936);
+}
+
+.dark {
+	--background: oklch(0.155 0.006 260);
+	--foreground: oklch(0.98 0.004 260);
+	--card: oklch(0.215 0.008 260);
+	--card-foreground: oklch(0.98 0.004 260);
+	--popover: oklch(0.215 0.008 260);
+	--popover-foreground: oklch(0.98 0.004 260);
+	--primary: oklch(0.94 0.006 260);
+	--primary-foreground: oklch(0.22 0.01 260);
+	--default-primary: oklch(0.94 0.006 260);
+	--default-ring: oklch(0.58 0.02 260);
+	--secondary: oklch(0.255 0.008 260);
+	--secondary-foreground: oklch(0.98 0.004 260);
+	--muted: oklch(0.255 0.008 260);
+	--muted-foreground: oklch(0.72 0.012 260);
+	--accent: oklch(0.27 0.01 260);
+	--accent-foreground: oklch(0.98 0.004 260);
+	--destructive: oklch(0.704 0.191 22.216);
+	--border: oklch(0.98 0.004 260 / 12%);
+	--input: oklch(0.98 0.004 260 / 16%);
+	--ring: oklch(0.58 0.02 260);
+	--chart-1: oklch(0.87 0.01 260);
+	--chart-2: oklch(0.556 0.014 260);
+	--chart-3: oklch(0.439 0.014 260);
+	--chart-4: oklch(0.371 0.012 260);
+	--chart-5: oklch(0.269 0.01 260);
+	--sidebar: oklch(0.18 0.007 260);
+	--sidebar-foreground: oklch(0.98 0.004 260);
+	--sidebar-primary: oklch(0.62 0.18 255);
+	--sidebar-primary-foreground: oklch(0.99 0.001 260);
+	--sidebar-accent: oklch(0.27 0.01 260);
+	--sidebar-accent-foreground: oklch(0.98 0.004 260);
+	--sidebar-border: oklch(0.98 0.004 260 / 12%);
+	--sidebar-ring: oklch(0.58 0.02 260);
+	--brand: oklch(0.707 0.165 254.624);
+	--highlight: oklch(0.852 0.199 91.936);
+}
+
+@layer base {
+	* {
+		@apply border-border outline-ring/50;
+	}
+	html,
+	body,
+	#root {
+		height: 100%;
+		overflow: hidden;
+	}
+	body {
+		/* Inherit Body 13 across chrome; surfaces opt into text-xs / text-caption. */
+		@apply bg-background text-foreground text-sm font-normal;
+	}
+	html {
+		@apply font-sans;
+		font-optical-sizing: auto;
+		text-rendering: optimizeLegibility;
+		-webkit-font-smoothing: antialiased;
+		-moz-osx-font-smoothing: grayscale;
+	}
+	:where(
+		button,
+		[role="button"],
+		[role="tab"],
+		[role="menuitem"],
+		[role="menuitemcheckbox"],
+		[role="menuitemradio"],
+		[role="option"],
+		[role="radio"],
+		[role="checkbox"],
+		[role="switch"],
+		[role="treeitem"]
+	) {
+		-webkit-user-select: none;
+		user-select: none;
+	}
+	:where(input, textarea, [contenteditable]:not([contenteditable="false"])) {
+		-webkit-user-select: text;
+		user-select: text;
+	}
+}
+
+/*
+ * Text selection carries the brand instead of the OS default blue. EmbedPDF
+ * paints PDF selection as its own rects, so PDF pages are unaffected.
+ */
+::selection {
+	background-color: color-mix(in oklch, var(--primary) 26%, transparent);
+	color: var(--foreground);
+}
+
+/*
+ * PDF bottom-bar zoom slider: muted gray at rest, brand accent on hover /
+ * focus / drag so the control stays quiet until the pointer engages it.
+ * Use --brand (chromatic) rather than --primary (near black/white neutrals).
+ */
+.pdf-zoom-slider {
+	-webkit-appearance: none;
+	appearance: none;
+	width: 4.25rem;
+	height: 1.25rem;
+	margin: 0;
+	background: transparent;
+	cursor: default;
+	accent-color: var(--muted-foreground);
+}
+
+.pdf-zoom-slider:hover,
+.pdf-zoom-slider:focus-visible,
+.pdf-zoom-slider:active {
+	accent-color: var(--brand);
+}
+
+.pdf-zoom-slider:focus {
+	outline: none;
+}
+
+.pdf-zoom-slider:focus-visible {
+	outline: 2px solid color-mix(in oklch, var(--brand) 40%, transparent);
+	outline-offset: 2px;
+	border-radius: 999px;
+}
+
+.pdf-zoom-slider::-webkit-slider-runnable-track {
+	height: 0.2rem;
+	border-radius: 999px;
+	background: color-mix(in oklch, var(--muted-foreground) 35%, transparent);
+}
+
+.pdf-zoom-slider:hover::-webkit-slider-runnable-track,
+.pdf-zoom-slider:focus-visible::-webkit-slider-runnable-track,
+.pdf-zoom-slider:active::-webkit-slider-runnable-track {
+	background: color-mix(in oklch, var(--brand) 45%, transparent);
+}
+
+.pdf-zoom-slider::-webkit-slider-thumb {
+	-webkit-appearance: none;
+	appearance: none;
+	width: 0.75rem;
+	height: 0.75rem;
+	margin-top: -0.275rem;
+	border-radius: 999px;
+	border: none;
+	background: var(--muted-foreground);
+	box-shadow: 0 0 0 1px color-mix(in oklch, var(--background) 70%, transparent);
+	transition:
+		background-color 120ms ease,
+		box-shadow 120ms ease;
+}
+
+.pdf-zoom-slider:hover::-webkit-slider-thumb,
+.pdf-zoom-slider:focus-visible::-webkit-slider-thumb,
+.pdf-zoom-slider:active::-webkit-slider-thumb {
+	background: var(--brand);
+	box-shadow: 0 0 0 1px color-mix(in oklch, var(--brand) 35%, transparent);
+}
+
+.pdf-zoom-slider::-moz-range-track {
+	height: 0.2rem;
+	border-radius: 999px;
+	background: color-mix(in oklch, var(--muted-foreground) 35%, transparent);
+}
+
+.pdf-zoom-slider:hover::-moz-range-track,
+.pdf-zoom-slider:focus-visible::-moz-range-track,
+.pdf-zoom-slider:active::-moz-range-track {
+	background: color-mix(in oklch, var(--brand) 45%, transparent);
+}
+
+.pdf-zoom-slider::-moz-range-thumb {
+	width: 0.75rem;
+	height: 0.75rem;
+	border: none;
+	border-radius: 999px;
+	background: var(--muted-foreground);
+	box-shadow: 0 0 0 1px color-mix(in oklch, var(--background) 70%, transparent);
+	transition:
+		background-color 120ms ease,
+		box-shadow 120ms ease;
+}
+
+.pdf-zoom-slider:hover::-moz-range-thumb,
+.pdf-zoom-slider:focus-visible::-moz-range-thumb,
+.pdf-zoom-slider:active::-moz-range-thumb {
+	background: var(--brand);
+	box-shadow: 0 0 0 1px color-mix(in oklch, var(--brand) 35%, transparent);
+}
+
+/*
+ * Auto-hiding pane scrollbars: hidden by default, shown while scrolling or on
+ * hover so content bounds stay clean when idle.
+ */
+.agentero-scroll {
+	overflow-x: hidden;
+	overflow-y: auto;
+	overscroll-behavior: contain;
+	scrollbar-width: thin;
+	scrollbar-color: transparent transparent;
+}
+
+@media (max-width: 767px) {
+	.mobile-shell :is(input, textarea, [contenteditable="true"]) {
+		font-size: 16px;
+	}
+}
+
+/* Both axes (e.g. papers library table) */
+.agentero-scroll-both {
+	overflow: auto;
+	overscroll-behavior: contain;
+	scrollbar-width: thin;
+	scrollbar-color: transparent transparent;
+}
+
+/*
+ * PDF drag-to-pan (hand tool). EmbedPDF writes an inline `cursor: auto` on its
+ * full-size pointer div, so only !important reaches the page under it; the
+ * descendant selector also covers the page layers' crosshair/pointer cursors.
+ */
+.agentero-pdf-pan-ready,
+.agentero-pdf-pan-ready * {
+	/* biome-ignore lint/complexity/noImportantStyles: must beat EmbedPDF's inline cursor */
+	cursor: grab !important;
+}
+
+.agentero-pdf-panning,
+.agentero-pdf-panning * {
+	/* biome-ignore lint/complexity/noImportantStyles: must beat EmbedPDF's inline cursor */
+	cursor: grabbing !important;
+	user-select: none;
+}
+
+/*
+ * Horizontal-only nested scrollers (Markdown code blocks) must not trap a
+ * vertical wheel gesture before it reaches the document pane.
+ */
+.agentero-scroll-both.agentero-scroll-x-only {
+	overflow-y: hidden;
+	overscroll-behavior-x: contain;
+	overscroll-behavior-y: auto;
+}
+
+.agentero-scroll::-webkit-scrollbar,
+.agentero-scroll-both::-webkit-scrollbar {
+	width: 8px;
+	height: 8px;
+}
+
+.agentero-scroll::-webkit-scrollbar-track,
+.agentero-scroll-both::-webkit-scrollbar-track {
+	background: transparent;
+}
+
+.agentero-scroll::-webkit-scrollbar-thumb,
+.agentero-scroll-both::-webkit-scrollbar-thumb {
+	background-color: transparent;
+	border-radius: 999px;
+	border: 2px solid transparent;
+	background-clip: content-box;
+	transition: background-color var(--motion-duration-fast) ease;
+}
+
+.agentero-scroll.scrolling::-webkit-scrollbar-thumb,
+.agentero-scroll-both.scrolling::-webkit-scrollbar-thumb,
+.agentero-scroll:hover::-webkit-scrollbar-thumb,
+.agentero-scroll-both:hover::-webkit-scrollbar-thumb {
+	background-color: color-mix(
+		in oklch,
+		var(--muted-foreground) 28%,
+		transparent
+	);
+}
+
+.agentero-scroll.scrolling::-webkit-scrollbar-thumb:hover,
+.agentero-scroll-both.scrolling::-webkit-scrollbar-thumb:hover,
+.agentero-scroll:hover::-webkit-scrollbar-thumb:hover,
+.agentero-scroll-both:hover::-webkit-scrollbar-thumb:hover {
+	background-color: color-mix(
+		in oklch,
+		var(--muted-foreground) 48%,
+		transparent
+	);
+	border: 2px solid transparent;
+	background-clip: content-box;
+}
+
+.agentero-scroll::-webkit-scrollbar-corner,
+.agentero-scroll-both::-webkit-scrollbar-corner {
+	background: transparent;
+}
+
+/* Firefox: restore thumb color while scrolling or hovering. */
+.agentero-scroll.scrolling,
+.agentero-scroll-both.scrolling,
+.agentero-scroll:hover,
+.agentero-scroll-both:hover {
+	scrollbar-color: color-mix(in oklch, var(--muted-foreground) 32%, transparent)
+		transparent;
+}
+
+/*
+ * Always-visible variant for content clipped by design (translate card):
+ * the thumb stays shown so the overflow is discoverable. Must come after the
+ * rules above to win at equal specificity; `overflow-y: auto` still means no
+ * scrollbar renders until the content actually clips.
+ */
+.agentero-scroll-visible {
+	scrollbar-color: color-mix(in oklch, var(--muted-foreground) 32%, transparent)
+		transparent;
+}
+
+.agentero-scroll-visible::-webkit-scrollbar-thumb {
+	background-color: color-mix(
+		in oklch,
+		var(--muted-foreground) 28%,
+		transparent
+	);
+}
+
+/* dockview: map native theme class to app design tokens */
+.agentero-dockview,
+.agentero-dockview-theme {
+	--dv-group-view-background-color: var(--background);
+	/* Soften the strip so the active tab can lift off it. */
+	--dv-tabs-and-actions-container-background-color: color-mix(
+		in oklab,
+		var(--muted) 72%,
+		var(--background)
+	);
+	/* Match PaneHeader (`h-9` / 2.25rem) so the workspace aligns with side-pane headers. */
+	--dv-tabs-and-actions-container-height: 2.25rem;
+	/* Body 13 — match PaneHeader / sidebar so tab titles sit on the same rung. */
+	--dv-tabs-and-actions-container-font-size: 0.8125rem;
+	--dv-activegroup-visiblepanel-tab-background-color: var(--background);
+	--dv-activegroup-hiddenpanel-tab-background-color: color-mix(
+		in oklab,
+		var(--muted) 55%,
+		var(--background)
+	);
+	--dv-inactivegroup-visiblepanel-tab-background-color: var(--background);
+	--dv-inactivegroup-hiddenpanel-tab-background-color: transparent;
+	--dv-activegroup-visiblepanel-tab-color: var(--foreground);
+	--dv-activegroup-hiddenpanel-tab-color: var(--muted-foreground);
+	--dv-inactivegroup-visiblepanel-tab-color: var(--foreground);
+	--dv-inactivegroup-hiddenpanel-tab-color: var(--muted-foreground);
+	--dv-tab-divider-color: var(--border);
+	--dv-separator-border: var(--border);
+	/* IDE-style sash (VS Code): rest is invisible, only the 1px separator
+	 * line shows; hover/drag paints a translucent highlight over it. */
+	--dv-sash-color: transparent;
+	--dv-active-sash-color: color-mix(in oklab, var(--primary) 40%, transparent);
+	--dv-drag-over-background-color: color-mix(
+		in oklab,
+		var(--primary) 16%,
+		transparent
+	);
+	--dv-drag-over-border-color: var(--primary);
+	--dv-drag-over-border: 2px solid var(--primary);
+	--dv-icon-hover-background-color: var(--accent);
+	/* Tab-group hues: paper tag swatches via dock-workspace (tag-colors). */
+	--dv-tab-group-chip-font-size: 0.6875rem;
+	--dv-tab-group-chip-border-radius: 0.375rem;
+	--dv-context-menu-background-color: var(--popover);
+	--dv-context-menu-color: var(--popover-foreground);
+	--dv-overlay-z-index: 1000;
+	--dv-floating-box-shadow: 0 8px 24px
+		color-mix(in oklab, var(--foreground) 12%, transparent);
+	background-color: var(--background);
+	color: var(--foreground);
+	height: 100%;
+	width: 100%;
+}
+
+/* Tab context-menu rows that show a shortcut hint (see dock-workspace). */
+.agentero-dockview
+.dv-context-menu-item.agentero-dv-context-menu-item--with-shortcut {
+	justify-content: space-between;
+	gap: 1rem;
+	min-width: 11rem;
+}
+.agentero-dockview .agentero-dv-context-menu-shortcut {
+	color: var(--muted-foreground);
+	font-size: 0.75rem;
+	letter-spacing: 0.025em;
+}
+
+/* Context menu / overflow popovers mount on this anchor (prepended to root). */
+.agentero-dockview .dv-popover-anchor {
+	z-index: var(--dv-overlay-z-index, 1000);
+}
+
+/*
+ * Dockview keeps `renderer: "always"` panels mounted in `.dv-render-overlay`.
+ * Before its first measured layout, a hidden overlay has no inline coordinates;
+ * anchor that fallback at the workspace origin so its static position cannot
+ * extend the document scroll area. Later inline left/top values still win.
+ */
+.agentero-dockview .dv-render-overlay {
+	top: 0;
+	left: 0;
+}
+
+/*
+ * Fill grid/split ancestry. Do NOT set height:100% on .dv-content-container —
+ * groupview is a flex column (tabs chrome + content). Forcing content to 100% of
+ * the group makes it overflow by the tab bar height, so editor toolbars stack
+ * over NOTES.md / tab titles.
+ */
+.agentero-dockview .dv-dockview,
+.agentero-dockview .dv-groupview,
+.agentero-dockview .dv-view,
+.agentero-dockview .dv-split-view-container {
+	height: 100%;
+	min-height: 0;
+}
+
+.agentero-dockview .dv-groupview > .dv-content-container {
+	/* dockview defaults: flex-grow:1; min-height:0 */
+	min-height: 0;
+	overflow: hidden;
+	background-color: var(--background);
+}
+
+/*
+ * A Dockview sash move resizes multiple nested views in the same frame.
+ * Temporarily contain those layout/paint trees so a heavy PDF or editor panel
+ * cannot invalidate sibling panels while the divider is moving.
+ */
+.agentero-dockview.agentero-dock-sash-active .dv-view,
+.agentero-dockview.agentero-dock-sash-active .dv-render-overlay {
+	contain: layout paint;
+}
+
+.agentero-dockview.agentero-dock-sash-active {
+	-webkit-user-select: none;
+	user-select: none;
+}
+
+/*
+ * Drag feedback for the sash being moved. Class-based (see dockview-sash.ts)
+ * because the frame loop prevents pointerdown default, which suppresses
+ * `:active`, and dockview never sets pointer capture — so pseudo-class
+ * styling cannot be relied on while dragging.
+ */
+.agentero-dockview .dv-sash.agentero-dock-sash-dragging {
+	background-color: var(--dv-active-sash-color);
+}
+
+/*
+ * Pointer-driven drags must suppress the browser's independent text-selection
+ * gesture until their matching pointerup/cancel restores normal content selection.
+ */
+body.dragging,
+body.dragging *,
+body.agentero-dockview-dragging,
+body.agentero-dockview-dragging * {
+	-webkit-user-select: none;
+	user-select: none;
+}
+
+.agentero-dockview .dv-tabs-and-actions-container {
+	flex-shrink: 0;
+	position: relative;
+	z-index: 2;
+	/* Soft edge vs. content — prefer mask over a hard 1px when possible. */
+	border-bottom: 1px solid color-mix(in oklab, var(--border) 70%, transparent);
+	-webkit-user-select: none;
+	user-select: none;
+}
+
+/*
+ * Cap each document tab so long paper titles do not dominate the tab strip.
+ * Ellipsis needs min-width:0 on the flex chain + overflow on the title span.
+ */
+.agentero-dockview .dv-tab {
+	max-width: 12rem;
+	min-width: 0;
+	overflow: hidden;
+	-webkit-user-select: none;
+	user-select: none;
+	/* Tab chrome fades like every other row; content still switches instantly. */
+	transition:
+		background-color var(--motion-duration-fast) var(--motion-ease-out),
+		color var(--motion-duration-fast) var(--motion-ease-out),
+		opacity var(--motion-duration-micro) var(--motion-ease-out);
+}
+
+.agentero-dockview .dv-tab:active {
+	opacity: 0.85;
+}
+
+.agentero-dockview .dv-tab .dv-default-tab {
+	min-width: 0;
+	overflow: hidden;
+}
+
+.agentero-dockview .dv-tab .dv-default-tab-content {
+	min-width: 0;
+	overflow: hidden;
+	text-overflow: ellipsis;
+	white-space: nowrap;
+}
+
+/*
+ * Tab group chip: no fill — icon + label only (override dockview solid + white).
+ * Expanded: dockview bottom underline under member tabs keeps group color.
+ * Collapsed: no extra bar under the chip (dockview underline width is already 0).
+ */
+.agentero-dockview .dv-tab-group-chip {
+	background-color: transparent;
+	color: var(--muted-foreground);
+	font-weight: 500;
+	border: none;
+	box-shadow: none;
+}
+
+.agentero-dockview .dv-tab-group-chip:hover {
+	color: var(--foreground);
+	background-color: transparent;
+}
+
+/* Nameless chip: solid accent swatch (identity only). */
+.agentero-dockview .dv-tab-group-chip:has(.dv-tab-group-chip-label--empty) {
+	background-color: var(--dv-tab-group-color, var(--muted-foreground));
+	color: transparent;
+	width: 12px;
+	height: 12px;
+	padding: 0;
+	border-radius: 50%;
+}
+
+/* Global workspace: always show dockview tab chrome (it owns document tabs). */
+.agentero-dockview.agentero-dock-global .dv-tabs-and-actions-container {
+	display: flex;
+}
+
+/*
+ * Code block syntax highlighting. lowlight (via @platejs/code-block) emits
+ * highlight.js token class names (.hljs-keyword etc.) on code_syntax leaves;
+ * these rules give them color. Scoped to .agentero-codeblock so inline code
+ * (code-leaf.tsx) is unaffected. Colors: GitHub light / dark themes. Only color
+ * declarations are kept — the upstream themes' padding/display/background rules
+ * are dropped to preserve the editor's own code-block layout.
+ */
+.agentero-codeblock .hljs-doctag,
+.agentero-codeblock .hljs-keyword,
+.agentero-codeblock .hljs-meta .hljs-keyword,
+.agentero-codeblock .hljs-template-tag,
+.agentero-codeblock .hljs-template-variable,
+.agentero-codeblock .hljs-type,
+.agentero-codeblock .hljs-variable.language_ {
+	color: #d73a49;
+}
+.agentero-codeblock .hljs-title,
+.agentero-codeblock .hljs-title.class_,
+.agentero-codeblock .hljs-title.class_.inherited__,
+.agentero-codeblock .hljs-title.function_ {
+	color: #6f42c1;
+}
+.agentero-codeblock .hljs-attr,
+.agentero-codeblock .hljs-attribute,
+.agentero-codeblock .hljs-literal,
+.agentero-codeblock .hljs-meta,
+.agentero-codeblock .hljs-number,
+.agentero-codeblock .hljs-operator,
+.agentero-codeblock .hljs-variable,
+.agentero-codeblock .hljs-selector-attr,
+.agentero-codeblock .hljs-selector-class,
+.agentero-codeblock .hljs-selector-id {
+	color: #005cc5;
+}
+.agentero-codeblock .hljs-regexp,
+.agentero-codeblock .hljs-string,
+.agentero-codeblock .hljs-meta .hljs-string {
+	color: #032f62;
+}
+.agentero-codeblock .hljs-built_in,
+.agentero-codeblock .hljs-symbol {
+	color: #e36209;
+}
+.agentero-codeblock .hljs-comment,
+.agentero-codeblock .hljs-code,
+.agentero-codeblock .hljs-formula {
+	color: #6a737d;
+}
+.agentero-codeblock .hljs-name,
+.agentero-codeblock .hljs-quote,
+.agentero-codeblock .hljs-selector-tag,
+.agentero-codeblock .hljs-selector-pseudo {
+	color: #22863a;
+}
+.agentero-codeblock .hljs-subst {
+	color: #24292e;
+}
+.agentero-codeblock .hljs-bullet {
+	color: #735c0f;
+}
+
+.dark .agentero-codeblock .hljs-doctag,
+.dark .agentero-codeblock .hljs-keyword,
+.dark .agentero-codeblock .hljs-meta .hljs-keyword,
+.dark .agentero-codeblock .hljs-template-tag,
+.dark .agentero-codeblock .hljs-template-variable,
+.dark .agentero-codeblock .hljs-type,
+.dark .agentero-codeblock .hljs-variable.language_ {
+	color: #ff7b72;
+}
+.dark .agentero-codeblock .hljs-title,
+.dark .agentero-codeblock .hljs-title.class_,
+.dark .agentero-codeblock .hljs-title.class_.inherited__,
+.dark .agentero-codeblock .hljs-title.function_ {
+	color: #d2a8ff;
+}
+.dark .agentero-codeblock .hljs-attr,
+.dark .agentero-codeblock .hljs-attribute,
+.dark .agentero-codeblock .hljs-literal,
+.dark .agentero-codeblock .hljs-meta,
+.dark .agentero-codeblock .hljs-number,
+.dark .agentero-codeblock .hljs-operator,
+.dark .agentero-codeblock .hljs-variable,
+.dark .agentero-codeblock .hljs-selector-attr,
+.dark .agentero-codeblock .hljs-selector-class,
+.dark .agentero-codeblock .hljs-selector-id {
+	color: #79c0ff;
+}
+.dark .agentero-codeblock .hljs-regexp,
+.dark .agentero-codeblock .hljs-string,
+.dark .agentero-codeblock .hljs-meta .hljs-string {
+	color: #a5d6ff;
+}
+.dark .agentero-codeblock .hljs-built_in,
+.dark .agentero-codeblock .hljs-symbol {
+	color: #ffa657;
+}
+.dark .agentero-codeblock .hljs-comment,
+.dark .agentero-codeblock .hljs-code,
+.dark .agentero-codeblock .hljs-formula {
+	color: #8b949e;
+}
+.dark .agentero-codeblock .hljs-name,
+.dark .agentero-codeblock .hljs-quote,
+.dark .agentero-codeblock .hljs-selector-tag,
+.dark .agentero-codeblock .hljs-selector-pseudo {
+	color: #7ee787;
+}
+.dark .agentero-codeblock .hljs-subst {
+	color: #c9d1d9;
+}
+
+.dark .agentero-codeblock .hljs-bullet {
+	color: #f2cc60;
+}
+
+::highlight(agentero-context-selection),
+::highlight(agentero-annotation-selection),
+::highlight(agentero-annotation-navigation) {
+	background-color: #3b82f650;
+}

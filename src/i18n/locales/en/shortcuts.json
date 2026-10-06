@@ -1,0 +1,43 @@
+{
+	"groups": {
+		"app": "App",
+		"vault": "Vault",
+		"navigation": "Navigation"
+	},
+	"labels": {
+		"settings": "Settings…",
+		"closeSheet": "Close dialog / sheet",
+		"zoomIn": "Zoom in",
+		"zoomOut": "Zoom out",
+		"zoomReset": "Reset zoom",
+		"newWindow": "New window",
+		"openVault": "Open vault…",
+		"createVault": "Create vault…",
+		"refreshTree": "Refresh file tree",
+		"revealInFinder": "Show in Finder",
+		"openInTerminal": "Open in Terminal",
+		"deleteTreeItem": "Delete selected item",
+		"cutTreeItem": "Cut selected item",
+		"pasteTreeItem": "Paste cut item(s)",
+		"collapseTreeCurrent": "Collapse selected folder",
+		"collapseTreeDefault": "Collapse tree to papers only",
+		"magicWand": "Add paper by identifier",
+		"quickOpen": "Quick open (papers / contents)",
+		"commandPalette": "Command palette",
+		"toggleSidebar": "Show / hide sidebar",
+		"toggleChat": "Add selection to chat / toggle chat",
+		"quickChat": "Quick chat from selection",
+		"addSelectionToChat": "Add selection to chat and focus",
+		"focusSidebar": "Focus sidebar",
+		"focusEditor": "Focus editor",
+		"focusNotes": "Focus notes",
+		"closeTab": "Close dialog, tab, or window",
+		"reopenTab": "Reopen closed tab",
+		"splitPane": "Split pane right (TeX: open compiled PDF)",
+		"nextTab": "Next tab",
+		"prevTab": "Previous tab",
+		"visualAnnotation": "Add visual annotation (PDF)",
+		"layoutTranslate": "Full-text translation (PDF)",
+		"toggleFullscreen": "Toggle borderless fullscreen"
+	}
+}

@@ -1,0 +1,42 @@
+# Normalize line endings across every platform.
+#
+# The repo stores text as LF. `eol=lf` forces LF in the working tree on checkout
+# too, overriding a contributor's `core.autocrlf=true` (common on Windows) so
+# Biome/rustfmt/pre-commit stay consistent and Git stops showing phantom
+# whole-repo "modified" churn.
+
+# Auto-detect text vs binary; check out text as LF everywhere.
+* text=auto eol=lf
+
+# Explicit text formats (kept LF).
+*.ts    text eol=lf
+*.tsx   text eol=lf
+*.js    text eol=lf
+*.jsx   text eol=lf
+*.mjs   text eol=lf
+*.cjs   text eol=lf
+*.json  text eol=lf
+*.jsonc text eol=lf
+*.css   text eol=lf
+*.html  text eol=lf
+*.md    text eol=lf
+*.rs    text eol=lf
+*.toml  text eol=lf
+*.yml   text eol=lf
+*.yaml  text eol=lf
+*.svg   text eol=lf
+*.sh    text eol=lf
+
+# Binary assets — never apply text/EOL conversion.
+*.png   binary
+*.jpg   binary
+*.jpeg  binary
+*.gif   binary
+*.webp  binary
+*.ico   binary
+*.icns  binary
+*.pdf   binary
+*.woff  binary
+*.woff2 binary
+*.ttf   binary
+*.otf   binary
