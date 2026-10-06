@@ -149,8 +149,8 @@ export function CommandPalette({
 		onOpenChange(false);
 	};
 	const chooseHit = (hit: SearchHit) => {
-		if (hit.paperPath) onOpenPaper(hit.paperPath);
-		else onOpenVaultRel(hit.path);
+		// Content/path results target the actual file, including paper NOTES.
+		onOpenVaultRel(hit.path);
 		onOpenChange(false);
 	};
 	const runCommand = (cmd: AppCommand) => {

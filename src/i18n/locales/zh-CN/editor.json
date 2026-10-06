@@ -258,5 +258,12 @@
 		"linkedNotes": "是否同时分享链接到的笔记？",
 		"linkedNotesHint": "仅勾选的笔记可被访问，不会自动公开这些笔记中更深层的链接。",
 		"backToNote": "返回分享的笔记"
+	},
+	"views": {
+		"title": "Markdown 视图",
+		"edit": "编辑",
+		"split": "编辑与渲染",
+		"preview": "仅渲染",
+		"source": "Markdown 源码"
 	}
 }

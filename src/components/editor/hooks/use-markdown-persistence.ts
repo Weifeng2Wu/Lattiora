@@ -61,6 +61,9 @@ export type MarkdownPersistence = {
 	 * snapshot (own-write echo) and nothing was reloaded.
 	 */
 	applyExternalMarkdown: (markdown: string) => boolean;
+	/** Keep source edits exact while projecting them into the shared rich editor. */
+	applySourceMarkdown: (markdown: string) => void;
+	clearSourceMarkdown: () => void;
 	/** Content currently believed to be on disk. */
 	savedRef: RefObject<string>;
 	dirtyRef: RefObject<boolean>;
@@ -83,6 +86,8 @@ export function useMarkdownPersistence({
 	onAssetsChangedRef,
 }: UseMarkdownPersistenceOptions): MarkdownPersistence {
 	const frontmatterRef = useRef("");
+	const sourceMarkdownRef = useRef<string | null>(null);
+	const projectingSourceRef = useRef(false);
 	const [frontmatterYaml, setFrontmatterYaml] = useState(() => {
 		const { frontmatter } = splitFrontmatter(initialMarkdown);
 		// Seed ref before first serialize / persist can run.
@@ -122,6 +127,7 @@ export function useMarkdownPersistence({
 	);
 
 	const serialize = useCallback(() => {
+		if (sourceMarkdownRef.current !== null) return sourceMarkdownRef.current;
 		const body = editor.getApi(MarkdownPlugin).markdown.serialize();
 		return joinFrontmatter(frontmatterRef.current, body);
 	}, [editor]);
@@ -149,7 +155,12 @@ export function useMarkdownPersistence({
 					setDirty(false);
 					continue;
 				}
-				if (!markdown.trim() && lastSaved.trim()) return;
+				if (
+					!markdown.trim() &&
+					lastSaved.trim() &&
+					sourceMarkdownRef.current === null
+				)
+					return;
 
 				const generation = reloadGenerationRef.current;
 				let persisted = false;
@@ -199,6 +210,8 @@ export function useMarkdownPersistence({
 	 * the diff does not change when files actually get deleted.
 	 */
 	const reconcileAssets = useCallback(() => {
+		// Partial source syntax must not garbage-collect images during typing.
+		if (sourceMarkdownRef.current !== null) return;
 		const nextCounts = collectImageUrlCounts(editor.children);
 		const prevCounts = imageCountsRef.current;
 		imageCountsRef.current = nextCounts;
@@ -247,6 +260,7 @@ export function useMarkdownPersistence({
 		(markdown: string) => {
 			// Own-write echo (autosave advanced the seed): nothing to reload.
 			if (markdown === savedRef.current && !dirtyRef.current) return false;
+			sourceMarkdownRef.current = null;
 			reloadGenerationRef.current += 1;
 			persistQueuedRef.current = false;
 			debouncedPersist.cancel();
@@ -277,10 +291,42 @@ export function useMarkdownPersistence({
 		[editor, setDirty, debouncedPersist],
 	);
 
+	const applySourceMarkdown = useCallback(
+		(markdown: string) => {
+			const { frontmatter, body } = splitFrontmatter(markdown);
+			const value = editor
+				.getApi(MarkdownPlugin)
+				.markdown.deserialize(prepareMarkdownForDeserialize(body || " "));
+			sourceMarkdownRef.current = markdown;
+			frontmatterRef.current = frontmatter;
+			setFrontmatterYaml(frontmatterInterior(frontmatter));
+			projectingSourceRef.current = true;
+			try {
+				editor.tf.deselect();
+				editor.tf.setValue(value);
+			} finally {
+				window.setTimeout(() => {
+					projectingSourceRef.current = false;
+				}, 0);
+			}
+			schedulePersist();
+		},
+		[editor, schedulePersist],
+	);
+	const clearSourceMarkdown = useCallback(() => {
+		if (!projectingSourceRef.current) sourceMarkdownRef.current = null;
+	}, []);
+
 	const onFrontmatterChange = useCallback(
 		(interior: string) => {
 			setFrontmatterYaml(interior);
 			frontmatterRef.current = wrapFrontmatter(interior);
+			if (sourceMarkdownRef.current !== null) {
+				sourceMarkdownRef.current = joinFrontmatter(
+					frontmatterRef.current,
+					splitFrontmatter(sourceMarkdownRef.current).body,
+				);
+			}
 			schedulePersist();
 		},
 		[schedulePersist],
@@ -299,6 +345,8 @@ export function useMarkdownPersistence({
 		noteDocumentChanged: schedulePersist,
 		saveNow,
 		applyExternalMarkdown,
+		applySourceMarkdown,
+		clearSourceMarkdown,
 		savedRef,
 		dirtyRef,
 	};

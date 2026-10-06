@@ -261,5 +261,12 @@
 		"linkedNotes": "Also share linked notes?",
 		"linkedNotesHint": "Only selected notes will be accessible. Their further links are not included automatically.",
 		"backToNote": "Back to shared note"
+	},
+	"views": {
+		"title": "Markdown view",
+		"edit": "Edit",
+		"split": "Edit and preview",
+		"preview": "Preview only",
+		"source": "Markdown source"
 	}
 }

@@ -1,4 +1,5 @@
 import i18n from "@/i18n";
+import { stat } from "@/lib/cloud/fs";
 import { errorText } from "@/lib/core/error";
 import {
 	detectPaperDirectory,
@@ -6,7 +7,6 @@ import {
 	getRemoteArxivPaperByPath,
 	isPaperDirectory,
 	isRemoteArxivPath,
-	isUnderPapers,
 	loadPaperMetadata,
 	loadPaperOpenBundle,
 	localFileToArrayBuffer,
@@ -45,7 +45,6 @@ import {
 	paperBodyMode,
 	preferredModeForPath,
 } from "@/lib/workspace/viewer";
-
 import { researchViewKind } from "@/lib/workspace/virtual-views";
 
 function findChildren(nodes: FileNode[], path: string): FileNode[] | undefined {
@@ -225,23 +224,14 @@ export async function loadTabResources(
 		paperDir = path.replace(/[\\/]+$/, "");
 	}
 
-	// Non-paper directory (org folder under papers/, notes/, etc.) → scoped library.
-	// Tree may be empty during tab restore before refreshTree completes: fall back to
-	// "not an openable file" so folder paths still reopen as library scope tabs.
-	// Outside `papers/` any extension-bearing path is a plain-text fallback file;
-	// extension-less names stay directory-suspect for that restore race.
-	const looksLikeOpenableFile =
-		isPdfPath(path) ||
-		isImagePath(path) ||
-		isHtmlPath(path) ||
-		isExcalidrawPath(path) ||
-		isTextOpenable(path) ||
-		(!isUnderPapers(path) && /\.[^\\/]+$/.test(path));
-	if (
-		!paperDir &&
-		(treeNode?.kind === "directory" ||
-			(treeNode == null && !looksLikeOpenableFile))
-	) {
+	// File type comes from the stored entry, never from whether its name has a dot.
+	// This also covers restored tabs whose tree has not loaded yet.
+	const directory = treeNode
+		? treeNode.kind === "directory"
+		: await stat(path)
+				.then((entry) => entry.isDirectory)
+				.catch(() => false);
+	if (!paperDir && directory) {
 		return {
 			kind: "library",
 			title: treeNode?.name || basenameOf(path),
@@ -362,10 +352,7 @@ export async function loadTabResources(
 
 		// A directory inside a paper folder (figures/, data/…) is not an
 		// openable file — scoped library, never an empty Markdown editor.
-		if (
-			treeNode?.kind === "directory" ||
-			(treeNode == null && !looksLikeOpenableFile)
-		) {
+		if (directory) {
 			return {
 				kind: "library",
 				title: treeNode?.name || basenameOf(path),

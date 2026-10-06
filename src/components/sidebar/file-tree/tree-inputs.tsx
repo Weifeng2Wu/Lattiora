@@ -9,7 +9,7 @@ import {
 import { useTranslation } from "react-i18next";
 import { useSettings } from "@/hooks/use-app-stores";
 import { cn } from "@/lib/core/utils";
-import { isPapersParent, isValidVaultEntryName } from "@/lib/vault";
+import { isValidVaultEntryName } from "@/lib/vault";
 import { fileNameSuffix } from "./tree-helpers";
 import type { TreeCreateKind } from "./types";
 
@@ -18,8 +18,6 @@ export function TreeCreateInput({
 	kind,
 	onConfirm,
 	onCancel,
-	parentPath,
-	vaultRoot,
 }: {
 	kind: TreeCreateKind;
 	onConfirm: (name: string) => void;
@@ -30,20 +28,19 @@ export function TreeCreateInput({
 	vaultRoot?: string;
 }) {
 	const { t } = useTranslation("sidebar");
-	// Papers/ (or parentPath not provided): default .md suffix + IDE-like selection.
-	// Outside papers/ + file: no suffix, full selection so user types the full name.
-	const insidePapers =
-		parentPath && vaultRoot ? isPapersParent(parentPath, vaultRoot) : true;
+	const allowFileExtensionRename = useSettings(
+		(s) => s.allowFileExtensionRename,
+	);
 	const defaultName =
 		kind === "excalidraw"
 			? `${t("fileTree.untitled")}.excalidraw`
 			: kind === "mindmap" || kind === "kanban"
 				? `${t("fileTree.untitled")}.${kind}.json`
 				: kind === "file"
-					? insidePapers
-						? "Untitled.md"
-						: ""
-					: "New Folder";
+					? allowFileExtensionRename
+						? `${t("fileTree.untitled")}.md`
+						: t("fileTree.untitled")
+					: t("fileTree.newFolder");
 	const [value, setValue] = useState(defaultName);
 	const [error, setError] = useState<string | null>(null);
 	const inputRef = useRef<HTMLInputElement>(null);
@@ -58,19 +55,19 @@ export function TreeCreateInput({
 		} else if (kind === "mindmap" || kind === "kanban") {
 			el.setSelectionRange(0, defaultName.length - `.${kind}.json`.length);
 		} else if (kind === "file") {
-			if (insidePapers) {
-				// IDE-like: select basename, leave extension selected.
+			if (allowFileExtensionRename) {
+				// Select the basename while retaining the suggested extension.
 				const dot = defaultName.lastIndexOf(".");
 				if (dot > 0) el.setSelectionRange(0, dot);
 				else el.select();
 			} else {
-				// Outside papers: full selection so user types the complete filename.
+				// Extension editing is off; the create action supplies .md.
 				el.select();
 			}
 		} else {
 			el.select();
 		}
-	}, [kind, defaultName, insidePapers]);
+	}, [kind, defaultName, allowFileExtensionRename]);
 
 	const commit = useCallback(() => {
 		if (committedRef.current) return;

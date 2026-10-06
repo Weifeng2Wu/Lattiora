@@ -4,6 +4,7 @@ import { MarkdownPlugin } from "@platejs/markdown";
 import { ImagePlugin } from "@platejs/media/react";
 import { BlockSelectionPlugin } from "@platejs/selection/react";
 import { TocPlugin } from "@platejs/toc/react";
+import { Columns2, Eye, PencilLine } from "lucide-react";
 import { Plate, usePlateEditor, usePluginOption } from "platejs/react";
 import {
 	type CSSProperties,
@@ -43,6 +44,7 @@ import { convertBlockquoteMarkerToCallout } from "@/components/editor/plugins/ca
 import { DndKit } from "@/components/editor/plugins/dnd-kit";
 import { MarkdownEditorKit } from "@/components/editor/plugins/markdown-editor-kit";
 import { MarkdownEditorToolbar } from "@/components/editor/toolbar/markdown-toolbar";
+import { Button } from "@/components/ui/button";
 import {
 	ContextMenu,
 	ContextMenuContent,
@@ -51,12 +53,14 @@ import {
 	ContextMenuShortcut,
 	ContextMenuTrigger,
 } from "@/components/ui/context-menu";
+import { Textarea } from "@/components/ui/textarea";
 import { useLibraryStore } from "@/hooks/use-app-stores";
 import i18n from "@/i18n";
 import { buildNoteShare, prepareNoteShare } from "@/lib/cloud/note-share";
 import { createShare } from "@/lib/cloud/shares";
 import { scrollBehavior } from "@/lib/core/motion";
 import { errorMessage, notifyError, notifySuccess } from "@/lib/core/notify";
+import { readJsonStorage, writeJsonStorage } from "@/lib/core/storage";
 import { cn } from "@/lib/core/utils";
 import { insertBreakAfterSelectedVoidBlocks } from "@/lib/markdown/block-selection";
 import { prepareMarkdownForDeserialize } from "@/lib/markdown/deserialize";
@@ -178,6 +182,15 @@ export function MarkdownEditor({
 	onRenameHeading,
 	navigationIntent,
 }: MarkdownEditorProps) {
+	const [viewMode, setViewMode] = useState<"edit" | "split" | "preview">(() => {
+		const value = readJsonStorage<string>(
+			`lattiora-markdown-view:${filePath}`,
+			"edit",
+		);
+		return value === "split" || value === "preview" ? value : "edit";
+	});
+	const [sourceText, setSourceText] = useState(initialMarkdown);
+	const renderReadOnly = readOnly || viewMode !== "edit";
 	const filePathRef = useRef(filePath ?? null);
 	filePathRef.current = filePath ?? null;
 	const onAssetsChangedRef = useRef(onAssetsChanged);
@@ -320,6 +333,8 @@ export function MarkdownEditor({
 		noteDocumentChanged,
 		saveNow,
 		applyExternalMarkdown,
+		applySourceMarkdown,
+		clearSourceMarkdown,
 		savedRef,
 		dirtyRef,
 	} = useMarkdownPersistence({
@@ -346,6 +361,7 @@ export function MarkdownEditor({
 		const container = editorContainerRef.current;
 		const scrollTop = container?.scrollTop ?? 0;
 		if (!applyExternalMarkdown(initialMarkdown)) return;
+		setSourceText(initialMarkdown);
 		window.requestAnimationFrame(() => {
 			const el = editorContainerRef.current;
 			if (el) el.scrollTop = scrollTop;
@@ -546,7 +562,7 @@ export function MarkdownEditor({
 	} = useEditorContextMenu({
 		editor,
 		editorContainerRef,
-		readOnly,
+		readOnly: renderReadOnly,
 		savedRef,
 		dirtyRef,
 		filePathRef,
@@ -576,10 +592,13 @@ export function MarkdownEditor({
 			scheduleWikiLinkPresentationSync();
 			return;
 		}
+		if (viewMode === "edit") clearSourceMarkdown();
 		handleChange();
 		scheduleWikiLinkPresentationSync();
 	}, [
 		consumePresentationChange,
+		viewMode,
+		clearSourceMarkdown,
 		handleChange,
 		scheduleCompletionProbe,
 		scheduleWikiLinkPresentationSync,
@@ -642,7 +661,7 @@ export function MarkdownEditor({
 	const contextMenuCapabilities = editorContextMenuCapabilities({
 		exportAvailable: true,
 		headingRenameAvailable: Boolean(headingContext),
-		readOnly: Boolean(readOnly),
+		readOnly: Boolean(renderReadOnly),
 		selectionExpanded: contextMenuSelectionExpanded,
 	});
 
@@ -670,7 +689,40 @@ export function MarkdownEditor({
 							className,
 						)}
 					>
-						{showToolbar && !readOnly ? (
+						{filePath && !readOnly && (
+							<fieldset
+								className="flex shrink-0 justify-end gap-1 border-b px-2 py-1"
+								aria-label={i18n.t("editor:views.title")}
+							>
+								{(
+									[
+										["edit", PencilLine],
+										["split", Columns2],
+										["preview", Eye],
+									] as const
+								).map(([mode, Icon]) => (
+									<Button
+										key={mode}
+										variant={viewMode === mode ? "secondary" : "ghost"}
+										size="icon-sm"
+										aria-label={i18n.t(`editor:views.${mode}`)}
+										title={i18n.t(`editor:views.${mode}`)}
+										aria-pressed={viewMode === mode}
+										onClick={() => {
+											if (mode === "split") setSourceText(serialize());
+											setViewMode(mode);
+											writeJsonStorage(
+												`lattiora-markdown-view:${filePath}`,
+												mode,
+											);
+										}}
+									>
+										<Icon className="size-4" />
+									</Button>
+								))}
+							</fieldset>
+						)}
+						{showToolbar && !renderReadOnly ? (
 							<MarkdownEditorToolbar
 								onOpenFind={() => {
 									setFindOpen(true);
@@ -680,13 +732,45 @@ export function MarkdownEditor({
 								propertiesPanel={
 									<FrontmatterPanel
 										value={frontmatterYaml}
-										readOnly={readOnly}
-										onChange={readOnly ? undefined : handleFrontmatterChange}
+										readOnly={renderReadOnly}
+										onChange={
+											renderReadOnly ? undefined : handleFrontmatterChange
+										}
 									/>
 								}
 							/>
 						) : null}
-						<div className="@container/editor relative flex min-h-0 min-w-0 flex-1 flex-col">
+						<div className="@container/editor relative flex min-h-0 min-w-0 flex-1 flex-col sm:flex-row">
+							{viewMode === "split" && !readOnly && (
+								<div
+									className="min-h-0 min-w-0 flex-1 border-b sm:border-b-0 sm:border-r"
+									data-markdown-source
+								>
+									<Textarea
+										aria-label={i18n.t("editor:views.source")}
+										className="h-full w-full resize-none rounded-none border-0 p-4 font-mono text-sm field-sizing-fixed focus-visible:ring-inset"
+										value={sourceText}
+										onChange={(event) => {
+											const value = event.target.value;
+											setSourceText(value);
+											try {
+												applySourceMarkdown(value);
+											} catch (error) {
+												notifyError(errorMessage(error));
+											}
+										}}
+										onKeyDown={(event) => {
+											if (
+												(event.ctrlKey || event.metaKey) &&
+												event.key.toLowerCase() === "s"
+											) {
+												event.preventDefault();
+												saveNow();
+											}
+										}}
+									/>
+								</div>
+							)}
 							<div className="relative min-h-0 min-w-0 flex-1">
 								<ContextMenu onOpenChange={handleContextMenuOpenChange}>
 									<ContextMenuTrigger asChild>
@@ -709,16 +793,24 @@ export function MarkdownEditor({
 													event.preventDefault();
 											}}
 											onContextMenuCapture={handleEditorContextMenu}
-											onKeyDownCapture={readOnly ? undefined : handleKeyDown}
-											onBeforeInputCapture={
-												readOnly ? undefined : handleWikiLinkBoundaryBeforeInput
+											onKeyDownCapture={
+												renderReadOnly ? undefined : handleKeyDown
 											}
-											onBlur={readOnly ? undefined : handleEditorBlur}
+											onBeforeInputCapture={
+												renderReadOnly
+													? undefined
+													: handleWikiLinkBoundaryBeforeInput
+											}
+											onBlur={renderReadOnly ? undefined : handleEditorBlur}
 											onCompositionStartCapture={
-												readOnly ? undefined : handleWikiLinkCompositionStart
+												renderReadOnly
+													? undefined
+													: handleWikiLinkCompositionStart
 											}
 											onCompositionEndCapture={
-												readOnly ? undefined : handleWikiLinkCompositionEnd
+												renderReadOnly
+													? undefined
+													: handleWikiLinkCompositionEnd
 											}
 										>
 											{/*
@@ -730,7 +822,7 @@ export function MarkdownEditor({
 												data-selection-chat-source={filePath || undefined}
 												data-selection-chat-origin="markdown"
 												placeholder={placeholder}
-												readOnly={readOnly}
+												readOnly={renderReadOnly}
 												// `pl-10` leaves room for the block drag handle
 												// (`-translate-x-full` in the left gutter).
 												// `pr-14` reserves a right gutter for the collapsed
@@ -739,7 +831,7 @@ export function MarkdownEditor({
 												className="min-h-full pl-10 pr-14 pt-4 pb-48 @max-2xs/editor:pr-6 [&>*:first-child]:mt-0"
 												style={editorTypographyStyle}
 											/>
-											{!readOnly ? (
+											{!renderReadOnly ? (
 												<WikiLinkSuggestion
 													draft={wikiCompletionDraft}
 													onClose={() => setWikiCompletionDraft(null)}
@@ -751,7 +843,7 @@ export function MarkdownEditor({
 													controllerRef={completionControllerRef}
 												/>
 											) : null}
-											{!readOnly ? (
+											{!renderReadOnly ? (
 												<SlashCommandMenu
 													draft={slashCommandDraft}
 													onClose={() => setSlashCommandDraft(null)}
@@ -836,7 +928,7 @@ export function MarkdownEditor({
 										</ContextMenuItem>
 									</ContextMenuContent>
 								</ContextMenu>
-								{findOpen && !readOnly ? (
+								{findOpen && !renderReadOnly ? (
 									<FindReplaceBar
 										focusTick={findFocusTick}
 										onClose={() => {

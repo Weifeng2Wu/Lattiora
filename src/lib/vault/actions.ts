@@ -838,9 +838,11 @@ export async function confirmCreate(name: string): Promise<void> {
 				? `.${kind}.json`
 				: "";
 	const filename =
-		suffix && !trimmed.toLowerCase().endsWith(suffix)
-			? `${trimmed}${suffix}`
-			: trimmed;
+		kind === "file" && !trimmed.startsWith(".") && !/\.[^./\\]+$/.test(trimmed)
+			? `${trimmed}.md`
+			: suffix && !trimmed.toLowerCase().endsWith(suffix)
+				? `${trimmed}${suffix}`
+				: trimmed;
 	const full = joinVaultPath(createDraft.parentPath, filename);
 	// Clear draft first so the tree can re-render after create.
 	setCreateDraft(null);
