@@ -230,3 +230,16 @@ pnpm test:browser
 应用提交 `f2c937d9` 已部署至 `https://agentero-web.minjunkirs.workers.dev`，主 Worker 版本 `4883272c-0f55-4e41-b03c-da03b845f099`。界面、浏览器图标、导出水印和模板改用 Lattiora 品牌，保留 MIT 版权声明和既有数据标识。广场代理同步发布：ModelScope `0d541868-9467-4980-a470-02717d19b592`，Cool Papers `e6927985-c8c3-4a20-981b-ad2f6b7e5e1a`。
 
 复用已通过构建、类型检查及浏览器验证的 `dist-web`，本次没有重新构建或运行测试；分别通过 `node scripts/cloudflare.mjs deploy` 及两个 plaza 配置发布。线上首页返回 HTTP 200，标题为 Lattiora；favicon 与 Service Worker 均返回 HTTP 200，内容与本地已验证产物完全一致。无需数据库迁移或新增 Secret，原访问地址保持不变。已有页面待新版缓存就绪后，保存并关闭本站所有标签页再重新打开以激活更新。
+
+
+## 0.37.0 科研工作区与统一 Markdown（2026-10-06）
+
+已推送至独立仓库 `Weifeng2Wu/Lattiora`，应用提交 `1535bcbc`；主 Worker 版本 `5ef422f9-7b76-4c26-a342-79b8c8f4532c` 已发布至 `https://agentero-web.minjunkirs.workers.dev`。旧历史保留，使用新仓库 main 的正常快进提交，没有强推。
+
+新增关系图谱、全库语义检索及 Agent 查询、可配置首页组件、天气/专注/最近阅读/闪念胶囊、图片背景与模糊/遮罩。阅读进度按实际浏览页累计，AI 分析单独记录。普通 Markdown 与论文 NOTES 共用编辑、源码/渲染双栏和仅渲染模式；新建文件省略后缀自动补 `.md`，快速打开定位实际笔记。
+
+复用现有 D1/R2、Secrets 和同步协议，无新增数据库迁移或绑定；仅部署主 Worker。发布前完成生产构建、前端/Worker 类型检查、相关 94 项单测及 10 个浏览器场景，详见[验证记录](../test/cloudflare.md)。
+
+线上首页与 `/sw.js` 均为 200，逐字节匹配最终构建；Service Worker SHA-256 为 `19b43e130d3ea074df3039eeb38c2b765d3b91a11f36879d903ab2b12d8526d0`。匿名 session/天气接口 401，登录与已登录 session/变更元数据读取 200；Cookie 带 Secure / HttpOnly。已登录上海天气请求返回 200 和有效温度/天气数据。冒烟没有修改生产笔记、布局或模型配置，没有调用付费模型；交互与离线验收来自隔离本地生产构建。
+
+使用入口：顶栏打开关系图谱/语义检索；首页自定义按钮启用或调整组件和背景。语义检索需在设置配置 Embedding 并主动建立索引，扫描页只显示可提取部分。已有页面在同步和新版缓存完成后，保存并关闭本站所有标签页再重新打开，激活新版本。
