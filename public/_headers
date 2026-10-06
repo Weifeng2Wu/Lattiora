@@ -2,7 +2,7 @@
   X-Content-Type-Options: nosniff
   Referrer-Policy: no-referrer
   X-Frame-Options: DENY
-  Permissions-Policy: camera=(), microphone=(), geolocation=()
+  Permissions-Policy: camera=(), microphone=(), geolocation=(self)
   Content-Security-Policy: default-src 'self'; script-src 'self' 'wasm-unsafe-eval' 'sha256-4PlQrEyHMG2hjyQ6SyDGY2zaQFynWts7IE+d4J+iyrg='; worker-src 'self' blob:; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: https:; font-src 'self' data:; connect-src 'self' blob: https://libraries.excalidraw.com; frame-src 'self' blob: https://papers.cool https://modelscope.cn; object-src 'none'; base-uri 'self'; frame-ancestors 'none'
 /sw.js
   Cache-Control: no-cache

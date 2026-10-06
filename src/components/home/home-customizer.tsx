@@ -1,5 +1,13 @@
-import { ArrowDown, ArrowUp, ImagePlus, Settings2, X } from "lucide-react";
-import { useId, useRef, useState } from "react";
+import {
+	ArrowDown,
+	ArrowUp,
+	ImagePlus,
+	Loader2,
+	LocateFixed,
+	Settings2,
+	X,
+} from "lucide-react";
+import { useEffect, useId, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -44,10 +52,12 @@ export function HomeCustomizer({
 	const [cityQuery, setCityQuery] = useState("");
 	const [cities, setCities] = useState<NonNullable<HomeSettings["city"]>[]>([]);
 	const [cityBusy, setCityBusy] = useState(false);
+	const [locating, setLocating] = useState(false);
 	const [citySearched, setCitySearched] = useState(false);
 	const cityRequest = useRef<AbortController | null>(null);
+	useEffect(() => () => cityRequest.current?.abort(), []);
 	const save = async () => {
-		if (saving.current) return;
+		if (saving.current || cityBusy) return;
 		saving.current = true;
 		setBusy(true);
 		try {
@@ -72,6 +82,7 @@ export function HomeCustomizer({
 		cityRequest.current?.abort();
 		const controller = new AbortController();
 		cityRequest.current = controller;
+		setLocating(false);
 		setCityBusy(true);
 		try {
 			const response = await cloudFetch(
@@ -89,18 +100,76 @@ export function HomeCustomizer({
 			if (!controller.signal.aborted) setCityBusy(false);
 		}
 	};
+	const locate = () => {
+		if (cityBusy || saving.current) return;
+		if (!navigator.geolocation) {
+			notifyError(t("home.weather.locationUnsupported"));
+			return;
+		}
+		cityRequest.current?.abort();
+		const controller = new AbortController();
+		cityRequest.current = controller;
+		setCityBusy(true);
+		setLocating(true);
+		const finish = () => {
+			setCityBusy(false);
+			setLocating(false);
+		};
+		navigator.geolocation.getCurrentPosition(
+			({ coords }) => {
+				if (controller.signal.aborted) return;
+				// Weather needs only approximate coordinates, including in synced settings.
+				const latitude = Math.round(coords.latitude * 100) / 100;
+				const longitude = Math.round(coords.longitude * 100) / 100;
+				if (
+					!Number.isFinite(latitude) ||
+					!Number.isFinite(longitude) ||
+					Math.abs(latitude) > 90 ||
+					Math.abs(longitude) > 180
+				) {
+					notifyError(t("home.weather.locationFailed"));
+					finish();
+					return;
+				}
+				setDraft((current) => ({
+					...current,
+					city: { name: t("home.weather.locatedPlace"), latitude, longitude },
+				}));
+				setCities([]);
+				setCitySearched(false);
+				finish();
+			},
+			(error) => {
+				if (controller.signal.aborted) return;
+				notifyError(
+					t(
+						error.code === 1
+							? "home.weather.locationDenied"
+							: error.code === 3
+								? "home.weather.locationTimeout"
+								: "home.weather.locationFailed",
+					),
+				);
+				finish();
+			},
+			{ enableHighAccuracy: false, maximumAge: 300000, timeout: 10000 },
+		);
+	};
 	return (
 		<Dialog
 			open={open}
 			onOpenChange={(next) => {
 				if (busy) return;
+				cityRequest.current?.abort();
+				setCityBusy(false);
+				setLocating(false);
 				if (next) {
 					setDraft(settings);
 					setBaseline(localId);
 					setFile(null);
 					setCities([]);
 					setCitySearched(false);
-				} else cityRequest.current?.abort();
+				}
 				setOpen(next);
 			}}
 		>
@@ -269,7 +338,23 @@ export function HomeCustomizer({
 						))}
 					</div>
 					<div className="space-y-3">
-						<h3 className="text-sm font-medium">{t("home.weather.city")}</h3>
+						<div className="flex flex-wrap items-center justify-between gap-2">
+							<h3 className="text-sm font-medium">{t("home.weather.city")}</h3>
+							<Button
+								type="button"
+								variant="secondary"
+								size="sm"
+								disabled={cityBusy || busy}
+								onClick={locate}
+							>
+								{locating ? (
+									<Loader2 className="size-4 animate-spin motion-reduce:animate-none" />
+								) : (
+									<LocateFixed className="size-4" />
+								)}
+								{t("home.weather.useLocation")}
+							</Button>
+						</div>
 						{draft.city && (
 							<p className="text-sm text-muted-foreground">{draft.city.name}</p>
 						)}
@@ -281,6 +366,7 @@ export function HomeCustomizer({
 							}}
 						>
 							<Input
+								disabled={locating || busy}
 								value={cityQuery}
 								onChange={(event) => setCityQuery(event.target.value)}
 								placeholder={t("home.weather.searchCity")}
@@ -288,7 +374,7 @@ export function HomeCustomizer({
 							/>
 							<Button
 								variant="secondary"
-								disabled={cityBusy || cityQuery.trim().length < 2}
+								disabled={cityBusy || busy || cityQuery.trim().length < 2}
 							>
 								{t("home.weather.search")}
 							</Button>
@@ -297,6 +383,7 @@ export function HomeCustomizer({
 							{cities.map((city) => (
 								<li key={`${city.latitude}:${city.longitude}`}>
 									<Button
+										disabled={locating || busy}
 										variant="ghost"
 										className="h-auto w-full justify-start whitespace-normal text-left"
 										onClick={() => {
@@ -318,7 +405,7 @@ export function HomeCustomizer({
 					</div>
 					<Button
 						className="w-full"
-						disabled={busy}
+						disabled={busy || cityBusy}
 						onClick={() => void save()}
 					>
 						{t("home.saveLayout")}

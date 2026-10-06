@@ -50,4 +50,4 @@ API 使用 HMAC 签名 HttpOnly / SameSite=Strict / HTTPS Secure cookie；写请
 
 关系图谱从论文 metadata、Markdown 双链和既有引文 sidecar 派生。语义索引 `.agentero/search/` 记录来源 revision 并复用推荐向量缓存；新内容/查询通过已有 Embedding 代理，既有索引可被 Agent 的 `semantic_search` 查询。无独立向量数据库，来源更新后旧索引失效，见 [科研检索](frontend/web-research.md)。
 
-实际阅读页在论文 `.reading/` 按设备独立写入，同步后按 PDF mutation ID 合并页集合，AI 分析完成时间独立保存。首页与 Library 共用这份派生进度，批注热力图保持原语义，见 [阅读记录](frontend/web-reading-heatmap.md)。天气使用登录保护的固定 Open-Meteo 代理，不增加用户定位或客户端 Key。
+实际阅读页在论文 `.reading/` 按设备独立写入，同步后按 PDF mutation ID 合并页集合，AI 分析完成时间独立保存。首页与 Library 共用这份派生进度，批注热力图保持原语义，见 [阅读记录](frontend/web-reading-heatmap.md)。天气使用登录保护的固定 Open-Meteo 代理，无客户端 Key；支持手动选择城市或用户点击后通过浏览器授权获取一次位置，经纬度保留两位小数并按现有首页设置同步，不持续追踪。静态页 Permissions-Policy 允许本站请求定位，详见 [首页](frontend/web-home.md)。

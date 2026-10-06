@@ -357,6 +357,12 @@
 		},
 		"weather": {
 			"city": "Weather location",
+			"useLocation": "Use current location",
+			"locatedPlace": "Located place",
+			"locationUnsupported": "Location is unavailable in this browser. Choose a city manually.",
+			"locationDenied": "Location access was denied. Allow it in your browser settings or choose a city manually.",
+			"locationTimeout": "Location timed out. Try again or choose a city manually.",
+			"locationFailed": "Could not find your location. Try again or choose a city manually.",
 			"searchCity": "Search city…",
 			"search": "Search",
 			"noCities": "No cities found.",

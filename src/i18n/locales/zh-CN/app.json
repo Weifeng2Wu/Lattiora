@@ -357,6 +357,12 @@
 		},
 		"weather": {
 			"city": "天气城市",
+			"useLocation": "使用当前位置",
+			"locatedPlace": "定位地点",
+			"locationUnsupported": "此浏览器无法使用定位，请手动选择城市。",
+			"locationDenied": "定位权限被拒绝，请在浏览器设置中允许定位，或手动选择城市。",
+			"locationTimeout": "定位超时，请重试或手动选择城市。",
+			"locationFailed": "无法获取位置，请重试或手动选择城市。",
 			"searchCity": "搜索城市…",
 			"search": "搜索",
 			"noCities": "未找到城市。",
